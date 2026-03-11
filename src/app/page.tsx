@@ -32,8 +32,38 @@ export default function App() {
   }
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => setSession(session))
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => setSession(session))
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session)
+      // === МАГИЯ ONESIGNAL: Говорим сервису, кто мы такие ===
+      if (session) {
+        // @ts-ignore
+        window.OneSignalDeferred = window.OneSignalDeferred || [];
+        // @ts-ignore
+        window.OneSignalDeferred.push(async function(OneSignal) {
+          await OneSignal.login(session.user.id);
+        });
+      }
+    })
+    
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session)
+      if (session) {
+        // @ts-ignore
+        window.OneSignalDeferred = window.OneSignalDeferred || [];
+        // @ts-ignore
+        window.OneSignalDeferred.push(async function(OneSignal) {
+          await OneSignal.login(session.user.id);
+        });
+      } else {
+        // Если вышли из аккаунта - отвязываем пуши
+        // @ts-ignore
+        window.OneSignalDeferred = window.OneSignalDeferred || [];
+        // @ts-ignore
+        window.OneSignalDeferred.push(async function(OneSignal) {
+          await OneSignal.logout();
+        });
+      }
+    })
     return () => subscription.unsubscribe()
   }, [])
 
