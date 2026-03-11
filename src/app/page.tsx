@@ -303,7 +303,7 @@ export default function App() {
       ) : (
         <>
           {/* ЛЕВАЯ КОЛОНКА */}
-          <div className={`bg-cover bg-center border-r shadow-md md:rounded-l-lg flex-col transition-all duration-300 ease-in-out z-20 
+          <div className={`bg-cover bg-center border-r border-gray-300 shadow-md md:rounded-l-lg flex-col transition-all duration-300 ease-in-out z-20 
             ${selectedUser ? 'hidden md:flex' : 'flex w-full'} 
             ${isCollapsed ? 'md:w-20 p-2 items-center' : 'md:w-1/3 p-4'}`}>
             
@@ -319,7 +319,7 @@ export default function App() {
             </div>
             
             {!isCollapsed && (
-              <div className="mb-4 pb-4 border-b w-full shrink-0">
+              <div className="mb-4 pb-4 border-b border-gray-300 w-full shrink-0">
                 <h3 className="text-gray-500 font-semibold mb-2 text-xs uppercase tracking-wider">Найти пользователя</h3>
                 <div className="flex gap-2">
                   <input className="border-none pl-3.5 flex-1 rounded-lg text-sm bg-gray-50 w-full" placeholder="Email для заявки" value={newContactEmail} onChange={e => setNewContactEmail(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && sendRequest(newContactEmail)} />
@@ -412,7 +412,7 @@ export default function App() {
             ) : (
               <>
                 {/* ШАПКА ЧАТА: z-20 и bg-white гарантируют, что она не просвечивает и всегда сверху */}
-                <div className="p-3 md:p-4 border-b shadow-sm z-20 font-bold text-gray-800 flex items-center shrink-0 w-full">
+                <div className="p-3 md:p-4 border-none shadow-sm z-20 font-bold text-gray-800 flex items-center shrink-0 w-full">
                   <button 
                     onClick={() => setSelectedUser(null)}
                     className="md:hidden mr-3 text-blue-500 hover:bg-blue-50 p-2 rounded-full flex items-center justify-center active:scale-95 transition shrink-0"
@@ -454,7 +454,7 @@ export default function App() {
                 
                 {/* ПАНЕЛЬ ВВОДА: Добавлен paddingBottom с учетом Safe Area (полоски на iPhone) */}
                 <div 
-                  className=" border-t flex flex-col shrink-0 w-full"
+                  className=" border-t border-gray-300 flex flex-col shrink-0 w-full"
                   style={{ paddingBottom: 'env(safe-area-inset-bottom, 16px)' }}
                 >
                   {/* @ts-ignore */}

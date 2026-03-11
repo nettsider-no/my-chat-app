@@ -41,8 +41,6 @@ export default function RootLayout({
           __html: `
             :root {
               --bg-login: url('/bg-login.png');
-              --bg-sidebar: url('/bg-sidebar.png');
-              --bg-chat: url('/bg-chat.png');
             }
           `
         }} />
