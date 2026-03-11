@@ -239,11 +239,10 @@ export default function App() {
   function formatTime(isoString: string) { return new Date(isoString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }
 
   // ==========================================
-  // ВЕРСТКА С ИДЕАЛЬНОЙ ФИКСАЦИЕЙ ШАПКИ И НИЗА
+  // ВЕРСТКА С ИДЕАЛЬНОЙ ФИКСАЦИЕЙ ДЛЯ МОБИЛОК
   // ==========================================
   return (
-    // ИСПОЛЬЗУЕМ h-[100dvh] вместо h-screen для мобильных браузеров
-    <div className="flex h-[100dvh] bg-gray-100 md:p-4 relative overflow-hidden">
+    <div className="flex h-[100dvh] bg-gray-100 md:p-4 relative overflow-hidden w-full">
       
       {toastMsg && (
         <div className="absolute top-8 left-1/2 transform -translate-x-1/2 bg-gray-900/90 backdrop-blur-sm text-white px-6 py-3 rounded-full shadow-2xl z-50 flex items-center gap-3 animate-bounce border border-gray-700">
@@ -251,21 +250,24 @@ export default function App() {
         </div>
       )}
 
+      {/* ЭКРАН ЛОГИНА: Теперь идеально по центру и не обрезается */}
       {!session ? (
-        <div className="m-auto p-6 md:p-8 max-w-sm w-full mx-4 md:mx-auto bg-white border border-gray-100 shadow-2xl rounded-3xl flex flex-col gap-5 relative overflow-hidden shrink-0">
-          <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-400 to-indigo-500"></div>
-          <div className="text-center mt-2 mb-2">
-            <div className="w-16 h-16 md:w-20 md:h-20 bg-blue-50 text-3xl md:text-4xl rounded-full flex items-center justify-center mx-auto mb-4 shadow-inner">💬</div>
-            <h2 className="text-xl md:text-2xl font-extrabold text-gray-800 tracking-tight">Мессенджер</h2>
-            <p className="text-gray-500 text-xs md:text-sm mt-2">Войдите в аккаунт или создайте новый</p>
-          </div>
-          <div className="flex flex-col gap-3">
-            <input className="border border-gray-200 p-3.5 w-full rounded-xl bg-gray-50 focus:ring-2 focus:ring-blue-400 outline-none transition-all text-sm" placeholder="Ваш Email" value={email} onChange={e => setEmail(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleLogin()}/>
-            <input className="border border-gray-200 p-3.5 w-full rounded-xl bg-gray-50 focus:ring-2 focus:ring-blue-400 outline-none transition-all text-sm" type="password" placeholder="Ваш Пароль" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleLogin()}/>
-          </div>
-          <div className="flex gap-2 md:gap-3 mt-2">
-            <button className="bg-blue-500 hover:bg-blue-600 text-white p-3 md:p-3.5 flex-1 rounded-xl font-bold text-sm md:text-base shadow-md shadow-blue-500/30 transition-all active:scale-95" onClick={handleLogin}>Войти</button>
-            <button className="bg-gray-100 hover:bg-gray-200 text-gray-700 p-3 md:p-3.5 flex-1 rounded-xl font-bold text-sm md:text-base shadow-sm transition-all active:scale-95" onClick={handleSignUp}>Рег-ция</button>
+        <div className="flex-1 flex items-center justify-center w-full h-full p-4">
+          <div className="max-w-sm w-full bg-white border border-gray-100 shadow-2xl rounded-3xl flex flex-col gap-5 relative overflow-hidden shrink-0 p-6 md:p-8">
+            <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-400 to-indigo-500"></div>
+            <div className="text-center mt-2 mb-2">
+              <div className="w-16 h-16 md:w-20 md:h-20 bg-blue-50 text-3xl md:text-4xl rounded-full flex items-center justify-center mx-auto mb-4 shadow-inner">💬</div>
+              <h2 className="text-xl md:text-2xl font-extrabold text-gray-800 tracking-tight">Мессенджер</h2>
+              <p className="text-gray-500 text-xs md:text-sm mt-2">Войдите в аккаунт или создайте новый</p>
+            </div>
+            <div className="flex flex-col gap-3">
+              <input className="border border-gray-200 p-3.5 w-full rounded-xl bg-gray-50 focus:ring-2 focus:ring-blue-400 outline-none transition-all text-sm" placeholder="Ваш Email" value={email} onChange={e => setEmail(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleLogin()}/>
+              <input className="border border-gray-200 p-3.5 w-full rounded-xl bg-gray-50 focus:ring-2 focus:ring-blue-400 outline-none transition-all text-sm" type="password" placeholder="Ваш Пароль" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleLogin()}/>
+            </div>
+            <div className="flex gap-2 md:gap-3 mt-2">
+              <button className="bg-blue-500 hover:bg-blue-600 text-white p-3 md:p-3.5 flex-1 rounded-xl font-bold text-sm md:text-base shadow-md shadow-blue-500/30 transition-all active:scale-95" onClick={handleLogin}>Войти</button>
+              <button className="bg-gray-100 hover:bg-gray-200 text-gray-700 p-3 md:p-3.5 flex-1 rounded-xl font-bold text-sm md:text-base shadow-sm transition-all active:scale-95" onClick={handleSignUp}>Рег-ция</button>
+            </div>
           </div>
         </div>
       ) : (
@@ -370,8 +372,8 @@ export default function App() {
           </div>
 
           {/* ПРАВАЯ КОЛОНКА (САМ ЧАТ) */}
-          <div className={`bg-white shadow-md md:rounded-r-lg flex-col relative transition-all duration-300 ease-in-out z-10
-            ${selectedUser ? 'flex w-full md:flex-1' : 'hidden md:flex md:flex-1'}`}>
+          <div className={`bg-white shadow-md md:rounded-r-lg flex-col relative transition-all duration-300 ease-in-out z-10 w-full
+            ${selectedUser ? 'flex md:flex-1' : 'hidden md:flex md:flex-1'}`}>
             
             {!selectedUser ? (
               <div className="flex-1 flex flex-col items-center justify-center text-gray-400 p-6 text-center">
@@ -380,8 +382,8 @@ export default function App() {
               </div>
             ) : (
               <>
-                {/* ШАПКА ЧАТА: Добавлен shrink-0, чтобы она никогда не сжималась */}
-                <div className="p-3 md:p-4 border-b bg-white shadow-sm z-10 font-bold text-gray-800 flex items-center shrink-0">
+                {/* ШАПКА ЧАТА: z-20 и bg-white гарантируют, что она не просвечивает и всегда сверху */}
+                <div className="p-3 md:p-4 border-b bg-white shadow-sm z-20 font-bold text-gray-800 flex items-center shrink-0 w-full">
                   <button 
                     onClick={() => setSelectedUser(null)}
                     className="md:hidden mr-3 text-blue-500 hover:bg-blue-50 p-2 rounded-full flex items-center justify-center active:scale-95 transition shrink-0"
@@ -398,8 +400,8 @@ export default function App() {
                   </div>
                 </div>
                 
-                {/* ОБЛАСТЬ СООБЩЕНИЙ: flex-1 забирает всё свободное место, overflow-y-auto включает скролл */}
-                <div className="flex-1 overflow-y-auto p-3 md:p-4 flex flex-col gap-3 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] bg-gray-50 pb-4">
+                {/* ОБЛАСТЬ СООБЩЕНИЙ */}
+                <div className="flex-1 overflow-y-auto p-3 md:p-4 flex flex-col gap-3 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] bg-gray-50 pb-4 w-full">
                   {messages.map((m) => {
                     const isMe = m.sender_id === session.user.id
                     return (
@@ -421,8 +423,11 @@ export default function App() {
                   <div ref={messagesEndRef} className="shrink-0" />
                 </div>
                 
-                {/* ПАНЕЛЬ ВВОДА: Добавлен shrink-0, чтобы она не сжималась при большом тексте */}
-                <div className="bg-white border-t flex flex-col pb-safe shrink-0">
+                {/* ПАНЕЛЬ ВВОДА: Добавлен paddingBottom с учетом Safe Area (полоски на iPhone) */}
+                <div 
+                  className="bg-white border-t flex flex-col shrink-0 w-full"
+                  style={{ paddingBottom: 'env(safe-area-inset-bottom, 16px)' }}
+                >
                   {/* @ts-ignore */}
                   {pendingFile && (
                     <div className="p-2 md:p-3 bg-gray-50 border-b flex items-start gap-3 transition-all shrink-0">
@@ -445,7 +450,7 @@ export default function App() {
                     {/* @ts-ignore */}
                     <input type="file" className="hidden" ref={fileInputRef} onChange={handleFileUpload} accept="image/*, .pdf, .doc, .docx" />
                     {/* @ts-ignore */}
-                    <input className="border p-3 md:p-4 flex-1 rounded-3xl outline-none focus:ring-2 focus:ring-blue-400 bg-gray-50 text-[14px] md:text-[15px]" value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && sendMessage()} onPaste={handlePaste} placeholder="Сообщение..." disabled={isSending}/>
+                    <input className="border p-3 md:p-4 flex-1 rounded-3xl outline-none focus:ring-2 focus:ring-blue-400 bg-gray-50 text-[14px] md:text-[15px] min-w-0" value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && sendMessage()} onPaste={handlePaste} placeholder="Сообщение..." disabled={isSending}/>
                     {/* @ts-ignore */}
                     <button className={`text-white w-12 h-12 md:w-14 md:h-14 flex items-center justify-center rounded-full font-bold shadow-md transition-all mb-0.5 md:mb-1 shrink-0 ${isSending || (text.trim() === '' && pendingFile === null) ? 'bg-blue-300 cursor-not-allowed' : 'bg-blue-500 hover:bg-blue-600 active:scale-95'}`} onClick={sendMessage} disabled={isSending || (text.trim() === '' && pendingFile === null)}>{isSending ? '...' : <span className="text-lg md:text-xl">➤</span>}</button>
                   </div>
