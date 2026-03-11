@@ -238,8 +238,12 @@ export default function App() {
 
   function formatTime(isoString: string) { return new Date(isoString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }
 
+  // ==========================================
+  // ВЕРСТКА С ИДЕАЛЬНОЙ ФИКСАЦИЕЙ ШАПКИ И НИЗА
+  // ==========================================
   return (
-    <div className="flex h-screen bg-gray-100 md:p-4 relative overflow-hidden">
+    // ИСПОЛЬЗУЕМ h-[100dvh] вместо h-screen для мобильных браузеров
+    <div className="flex h-[100dvh] bg-gray-100 md:p-4 relative overflow-hidden">
       
       {toastMsg && (
         <div className="absolute top-8 left-1/2 transform -translate-x-1/2 bg-gray-900/90 backdrop-blur-sm text-white px-6 py-3 rounded-full shadow-2xl z-50 flex items-center gap-3 animate-bounce border border-gray-700">
@@ -248,7 +252,7 @@ export default function App() {
       )}
 
       {!session ? (
-        <div className="m-auto p-6 md:p-8 max-w-sm w-full mx-4 md:mx-auto bg-white border border-gray-100 shadow-2xl rounded-3xl flex flex-col gap-5 relative overflow-hidden">
+        <div className="m-auto p-6 md:p-8 max-w-sm w-full mx-4 md:mx-auto bg-white border border-gray-100 shadow-2xl rounded-3xl flex flex-col gap-5 relative overflow-hidden shrink-0">
           <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-400 to-indigo-500"></div>
           <div className="text-center mt-2 mb-2">
             <div className="w-16 h-16 md:w-20 md:h-20 bg-blue-50 text-3xl md:text-4xl rounded-full flex items-center justify-center mx-auto mb-4 shadow-inner">💬</div>
@@ -266,24 +270,24 @@ export default function App() {
         </div>
       ) : (
         <>
-          {/* ЛЕВАЯ КОЛОНКА (СПИСОК КОНТАКТОВ) */}
+          {/* ЛЕВАЯ КОЛОНКА */}
           <div className={`bg-white border-r shadow-md md:rounded-l-lg flex-col transition-all duration-300 ease-in-out z-20 
             ${selectedUser ? 'hidden md:flex' : 'flex w-full'} 
             ${isCollapsed ? 'md:w-20 p-2 items-center' : 'md:w-1/3 p-4'}`}>
             
-            <div className={`flex items-center mb-4 pb-2 border-b w-full ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
+            <div className={`flex items-center mb-4 pb-2 border-b w-full shrink-0 ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
               <button onClick={() => setIsCollapsed(!isCollapsed)} className="hidden md:block text-gray-500 hover:text-blue-500 hover:bg-gray-100 p-2 rounded-full transition" title={isCollapsed ? "Развернуть" : "Свернуть"}>{isCollapsed ? '▶' : '◀'} </button>
               
               {!isCollapsed && (
                 <div className="flex-1 md:ml-2 flex justify-between items-center overflow-hidden">
                   <p className="font-bold truncate text-sm">Профиль: <span className="text-blue-500 block truncate">{session.user.email}</span></p>
-                  <button className="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg text-xs md:text-sm shadow-sm transition active:scale-95" onClick={() => supabase.auth.signOut()}>Выйти</button>
+                  <button className="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg text-xs md:text-sm shadow-sm transition active:scale-95 shrink-0" onClick={() => supabase.auth.signOut()}>Выйти</button>
                 </div>
               )}
             </div>
             
             {!isCollapsed && (
-              <div className="mb-4 pb-4 border-b w-full">
+              <div className="mb-4 pb-4 border-b w-full shrink-0">
                 <h3 className="text-gray-500 font-semibold mb-2 text-xs uppercase tracking-wider">Найти пользователя</h3>
                 <div className="flex gap-2">
                   <input className="border p-2 flex-1 rounded-lg text-sm bg-gray-50 w-full" placeholder="Email для заявки" value={newContactEmail} onChange={e => setNewContactEmail(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && sendRequest(newContactEmail)} />
@@ -294,7 +298,7 @@ export default function App() {
 
             <div className="flex-1 overflow-y-auto overflow-x-hidden w-full no-scrollbar pb-20 md:pb-0">
               {incomingRequests.length > 0 && (
-                <div className="mb-4 w-full">
+                <div className="mb-4 w-full shrink-0">
                   {!isCollapsed && <h3 className="text-indigo-500 font-semibold mb-2 text-xs uppercase tracking-wider">Новые запросы</h3>}
                   <ul className="w-full flex flex-col items-center">
                     {incomingRequests.map(u => (
@@ -319,7 +323,7 @@ export default function App() {
               )}
 
               {!isCollapsed && outgoingRequests.length > 0 && (
-                <div className="mb-4 w-full">
+                <div className="mb-4 w-full shrink-0">
                   <h3 className="text-gray-400 font-semibold mb-2 text-xs uppercase tracking-wider">Мои заявки</h3>
                   <ul className="w-full">
                     {outgoingRequests.map(u => (
@@ -354,7 +358,7 @@ export default function App() {
                             </div>
                             <div className="flex items-center gap-2 shrink-0">
                               {unreadCounts[u.id] > 0 && <span className="bg-blue-500 text-white text-xs px-2 py-1 rounded-full shadow-sm">{unreadCounts[u.id]}</span>}
-                              <button className="text-gray-300 hover:text-red-500 text-2xl md:text-lg ml-2 active:scale-95" onClick={(e) => removeContact(e, u.id)}>×</button>
+                              <button className="text-gray-300 hover:text-red-500 text-2xl md:text-lg ml-2 active:scale-95 shrink-0" onClick={(e) => removeContact(e, u.id)}>×</button>
                             </div>
                           </>
                         )}
@@ -376,10 +380,11 @@ export default function App() {
               </div>
             ) : (
               <>
-                <div className="p-3 md:p-4 border-b bg-white shadow-sm z-10 font-bold text-gray-800 flex items-center sticky top-0">
+                {/* ШАПКА ЧАТА: Добавлен shrink-0, чтобы она никогда не сжималась */}
+                <div className="p-3 md:p-4 border-b bg-white shadow-sm z-10 font-bold text-gray-800 flex items-center shrink-0">
                   <button 
                     onClick={() => setSelectedUser(null)}
-                    className="md:hidden mr-3 text-blue-500 hover:bg-blue-50 p-2 rounded-full flex items-center justify-center active:scale-95 transition"
+                    className="md:hidden mr-3 text-blue-500 hover:bg-blue-50 p-2 rounded-full flex items-center justify-center active:scale-95 transition shrink-0"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-6 h-6">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
@@ -393,11 +398,12 @@ export default function App() {
                   </div>
                 </div>
                 
+                {/* ОБЛАСТЬ СООБЩЕНИЙ: flex-1 забирает всё свободное место, overflow-y-auto включает скролл */}
                 <div className="flex-1 overflow-y-auto p-3 md:p-4 flex flex-col gap-3 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] bg-gray-50 pb-4">
                   {messages.map((m) => {
                     const isMe = m.sender_id === session.user.id
                     return (
-                      <div key={m.id} className={`max-w-[85%] md:max-w-[75%] p-3 rounded-2xl shadow-sm relative flex flex-col ${isMe ? 'bg-blue-500 text-white self-end rounded-tr-sm' : 'bg-white text-gray-800 border self-start rounded-tl-sm'}`}>
+                      <div key={m.id} className={`max-w-[85%] md:max-w-[75%] p-3 rounded-2xl shadow-sm relative flex flex-col shrink-0 ${isMe ? 'bg-blue-500 text-white self-end rounded-tr-sm' : 'bg-white text-gray-800 border self-start rounded-tl-sm'}`}>
                         {m.file_url && (
                           <div className="mb-2">
                             {m.file_url.match(/\.(jpeg|jpg|gif|png|webp)$/i) ? (
@@ -412,14 +418,15 @@ export default function App() {
                       </div>
                     )
                   })}
-                  <div ref={messagesEndRef} />
+                  <div ref={messagesEndRef} className="shrink-0" />
                 </div>
                 
-                <div className="bg-white border-t flex flex-col pb-safe">
+                {/* ПАНЕЛЬ ВВОДА: Добавлен shrink-0, чтобы она не сжималась при большом тексте */}
+                <div className="bg-white border-t flex flex-col pb-safe shrink-0">
                   {/* @ts-ignore */}
                   {pendingFile && (
-                    <div className="p-2 md:p-3 bg-gray-50 border-b flex items-start gap-3 transition-all">
-                      <div className="relative inline-block">
+                    <div className="p-2 md:p-3 bg-gray-50 border-b flex items-start gap-3 transition-all shrink-0">
+                      <div className="relative inline-block shrink-0">
                         {/* @ts-ignore */}
                         {pendingFile.type.startsWith('image/') ? <img src={URL.createObjectURL(pendingFile)} alt="Превью" className="h-14 w-14 md:h-16 md:w-16 object-cover rounded-lg border shadow-sm" /> : <div className="h-14 w-14 md:h-16 md:w-16 bg-white border rounded-lg shadow-sm flex items-center justify-center text-2xl">📄</div>}
                         {/* @ts-ignore */}
@@ -433,14 +440,14 @@ export default function App() {
                     </div>
                   )}
 
-                  <div className="p-2 md:p-3 flex gap-2 md:gap-3 items-end">
-                    <button onClick={() => fileInputRef.current?.click()} className="text-gray-400 hover:text-blue-500 p-2 md:p-3 rounded-full hover:bg-gray-100 transition-colors mb-1 md:mb-1 active:scale-95" disabled={isSending}><span className="text-xl md:text-xl">📎</span></button>
+                  <div className="p-2 md:p-3 flex gap-2 md:gap-3 items-end shrink-0">
+                    <button onClick={() => fileInputRef.current?.click()} className="text-gray-400 hover:text-blue-500 p-2 md:p-3 rounded-full hover:bg-gray-100 transition-colors mb-1 md:mb-1 active:scale-95 shrink-0" disabled={isSending}><span className="text-xl md:text-xl">📎</span></button>
                     {/* @ts-ignore */}
                     <input type="file" className="hidden" ref={fileInputRef} onChange={handleFileUpload} accept="image/*, .pdf, .doc, .docx" />
                     {/* @ts-ignore */}
                     <input className="border p-3 md:p-4 flex-1 rounded-3xl outline-none focus:ring-2 focus:ring-blue-400 bg-gray-50 text-[14px] md:text-[15px]" value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && sendMessage()} onPaste={handlePaste} placeholder="Сообщение..." disabled={isSending}/>
                     {/* @ts-ignore */}
-                    <button className={`text-white w-12 h-12 md:w-14 md:h-14 flex items-center justify-center rounded-full font-bold shadow-md transition-all mb-0.5 md:mb-1 ${isSending || (text.trim() === '' && pendingFile === null) ? 'bg-blue-300 cursor-not-allowed' : 'bg-blue-500 hover:bg-blue-600 active:scale-95'}`} onClick={sendMessage} disabled={isSending || (text.trim() === '' && pendingFile === null)}>{isSending ? '...' : <span className="text-lg md:text-xl">➤</span>}</button>
+                    <button className={`text-white w-12 h-12 md:w-14 md:h-14 flex items-center justify-center rounded-full font-bold shadow-md transition-all mb-0.5 md:mb-1 shrink-0 ${isSending || (text.trim() === '' && pendingFile === null) ? 'bg-blue-300 cursor-not-allowed' : 'bg-blue-500 hover:bg-blue-600 active:scale-95'}`} onClick={sendMessage} disabled={isSending || (text.trim() === '' && pendingFile === null)}>{isSending ? '...' : <span className="text-lg md:text-xl">➤</span>}</button>
                   </div>
                 </div>
 
