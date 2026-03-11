@@ -1,36 +1,33 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
-import Script from "next/script"; // <-- Добавь вот эту строчку
+import { GeistSans } from 'geist/font/sans'; // Импортируем крутой шрифт Geist Sans
+import Script from "next/script";
 import "./globals.css";
 
-const inter = Inter({ subsets: ["latin", "cyrillic"] });
-
-// === 1. ЗАПРЕТ ЗУМА НА МОБИЛЬНЫХ (ФИКС ПОЛЕЙ ВВОДА) ===
-export const viewport: Viewport = {
-  width: "device-width",
-  initialScale: 1,
-  maximumScale: 1, // Запрещаем увеличивать больше 100%
-  userScalable: false, // Запрещаем пользователю щипать экран для зума
-};
-
+// МЕТАДАННЫЕ (Наш паспорт приложения)
 export const metadata: Metadata = {
   title: "Messenger | Приватный чат",
-  description: "Мой личный защищенный мессенджер",
-  manifest: "/manifest.json", // Ссылка на наш манифест (Next.js сгенерирует .json сам)
-  
-  // Эти настройки сделают так, что верхняя полоска телефона станет синей (PWA)
+  description: "Мой личный защищенный мессенджер в стиле Apple",
+  manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
     title: "Messenger",
   },
-  
   icons: {
-    icon: '/favicon.ico',   // Маленькая иконка для вкладок ПК
-    apple: '/icon-512.png', // Большая стеклянная иконка для Айфонов
+    icon: '/favicon.ico',
+    apple: '/icon-512.png',
   },
 };
 
+export const viewport: Viewport = {
+  themeColor: "#3b82f6",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+};
+
+// ВЕРСТКА: Добавляем GeistSans и CSS-переменные для картинок
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -38,8 +35,22 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ru">
-      <body className={inter.className}>
-        {/* --- КОД ONESIGNAL --- */}
+      <head>
+        {/* Внедряем CSS-переменные прямо здесь для удобства */}
+        <style dangerouslySetInnerHTML={{
+          __html: `
+            :root {
+              --bg-login: url('/bg-login.png');
+              --bg-sidebar: url('/bg-sidebar.png');
+              --bg-chat: url('/bg-chat.png');
+            }
+          `
+        }} />
+      </head>
+      {/* Класс {GeistSans.className} применит шрифт ко всему сайту */}
+      <body className={`${GeistSans.className} antialiased`}>
+        
+        {/* --- КОД ONESIGNAL (Оставляем как есть) --- */}
         <Script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" strategy="beforeInteractive" />
         <Script id="onesignal-init" strategy="afterInteractive" dangerouslySetInnerHTML={{
           __html: `
@@ -52,8 +63,9 @@ export default function RootLayout({
           `
         }} />
         {/* --- КОНЕЦ КОДА ONESIGNAL --- */}
+        
         {children}
-        </body>
+      </body>
     </html>
   );
 }
