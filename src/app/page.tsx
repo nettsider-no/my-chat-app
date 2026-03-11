@@ -430,7 +430,7 @@ export default function App() {
                 </div>
                 
                 {/* ОБЛАСТЬ СООБЩЕНИЙ */}
-                <div className="flex-1 overflow-y-auto p-3 md:p-4 flex flex-col gap-3 bg-transparent pb-4 w-full no-scrollbar">
+                <div className="flex-1 overflow-y-auto p-3 md:p-4 flex flex-col gap-3 pb-4 w-full no-scrollbar" style={{ backgroundImage: "url('/bg-chat.png')", backgroundSize: 'cover', backgroundPosition: 'center' }}>
                   {messages.map((m) => {
                     const isMe = m.sender_id === session.user.id
                     return (
