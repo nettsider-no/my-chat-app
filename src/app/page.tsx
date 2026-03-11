@@ -403,7 +403,7 @@ export default function App() {
 
           {/* ПРАВАЯ КОЛОНКА (САМ ЧАТ) */}
           <div className={`bg-cover bg-center shadow-md md:rounded-r-lg flex-col relative transition-all duration-300 ease-in-out z-10 w-full
-            ${selectedUser ? 'flex md:flex-1' : 'hidden md:flex md:flex-1'}`} style={{ backgroundImage: "linear-gradient(rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0.85)), url('/bg-chat.png')", backgroundSize: 'cover', backgroundPosition: 'center' }}>   
+            ${selectedUser ? 'flex md:flex-1' : 'hidden md:flex md:flex-1'}`} style={{ backgroundImage: "linear-gradient(rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0.85)), url('/bg-chat-area.png')", backgroundSize: 'cover', backgroundPosition: 'center' }}>   
             {!selectedUser ? (
               <div className="flex-1 flex flex-col items-center justify-center text-gray-400 p-6 text-center">
                 <span className="text-5xl md:text-6xl mb-4 opacity-50">💬</span>
@@ -430,7 +430,7 @@ export default function App() {
                 </div>
                 
                 {/* ОБЛАСТЬ СООБЩЕНИЙ */}
-                <div className="flex-1 overflow-y-auto p-3 md:p-4 flex flex-col gap-3 pb-4 w-full no-scrollbar" style={{ backgroundImage: "url('/bg-chat.png')", backgroundSize: 'cover', backgroundPosition: 'center' }}>
+                <div className="flex-1 overflow-y-auto p-3 md:p-4 flex flex-col gap-3 pb-4 w-full no-scrollbar">
                   {messages.map((m) => {
                     const isMe = m.sender_id === session.user.id
                     return (
