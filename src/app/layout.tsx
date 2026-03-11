@@ -43,7 +43,6 @@ export default function RootLayout({
               --bg-login: url('/bg-login.png');
               --bg-sidebar: url('/bg-sidebar.png');
               --bg-chat: url('/bg-chat.png');
-              --bg-chat-area: url('/bg-chat-area.png');
             }
           `
         }} />

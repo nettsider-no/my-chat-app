@@ -272,7 +272,7 @@ export default function App() {
   // ВЕРСТКА С ИДЕАЛЬНОЙ ФИКСАЦИЕЙ ДЛЯ МОБИЛОК
   // ==========================================
   return (
-    <div className="flex h-[100dvh] bg-cover bg-center md:p-4 relative overflow-hidden w-full transition-all duration-500 antialiased" style={{ backgroundImage: 'var(--bg-login)' }}>
+    <div className="flex h-[100dvh] bg-cover bg-center md:p-4 relative overflow-hidden w-full transition-all duration-500 antialiased" style={{ backgroundImage: 'var(--bg-login)', backgroundSize: 'cover', backgroundPosition: 'center' }}>
       
       {toastMsg && (
         <div className="absolute top-8 left-1/2 transform -translate-x-1/2 bg-gray-900/90 backdrop-blur-sm text-white px-6 py-3 rounded-full shadow-2xl z-50 flex items-center gap-3 animate-bounce border border-gray-700">
@@ -305,15 +305,15 @@ export default function App() {
           {/* ЛЕВАЯ КОЛОНКА */}
           <div className={`bg-cover bg-center border-r shadow-md md:rounded-l-lg flex-col transition-all duration-300 ease-in-out z-20 
             ${selectedUser ? 'hidden md:flex' : 'flex w-full'} 
-            ${isCollapsed ? 'md:w-20 p-2 items-center' : 'md:w-1/3 p-4'}`} style={{ backgroundImage: "linear-gradient(rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.7)),url('/bg-sidebar.png')", backgroundSize: 'cover', backgroundPosition: 'center' }}>
+            ${isCollapsed ? 'md:w-20 p-2 items-center' : 'md:w-1/3 p-4'}`} style={{ backgroundImage: 'var(--bg-sidebar)', backgroundSize: 'cover', backgroundPosition: 'center' }}>
             
-            <div className={`flex items-center mb-4 pb-2 border-b w-full shrink-0 ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
+            <div className={`flex items-center mb-4 pb-2 border-none w-full shrink-0 ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
               <button onClick={() => setIsCollapsed(!isCollapsed)} className="hidden md:block text-gray-500 hover:text-blue-500 hover:bg-gray-100 p-2 rounded-full transition" title={isCollapsed ? "Развернуть" : "Свернуть"}>{isCollapsed ? '▶' : '◀'} </button>
               
               {!isCollapsed && (
                 <div className="flex-1 md:ml-2 flex justify-between items-center overflow-hidden">
                   <p className="font-bold truncate text-sm">Профиль: <span className="text-blue-500 block truncate">{session.user.email}</span></p>
-                  <button className="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg text-xs md:text-sm shadow-sm transition active:scale-95 shrink-0" onClick={() => supabase.auth.signOut()}>Выйти</button>
+                  <button className="bg-transparet border border-red-200 hover:bg-red-50 text-red-600 px-3 py-1.5 rounded-full text-xs md:text-sm  transition active:scale-95 shrink-0" onClick={() => supabase.auth.signOut()}>Выйти</button>
                 </div>
               )}
             </div>
@@ -322,7 +322,7 @@ export default function App() {
               <div className="mb-4 pb-4 border-b w-full shrink-0">
                 <h3 className="text-gray-500 font-semibold mb-2 text-xs uppercase tracking-wider">Найти пользователя</h3>
                 <div className="flex gap-2">
-                  <input className="border p-2 flex-1 rounded-lg text-sm bg-gray-50 w-full" placeholder="Email для заявки" value={newContactEmail} onChange={e => setNewContactEmail(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && sendRequest(newContactEmail)} />
+                  <input className="border-none pl-3.5 flex-1 rounded-lg text-sm bg-gray-50 w-full" placeholder="Email для заявки" value={newContactEmail} onChange={e => setNewContactEmail(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && sendRequest(newContactEmail)} />
                   <button className="bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm active:scale-95" onClick={() => sendRequest(newContactEmail)}>+</button>
                 </div>
               </div>
@@ -403,7 +403,7 @@ export default function App() {
 
           {/* ПРАВАЯ КОЛОНКА (САМ ЧАТ) */}
           <div className={`bg-cover bg-center shadow-md md:rounded-r-lg flex-col relative transition-all duration-300 ease-in-out z-10 w-full
-            ${selectedUser ? 'flex md:flex-1' : 'hidden md:flex md:flex-1'}`} style={{ backgroundImage: "linear-gradient(rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0.85)), url('/bg-chat-area.png')", backgroundSize: 'cover', backgroundPosition: 'center' }}>   
+            ${selectedUser ? 'flex md:flex-1' : 'hidden md:flex md:flex-1'}`} style={{ backgroundImage: 'var(--bg-chat)', backgroundSize: 'cover', backgroundPosition: 'center' }}>   
             {!selectedUser ? (
               <div className="flex-1 flex flex-col items-center justify-center text-gray-400 p-6 text-center">
                 <span className="text-5xl md:text-6xl mb-4 opacity-50">💬</span>
@@ -412,7 +412,7 @@ export default function App() {
             ) : (
               <>
                 {/* ШАПКА ЧАТА: z-20 и bg-white гарантируют, что она не просвечивает и всегда сверху */}
-                <div className="p-3 md:p-4 border-b bg-white shadow-sm z-20 font-bold text-gray-800 flex items-center shrink-0 w-full">
+                <div className="p-3 md:p-4 border-b bg-white shadow-sm z-20 font-bold text-gray-800 flex items-center shrink-0 w-full" style={{ backgroundImage: "url('/bg-sidebar.png')", backgroundSize: 'cover', backgroundPosition: 'center' }}>
                   <button 
                     onClick={() => setSelectedUser(null)}
                     className="md:hidden mr-3 text-blue-500 hover:bg-blue-50 p-2 rounded-full flex items-center justify-center active:scale-95 transition shrink-0"
@@ -455,7 +455,7 @@ export default function App() {
                 {/* ПАНЕЛЬ ВВОДА: Добавлен paddingBottom с учетом Safe Area (полоски на iPhone) */}
                 <div 
                   className="bg-white border-t flex flex-col shrink-0 w-full"
-                  style={{ paddingBottom: 'env(safe-area-inset-bottom, 16px)' }}
+                  style={{ paddingBottom: 'env(safe-area-inset-bottom, 16px)',backgroundImage: "url('/bg-sidebar.png')", backgroundSize: 'cover', backgroundPosition: 'center' }}
                 >
                   {/* @ts-ignore */}
                   {pendingFile && (
@@ -479,7 +479,7 @@ export default function App() {
                     {/* @ts-ignore */}
                     <input type="file" className="hidden" ref={fileInputRef} onChange={handleFileUpload} accept="image/*, .pdf, .doc, .docx" />
                     {/* @ts-ignore */}
-                    <input className="border p-3 md:p-4 flex-1 rounded-3xl outline-none focus:ring-2 focus:ring-blue-400 bg-gray-50 text-[14px] md:text-[15px] min-w-0" value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && sendMessage()} onPaste={handlePaste} placeholder="Сообщение..." disabled={isSending}/>
+                    <input className="border-none md:p-4 flex-1 rounded-3xl outline-none focus:ring-2 focus:ring-blue-400 bg-gray-50 text-[14px] md:text-[15px] min-w-0" value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && sendMessage()} onPaste={handlePaste} placeholder="Сообщение..." disabled={isSending}/>
                     {/* @ts-ignore */}
                     <button className={`text-white w-12 h-12 md:w-14 md:h-14 flex items-center justify-center rounded-full font-bold shadow-md transition-all mb-0.5 md:mb-1 shrink-0 ${isSending || (text.trim() === '' && pendingFile === null) ? 'bg-blue-300 cursor-not-allowed' : 'bg-blue-500 hover:bg-blue-600 active:scale-95'}`} onClick={sendMessage} disabled={isSending || (text.trim() === '' && pendingFile === null)}>{isSending ? '...' : <span className="text-lg md:text-xl">➤</span>}</button>
                   </div>
