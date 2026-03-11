@@ -272,7 +272,7 @@ export default function App() {
   // ВЕРСТКА С ИДЕАЛЬНОЙ ФИКСАЦИЕЙ ДЛЯ МОБИЛОК
   // ==========================================
   return (
-    <div className="flex h-[100dvh] bg-cover bg-center md:p-4 relative overflow-hidden w-full" style={{ backgroundImage: 'var(--bg-login)' }}>
+    <div className="flex h-[100dvh] bg-cover bg-center md:p-4 relative overflow-hidden w-full transition-all duration-500" style={{ backgroundImage: 'var(--bg-login)' }}>
       
       {toastMsg && (
         <div className="absolute top-8 left-1/2 transform -translate-x-1/2 bg-gray-900/90 backdrop-blur-sm text-white px-6 py-3 rounded-full shadow-2xl z-50 flex items-center gap-3 animate-bounce border border-gray-700">
@@ -305,7 +305,7 @@ export default function App() {
           {/* ЛЕВАЯ КОЛОНКА */}
           <div className={`bg-cover bg-center border-r shadow-md md:rounded-l-lg flex-col transition-all duration-300 ease-in-out z-20 
             ${selectedUser ? 'hidden md:flex' : 'flex w-full'} 
-            ${isCollapsed ? 'md:w-20 p-2 items-center' : 'md:w-1/3 p-4'}`} style={{ backgroundImage: 'var(--bg-sidebar)' }}>
+            ${isCollapsed ? 'md:w-20 p-2 items-center' : 'md:w-1/3 p-4'}`} style={{ backgroundImage: 'var(--bg-sidebar)', backgroundColor: 'rgba(255,255,255,0.7)', backgroundBlendMode: 'overlay' }}>
             
             <div className={`flex items-center mb-4 pb-2 border-b w-full shrink-0 ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
               <button onClick={() => setIsCollapsed(!isCollapsed)} className="hidden md:block text-gray-500 hover:text-blue-500 hover:bg-gray-100 p-2 rounded-full transition" title={isCollapsed ? "Развернуть" : "Свернуть"}>{isCollapsed ? '▶' : '◀'} </button>
@@ -403,7 +403,7 @@ export default function App() {
 
           {/* ПРАВАЯ КОЛОНКА (САМ ЧАТ) */}
           <div className={`bg-cover bg-center shadow-md md:rounded-r-lg flex-col relative transition-all duration-300 ease-in-out z-10 w-full
-            ${selectedUser ? 'flex md:flex-1' : 'hidden md:flex md:flex-1'}`} style={{ backgroundImage: 'var(--bg-chat)' }}>   
+            ${selectedUser ? 'flex md:flex-1' : 'hidden md:flex md:flex-1'}`} style={{ backgroundImage: 'var(--bg-chat)', backgroundColor: 'rgba(255,255,255,0.8)', backgroundBlendMode: 'overlay' }}>   
             {!selectedUser ? (
               <div className="flex-1 flex flex-col items-center justify-center text-gray-400 p-6 text-center">
                 <span className="text-5xl md:text-6xl mb-4 opacity-50">💬</span>
