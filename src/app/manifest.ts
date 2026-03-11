@@ -14,7 +14,7 @@ export default function manifest(): MetadataRoute.Manifest {
         src: '/icon-512.png',          // Путь к твоей новой стеклянной иконке
         sizes: '512x512',
         type: 'image/png',
-        purpose: 'any maskable',       // Позволяет телефону красиво обрезать иконку
+        purpose: 'maskable',       // Позволяет телефону красиво обрезать иконку
       },
     ],
   }
