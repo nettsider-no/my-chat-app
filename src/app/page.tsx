@@ -90,10 +90,13 @@ export default function App() {
     setUnreadCounts(counts)
   }
 
+  // === ИСПРАВЛЕННЫЙ ГЛОБАЛЬНЫЙ REALTIME ===
   useEffect(() => {
     fetchSidebarData()
     if (!session) return
-    const channel = supabase.channel('realtime-contacts').on('postgres_changes', { event: '*', schema: 'public', table: 'contacts' }, async (payload) => {
+    
+    // Слушаем заявки
+    const contactsChannel = supabase.channel('realtime-contacts').on('postgres_changes', { event: '*', schema: 'public', table: 'contacts' }, async (payload) => {
         if (payload.eventType === 'UPDATE' && payload.new.owner_id === session.user.id) {
             const { data: profile } = await supabase.from('profiles').select('email').eq('id', payload.new.contact_id).single()
             const userEmail = profile ? profile.email : 'Пользователь'
@@ -102,7 +105,16 @@ export default function App() {
         }
         fetchSidebarData()
     }).subscribe()
-    return () => { supabase.removeChannel(channel) }
+
+    // Слушаем ВСЕ новые сообщения, чтобы зажигать цифру "1" даже если мы не в чате!
+    const badgesChannel = supabase.channel('realtime-badges').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `receiver_id=eq.${session.user.id}` }, () => {
+        fetchSidebarData() 
+    }).subscribe()
+
+    return () => { 
+      supabase.removeChannel(contactsChannel)
+      supabase.removeChannel(badgesChannel)
+    }
   }, [session])
 
   async function sendRequest(emailToAdd: string) {
@@ -134,6 +146,7 @@ export default function App() {
     if (selectedUser?.id === contactId) setSelectedUser(null)
   }
 
+  // === ЛОГИКА АКТИВНОГО ЧАТА ===
   useEffect(() => {
     if (!session || !selectedUser) return
     async function fetchMessagesAndMarkRead() {
@@ -154,7 +167,7 @@ export default function App() {
             setMessages((prev) => [...prev, msg])
           } else if (msg.sender_id === session.user.id && msg.receiver_id === selectedUser.id) {
             setMessages((prev) => [...prev, msg])
-          } else if (msg.receiver_id === session.user.id) fetchSidebarData()
+          }
         }
         if (payload.eventType === 'UPDATE') {
           setMessages((prev) => prev.map(m => m.id === payload.new.id ? payload.new : m))
@@ -225,11 +238,7 @@ export default function App() {
 
   function formatTime(isoString: string) { return new Date(isoString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }
 
-  // ==========================================
-  // ВЕРСТКА С МОБИЛЬНОЙ АДАПТАЦИЕЙ
-  // ==========================================
   return (
-    // Добавил md:p-4, чтобы на телефонах чат был без отступов по краям (на весь экран)
     <div className="flex h-screen bg-gray-100 md:p-4 relative overflow-hidden">
       
       {toastMsg && (
@@ -258,13 +267,11 @@ export default function App() {
       ) : (
         <>
           {/* ЛЕВАЯ КОЛОНКА (СПИСОК КОНТАКТОВ) */}
-          {/* МАГИЯ ЗДЕСЬ: Если юзер выбран, скрываем левую колонку на мобильных (hidden md:flex). Если нет - показываем на всю ширину (w-full md:w-1/3) */}
           <div className={`bg-white border-r shadow-md md:rounded-l-lg flex-col transition-all duration-300 ease-in-out z-20 
             ${selectedUser ? 'hidden md:flex' : 'flex w-full'} 
             ${isCollapsed ? 'md:w-20 p-2 items-center' : 'md:w-1/3 p-4'}`}>
             
             <div className={`flex items-center mb-4 pb-2 border-b w-full ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
-              {/* Кнопка сворачивания видна только на ПК */}
               <button onClick={() => setIsCollapsed(!isCollapsed)} className="hidden md:block text-gray-500 hover:text-blue-500 hover:bg-gray-100 p-2 rounded-full transition" title={isCollapsed ? "Развернуть" : "Свернуть"}>{isCollapsed ? '▶' : '◀'} </button>
               
               {!isCollapsed && (
@@ -359,7 +366,6 @@ export default function App() {
           </div>
 
           {/* ПРАВАЯ КОЛОНКА (САМ ЧАТ) */}
-          {/* МАГИЯ ЗДЕСЬ 2: Если юзер не выбран, скрываем чат на мобильных (hidden md:flex). Если выбран - показываем на весь экран (flex w-full) */}
           <div className={`bg-white shadow-md md:rounded-r-lg flex-col relative transition-all duration-300 ease-in-out z-10
             ${selectedUser ? 'flex w-full md:flex-1' : 'hidden md:flex md:flex-1'}`}>
             
@@ -370,9 +376,7 @@ export default function App() {
               </div>
             ) : (
               <>
-                {/* Шапка чата */}
                 <div className="p-3 md:p-4 border-b bg-white shadow-sm z-10 font-bold text-gray-800 flex items-center sticky top-0">
-                  {/* КНОПКА НАЗАД ДЛЯ МОБИЛОК */}
                   <button 
                     onClick={() => setSelectedUser(null)}
                     className="md:hidden mr-3 text-blue-500 hover:bg-blue-50 p-2 rounded-full flex items-center justify-center active:scale-95 transition"
@@ -389,7 +393,6 @@ export default function App() {
                   </div>
                 </div>
                 
-                {/* Окно сообщений */}
                 <div className="flex-1 overflow-y-auto p-3 md:p-4 flex flex-col gap-3 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] bg-gray-50 pb-4">
                   {messages.map((m) => {
                     const isMe = m.sender_id === session.user.id
@@ -412,7 +415,6 @@ export default function App() {
                   <div ref={messagesEndRef} />
                 </div>
                 
-                {/* Нижняя панель ввода */}
                 <div className="bg-white border-t flex flex-col pb-safe">
                   {/* @ts-ignore */}
                   {pendingFile && (
