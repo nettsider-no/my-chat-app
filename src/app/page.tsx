@@ -434,7 +434,7 @@ export default function App() {
                   {messages.map((m) => {
                     const isMe = m.sender_id === session.user.id
                     return (
-                      <div key={m.id} className={`max-w-[85%] md:max-w-[75%] p-3 rounded-2xl shadow-sm relative flex flex-col shrink-0 ${isMe ? 'bg-blue-500/80 backdrop-blur-md text-white border border-blue-400/30 self-end rounded-tr-sm' : 'bg-white/70 backdrop-blur-md text-gray-800 border border-white/50 self-start rounded-tl-sm'}`}>
+                      <div key={m.id} className={`max-w-[85%] md:max-w-[75%] p-3 rounded-2xl shadow-sm relative flex flex-col shrink-0 ${isMe ? 'bg-blue-500/80 backdrop-blur-md text-white border border-blue-400/30 self-end rounded-tr-sm' : 'bg-emerald-100 backdrop-blur-md text-gray-800 border border-white/50 self-start rounded-tl-sm'}`}>
                         {m.file_url && (
                           <div className="mb-2">
                             {m.file_url.match(/\.(jpeg|jpg|gif|png|webp)$/i) ? (
