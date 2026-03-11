@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
+import Script from "next/script"; // <-- Добавь вот эту строчку
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin", "cyrillic"] });
@@ -37,7 +38,22 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ru">
-      <body className={inter.className}>{children}</body>
+      <body className={inter.className}>
+        {/* --- КОД ONESIGNAL --- */}
+        <Script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" strategy="beforeInteractive" />
+        <Script id="onesignal-init" strategy="afterInteractive" dangerouslySetInnerHTML={{
+          __html: `
+            window.OneSignalDeferred = window.OneSignalDeferred || [];
+            OneSignalDeferred.push(async function(OneSignal) {
+              await OneSignal.init({
+                appId: "9485fb3c-fdf8-4d2c-b4d3-8cecaf4e347c",
+              });
+            });
+          `
+        }} />
+        {/* --- КОНЕЦ КОДА ONESIGNAL --- */}
+        {children}
+        </body>
     </html>
   );
 }
