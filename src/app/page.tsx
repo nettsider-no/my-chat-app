@@ -305,7 +305,7 @@ export default function App() {
           {/* ЛЕВАЯ КОЛОНКА */}
           <div className={`bg-cover bg-center border-r shadow-md md:rounded-l-lg flex-col transition-all duration-300 ease-in-out z-20 
             ${selectedUser ? 'hidden md:flex' : 'flex w-full'} 
-            ${isCollapsed ? 'md:w-20 p-2 items-center' : 'md:w-1/3 p-4'}`} style={{ backgroundImage: 'var(--bg-sidebar)', backgroundSize: 'cover', backgroundPosition: 'center' }}>
+            ${isCollapsed ? 'md:w-20 p-2 items-center' : 'md:w-1/3 p-4'}`}>
             
             <div className={`flex items-center mb-4 pb-2 border-none w-full shrink-0 ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
               <button onClick={() => setIsCollapsed(!isCollapsed)} className="hidden md:block text-gray-500 hover:text-blue-500 hover:bg-gray-100 p-2 rounded-full transition" title={isCollapsed ? "Развернуть" : "Свернуть"}>{isCollapsed ? '▶' : '◀'} </button>
@@ -403,7 +403,7 @@ export default function App() {
 
           {/* ПРАВАЯ КОЛОНКА (САМ ЧАТ) */}
           <div className={`bg-cover bg-center shadow-md md:rounded-r-lg flex-col relative transition-all duration-300 ease-in-out z-10 w-full
-            ${selectedUser ? 'flex md:flex-1' : 'hidden md:flex md:flex-1'}`} style={{ backgroundImage: 'var(--bg-chat)', backgroundSize: 'cover', backgroundPosition: 'center' }}>   
+            ${selectedUser ? 'flex md:flex-1' : 'hidden md:flex md:flex-1'}`}>   
             {!selectedUser ? (
               <div className="flex-1 flex flex-col items-center justify-center text-gray-400 p-6 text-center">
                 <span className="text-5xl md:text-6xl mb-4 opacity-50">💬</span>
@@ -412,7 +412,7 @@ export default function App() {
             ) : (
               <>
                 {/* ШАПКА ЧАТА: z-20 и bg-white гарантируют, что она не просвечивает и всегда сверху */}
-                <div className="p-3 md:p-4 border-b bg-white shadow-sm z-20 font-bold text-gray-800 flex items-center shrink-0 w-full" style={{ backgroundImage: "url('/bg-sidebar.png')", backgroundSize: 'cover', backgroundPosition: 'center' }}>
+                <div className="p-3 md:p-4 border-b shadow-sm z-20 font-bold text-gray-800 flex items-center shrink-0 w-full">
                   <button 
                     onClick={() => setSelectedUser(null)}
                     className="md:hidden mr-3 text-blue-500 hover:bg-blue-50 p-2 rounded-full flex items-center justify-center active:scale-95 transition shrink-0"
@@ -434,7 +434,7 @@ export default function App() {
                   {messages.map((m) => {
                     const isMe = m.sender_id === session.user.id
                     return (
-                      <div key={m.id} className={`max-w-[85%] md:max-w-[75%] p-3 rounded-2xl shadow-sm relative flex flex-col shrink-0 ${isMe ? 'bg-blue-500/80 backdrop-blur-md text-white border border-blue-400/30 self-end rounded-tr-sm' : 'bg-emerald-100 backdrop-blur-md text-gray-800 border border-white/50 self-start rounded-tl-sm'}`}>
+                      <div key={m.id} className={`max-w-[85%] md:max-w-[75%] p-3 rounded-2xl shadow-sm relative flex flex-col shrink-0 ${isMe ? 'bg-blue-300 backdrop-blur-md text-white border border-blue-200/30 self-end rounded-tr-sm' : 'bg-emerald-200 backdrop-blur-md text-gray-800 border border-white/50 self-start rounded-tl-sm'}`}>
                         {m.file_url && (
                           <div className="mb-2">
                             {m.file_url.match(/\.(jpeg|jpg|gif|png|webp)$/i) ? (
@@ -454,8 +454,8 @@ export default function App() {
                 
                 {/* ПАНЕЛЬ ВВОДА: Добавлен paddingBottom с учетом Safe Area (полоски на iPhone) */}
                 <div 
-                  className="bg-white border-t flex flex-col shrink-0 w-full"
-                  style={{ paddingBottom: 'env(safe-area-inset-bottom, 16px)',backgroundImage: "url('/bg-sidebar.png')", backgroundSize: 'cover', backgroundPosition: 'center' }}
+                  className=" border-t flex flex-col shrink-0 w-full"
+                  style={{ paddingBottom: 'env(safe-area-inset-bottom, 16px)' }}
                 >
                   {/* @ts-ignore */}
                   {pendingFile && (
