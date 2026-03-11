@@ -12,20 +12,22 @@ export const viewport: Viewport = {
   userScalable: false, // Запрещаем пользователю щипать экран для зума
 };
 
-// === 2. НАСТРОЙКА НАЗВАНИЯ САЙТА И ИКОНКИ ===
 export const metadata: Metadata = {
-  title: "Messenger | Приватный чат", // То, что будет написано на вкладке
+  title: "Messenger | Приватный чат",
   description: "Мой личный защищенный мессенджер",
-  icons: {
-    icon: '/favicon.ico', // Твоя красивая иконка
-    apple: '/favicon.ico', // Иконка для добавления на экран iPhone
-  },
-  // Эти настройки сделают так, что если ссылку кинуть в Telegram, появится красивая карточка
-  openGraph: {
+  manifest: "/manifest.json", // Ссылка на наш манифест (Next.js сгенерирует .json сам)
+  
+  // Эти настройки сделают так, что верхняя полоска телефона станет синей (PWA)
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
     title: "Messenger",
-    description: "Присоединяйся к моему приватному чату!",
-    type: "website",
-  }
+  },
+  
+  icons: {
+    icon: '/favicon.ico',   // Маленькая иконка для вкладок ПК
+    apple: '/icon-512.png', // Большая стеклянная иконка для Айфонов
+  },
 };
 
 export default function RootLayout({
