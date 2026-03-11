@@ -479,7 +479,15 @@ export default function App() {
                     {/* @ts-ignore */}
                     <input type="file" className="hidden" ref={fileInputRef} onChange={handleFileUpload} accept="image/*, .pdf, .doc, .docx" />
                     {/* @ts-ignore */}
-                    <input className="border-none md:p-4 flex-1 rounded-3xl outline-none focus:ring-2 focus:ring-blue-400 bg-gray-50 text-[14px] md:text-[15px] min-w-0" value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && sendMessage()} onPaste={handlePaste} placeholder="Сообщение..." disabled={isSending}/>
+                    <input
+  className="border-none w-full md:w-auto md:flex-1 p-3 md:p-4 rounded-3xl outline-none focus:ring-2 focus:ring-blue-400 bg-gray-50 text-[14px] md:text-[15px] min-w-0"
+  value={text}
+  onChange={(e) => setText(e.target.value)}
+  onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
+  onPaste={handlePaste}
+  placeholder="Сообщение..."
+  disabled={isSending}
+/>
                     {/* @ts-ignore */}
                     <button className={`text-white w-12 h-12 md:w-14 md:h-14 flex items-center justify-center rounded-full font-bold shadow-md transition-all mb-0.5 md:mb-1 shrink-0 ${isSending || (text.trim() === '' && pendingFile === null) ? 'bg-blue-300 cursor-not-allowed' : 'bg-blue-500 hover:bg-blue-600 active:scale-95'}`} onClick={sendMessage} disabled={isSending || (text.trim() === '' && pendingFile === null)}>{isSending ? '...' : <span className="text-lg md:text-xl">➤</span>}</button>
                   </div>
