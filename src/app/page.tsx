@@ -272,7 +272,7 @@ export default function App() {
   // ВЕРСТКА С ИДЕАЛЬНОЙ ФИКСАЦИЕЙ ДЛЯ МОБИЛОК
   // ==========================================
   return (
-    <div className="flex h-[100dvh] bg-cover bg-center md:p-4 relative overflow-hidden w-full transition-all duration-500 antialiased" style={{ backgroundImage: 'var(--bg-login)', backgroundSize: 'cover', backgroundPosition: 'center' }}>
+    <div className="flex h-[100dvh] bg-gradient-to-br from-slate-100 to-indigo-50 text-slate-800 md:p-4 relative overflow-hidden w-full transition-all duration-500 antialiased">
       
       {toastMsg && (
         <div className="absolute top-8 left-1/2 transform -translate-x-1/2 bg-gray-900/90 backdrop-blur-sm text-white px-6 py-3 rounded-full shadow-2xl z-50 flex items-center gap-3 animate-bounce border border-gray-700">
@@ -283,8 +283,8 @@ export default function App() {
       {/* ЭКРАН ЛОГИНА: Теперь идеально по центру и не обрезается */}
       {!session ? (
         <div className="flex-1 flex items-center justify-center w-full h-full p-4">
-          <div className="max-w-sm w-full bg-white border border-gray-100 shadow-2xl rounded-3xl flex flex-col gap-5 relative overflow-hidden shrink-0 p-6 md:p-8">
-            <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-400 to-indigo-500"></div>
+          <div className="max-w-sm w-full bg-white/70 backdrop-blur-xl border border-white/50 shadow-2xl shadow-indigo-200/60 rounded-3xl flex flex-col gap-5 relative overflow-hidden shrink-0 p-6 md:p-8">
+            <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-300 to-indigo-400"></div>
             <div className="text-center mt-2 mb-2">
               <div className="w-16 h-16 md:w-20 md:h-20 bg-blue-50 text-3xl md:text-4xl rounded-full flex items-center justify-center mx-auto mb-4 shadow-inner">💬</div>
               <h2 className="text-xl md:text-2xl font-extrabold text-gray-800 tracking-tight">Мессенджер</h2>
@@ -303,7 +303,7 @@ export default function App() {
       ) : (
         <>
           {/* ЛЕВАЯ КОЛОНКА */}
-          <div className={`bg-cover bg-center border-r border-gray-300 shadow-md md:rounded-l-lg flex-col transition-all duration-300 ease-in-out z-20 
+          <div className={`bg-white/60 backdrop-blur-xl border-r border-slate-200/60 shadow-md md:rounded-l-3xl flex-col transition-all duration-300 ease-in-out z-20 
             ${selectedUser ? 'hidden md:flex' : 'flex w-full'} 
             ${isCollapsed ? 'md:w-20 p-2 items-center' : 'md:w-1/3 p-4'}`}>
             
@@ -313,7 +313,12 @@ export default function App() {
               {!isCollapsed && (
                 <div className="flex-1 md:ml-2 flex justify-between items-center overflow-hidden">
                   <p className="font-bold truncate text-sm">Профиль: <span className="text-blue-500 block truncate">{session.user.email}</span></p>
-                  <button className="bg-transparet border border-red-200 hover:bg-red-50 text-red-600 px-3 py-1.5 rounded-full text-xs md:text-sm  transition active:scale-95 shrink-0" onClick={() => supabase.auth.signOut()}>Выйти</button>
+                  <button 
+  className="px-4 py-1.5 rounded-full text-xs md:text-sm font-medium transition-all duration-300 active:scale-95 shrink-0 text-slate-500 bg-slate-100/60 hover:bg-rose-50 hover:text-rose-600 border border-transparent hover:border-rose-200" 
+  onClick={() => supabase.auth.signOut()}
+>
+  Выйти
+</button>
                 </div>
               )}
             </div>
@@ -322,87 +327,193 @@ export default function App() {
               <div className="mb-4 pb-4 border-b border-gray-300 w-full shrink-0">
                 <h3 className="text-gray-500 font-semibold mb-2 text-xs uppercase tracking-wider">Найти пользователя</h3>
                 <div className="flex gap-2">
-                  <input className="border-none pl-3.5 flex-1 rounded-lg text-sm bg-gray-50 w-full" placeholder="Email для заявки" value={newContactEmail} onChange={e => setNewContactEmail(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && sendRequest(newContactEmail)} />
-                  <button className="bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm active:scale-95" onClick={() => sendRequest(newContactEmail)}>+</button>
+                  <input className="border  border-slate-200/50 pl-3.5 flex-1 rounded-xl text-sm text-slate-800 placeholder-slate-400 bg-slate-100/50 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:bg-white transition-all w-full" placeholder="Email для заявки" value={newContactEmail} onChange={e => setNewContactEmail(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && sendRequest(newContactEmail)} />
+                  <button 
+  className="w-10 h-10 md:w-11 md:h-11 flex items-center justify-center bg-indigo-500 text-white rounded-xl shadow-md shadow-indigo-500/30 hover:bg-indigo-600 hover:shadow-lg hover:shadow-indigo-500/40 active:scale-95 transition-all duration-300 shrink-0 ml-2"
+  onClick={() => sendRequest(newContactEmail)}
+>
+  <span className="text-2xl leading-none font-light mb-0.5">+</span>
+</button>
                 </div>
               </div>
             )}
 
             <div className="flex-1 overflow-y-auto overflow-x-hidden w-full no-scrollbar pb-20 md:pb-0">
               {incomingRequests.length > 0 && (
-                <div className="mb-4 w-full shrink-0">
-                  {!isCollapsed && <h3 className="text-indigo-500 font-semibold mb-2 text-xs uppercase tracking-wider">Новые запросы</h3>}
-                  <ul className="w-full flex flex-col items-center">
-                    {incomingRequests.map(u => (
-                      <li key={u.id} className={`mb-2 w-full transition-all ${isCollapsed ? 'flex justify-center' : 'p-3 rounded-xl border border-indigo-200 bg-indigo-50 flex flex-col'}`}>
-                        {isCollapsed ? (
-                           <div className="relative w-12 h-12 bg-indigo-100 text-indigo-500 rounded-full flex justify-center items-center font-bold uppercase text-xl shadow cursor-pointer" onClick={() => setIsCollapsed(false)}>
-                             {u.email[0]}<span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold shadow-md">!</span>
-                           </div>
-                        ) : (
-                           <>
-                             <span className="truncate text-sm mb-3 font-bold text-center">{u.email}</span>
-                             <div className="flex gap-2 w-full">
-                               <button className="bg-green-500 text-white text-xs py-2 flex-1 rounded-lg hover:bg-green-600 shadow-sm active:scale-95" onClick={() => acceptRequest(u.id)}>Принять</button>
-                               <button className="bg-red-100 text-red-600 border border-red-200 text-xs py-2 flex-1 rounded-lg hover:bg-red-200 active:scale-95" onClick={() => rejectRequest(u.id)}>Отклонить</button>
-                             </div>
-                           </>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+<div className="mb-4 w-full shrink-0">
+  {!isCollapsed && (
+    <h3 className="text-slate-400 font-medium mb-3 text-xs uppercase tracking-widest px-2">
+      Новые запросы
+    </h3>
+  )}
+  <ul className="w-full flex flex-col items-center gap-2">
+    {incomingRequests.map(u => (
+      <li 
+        key={u.id} 
+        className={`w-full transition-all duration-300 ${
+          isCollapsed 
+            ? 'flex justify-center' 
+            : 'p-3.5 rounded-2xl bg-white/50 backdrop-blur-md border border-white/60 shadow-sm flex flex-col gap-3'
+        }`}
+      >
+        {isCollapsed ? (
+           <div 
+             className="relative w-12 h-12 bg-gradient-to-br from-indigo-50 to-indigo-100/80 text-indigo-600 rounded-full flex justify-center items-center font-medium uppercase text-lg shadow-sm shadow-indigo-200/50 border border-white/60 cursor-pointer hover:scale-105 transition-all" 
+             onClick={() => setIsCollapsed(false)}
+           >
+             {u.email[0]}
+             {/* Красивый бейдж уведомления */}
+             <span className="absolute -top-1 -right-1 bg-rose-500 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold shadow-sm shadow-rose-500/30 border-[1.5px] border-white">
+               !
+             </span>
+           </div>
+        ) : (
+           <>
+             <span className="truncate text-sm font-medium text-slate-700 text-center">
+               {u.email}
+             </span>
+             <div className="flex gap-2 w-full">
+               <button 
+                 className="bg-emerald-500 text-white text-xs py-2.5 flex-1 rounded-xl hover:bg-emerald-600 shadow-sm shadow-emerald-500/30 active:scale-95 transition-all font-medium" 
+                 onClick={() => acceptRequest(u.id)}
+               >
+                 Принять
+               </button>
+               <button 
+                 className="bg-slate-100/80 text-slate-500 text-xs py-2.5 flex-1 rounded-xl border border-slate-200/50 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 active:scale-95 transition-all font-medium" 
+                 onClick={() => rejectRequest(u.id)}
+               >
+                 Отклонить
+               </button>
+             </div>
+           </>
+        )}
+      </li>
+    ))}
+  </ul>
+</div>
               )}
 
               {!isCollapsed && outgoingRequests.length > 0 && (
                 <div className="mb-4 w-full shrink-0">
-                  <h3 className="text-gray-400 font-semibold mb-2 text-xs uppercase tracking-wider">Мои заявки</h3>
-                  <ul className="w-full">
-                    {outgoingRequests.map(u => (
-                      <li key={u.id} className="p-3 rounded-xl mb-2 border border-gray-200 bg-gray-50 text-sm flex justify-between items-center group">
-                        <div className="flex flex-col truncate w-3/4">
-                          <span className="font-bold truncate">{u.email}</span>
-                          {u.requestStatus === 'pending' ? <span className="text-yellow-600 text-xs mt-1 flex items-center gap-1">⏳ Ожидает</span> : <span className="text-red-500 text-xs mt-1 flex items-center gap-1">🚫 Отклонено</span>}
-                        </div>
-                        <button className="text-gray-400 hover:text-red-500 text-2xl px-2 opacity-50 md:group-hover:opacity-100 transition active:scale-95" onClick={() => cancelOutgoingRequest(u.id)}>×</button>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+  <h3 className="text-slate-400 font-medium mb-3 text-xs uppercase tracking-widest px-2">
+    Мои заявки
+  </h3>
+  <ul className="w-full flex flex-col gap-2">
+    {outgoingRequests.map(u => (
+      <li 
+        key={u.id} 
+        className="p-3.5 rounded-2xl border border-white/60 bg-white/40 backdrop-blur-md shadow-sm text-sm flex justify-between items-center group transition-all duration-300 hover:bg-white/60"
+      >
+        <div className="flex flex-col truncate pr-2 w-full">
+          <span className="font-medium text-slate-700 truncate">{u.email}</span>
+          
+          {/* Красивые бейджики статусов */}
+          <div className="mt-1.5">
+            {u.requestStatus === 'pending' ? (
+              <span className="text-amber-600 bg-amber-50 border border-amber-200/50 px-2 py-0.5 rounded-md text-[11px] font-medium flex items-center gap-1.5 w-fit shadow-sm">
+                <span className="animate-pulse">⏳</span> Ожидает
+              </span>
+            ) : (
+              <span className="text-rose-500 bg-rose-50 border border-rose-200/50 px-2 py-0.5 rounded-md text-[11px] font-medium flex items-center gap-1.5 w-fit shadow-sm">
+                🚫 Отклонено
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Элегантная кнопка отмены */}
+        <button 
+          className="text-slate-400 hover:text-rose-500 hover:bg-rose-50 w-8 h-8 flex items-center justify-center rounded-full text-xl md:opacity-0 md:group-hover:opacity-100 transition-all duration-300 active:scale-90 shrink-0 border border-transparent hover:border-rose-100" 
+          onClick={() => cancelOutgoingRequest(u.id)}
+          title="Отменить заявку"
+        >
+          ×
+        </button>
+      </li>
+    ))}
+  </ul>
+</div>
               )}
 
               {!isCollapsed && <h3 className="text-gray-500 font-semibold mb-2 text-xs uppercase tracking-wider md:text-center mt-6">Мои друзья</h3>}
-              <ul className="w-full flex flex-col items-center">
-                {contacts.map(u => {
-                   const isSelected = selectedUser?.id === u.id;
-                   return (
-                      <li key={u.id} className={`cursor-pointer mb-2 transition-all w-full flex items-center ${isCollapsed ? 'justify-center p-1' : `p-4 md:p-3 rounded-xl justify-between ${isSelected ? 'bg-blue-50 border-l-4 border-blue-500 text-blue-700' : 'hover:bg-gray-50 text-gray-700 bg-white border border-transparent shadow-sm md:shadow-none md:border-none'}`}`} onClick={() => setSelectedUser(u)}>
-                        {isCollapsed ? (
-                          <div className={`relative w-12 h-12 rounded-full flex justify-center items-center font-bold uppercase text-xl transition-all shadow-sm ${isSelected ? 'bg-blue-500 text-white ring-4 ring-blue-100' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
-                            {u.email[0]}
-                            {unreadCounts[u.id] > 0 && <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] min-w-[18px] h-[18px] rounded-full flex items-center justify-center font-bold border-2 border-white shadow-md">{unreadCounts[u.id] > 9 ? '9+' : unreadCounts[u.id]}</span>}
-                          </div>
-                        ) : (
-                          <>
-                            <div className="flex items-center truncate">
-                               <div className="w-10 h-10 md:w-8 md:h-8 bg-blue-100 text-blue-500 rounded-full flex items-center justify-center mr-3 md:mr-3 uppercase font-bold shrink-0 text-lg md:text-base">{u.email[0]}</div>
-                               <span className="truncate font-medium text-base md:text-sm">{u.email}</span>
-                            </div>
-                            <div className="flex items-center gap-2 shrink-0">
-                              {unreadCounts[u.id] > 0 && <span className="bg-blue-500 text-white text-xs px-2 py-1 rounded-full shadow-sm">{unreadCounts[u.id]}</span>}
-                              <button className="text-gray-300 hover:text-red-500 text-2xl md:text-lg ml-2 active:scale-95 shrink-0" onClick={(e) => removeContact(e, u.id)}>×</button>
-                            </div>
-                          </>
-                        )}
-                      </li>
-                   )
-                })}
-              </ul>
+              <ul className="w-full flex flex-col gap-1.5">
+  {contacts.map(u => {
+    const isSelected = selectedUser?.id === u.id;
+    return (
+      <li 
+        key={u.id} 
+        className={`cursor-pointer transition-all duration-300 w-full group flex items-center ${
+          isCollapsed 
+            ? 'justify-center p-1' 
+            : `p-3 md:p-3 rounded-2xl justify-between border ${
+                isSelected 
+                  ? 'bg-white/70 backdrop-blur-md border-white/80 shadow-sm shadow-indigo-100/50' 
+                  : 'border-transparent hover:bg-white/40 hover:backdrop-blur-sm text-slate-700'
+              }`
+        }`} 
+        onClick={() => setSelectedUser(u)}
+      >
+        {isCollapsed ? (
+          <div className={`relative w-12 h-12 rounded-full flex justify-center items-center font-bold uppercase text-xl transition-all duration-300 ${
+            isSelected 
+              ? 'bg-gradient-to-br from-indigo-500 to-indigo-600 text-white shadow-md shadow-indigo-500/40 ring-4 ring-indigo-50/50' 
+              : 'bg-white/60 text-slate-500 hover:bg-white/80 border border-white/50 shadow-sm'
+          }`}>
+            {u.email[0]}
+            {/* Кружок непрочитанных (свернутый вид) */}
+            {unreadCounts[u.id] > 0 && (
+              <span className="absolute -top-1 -right-1 bg-rose-500 text-white text-[10px] min-w-[18px] h-[18px] rounded-full flex items-center justify-center font-bold border-2 border-white shadow-sm shadow-rose-500/30">
+                {unreadCounts[u.id] > 9 ? '9+' : unreadCounts[u.id]}
+              </span>
+            )}
+          </div>
+        ) : (
+          <>
+            <div className="flex items-center truncate pr-2">
+              {/* Аватарка (развернутый вид) */}
+               <div className={`w-10 h-10 md:w-9 md:h-9 rounded-full flex items-center justify-center mr-3 uppercase font-bold shrink-0 text-lg md:text-base transition-all duration-300 ${
+                 isSelected
+                   ? 'bg-indigo-500 text-white shadow-md shadow-indigo-500/30'
+                   : 'bg-gradient-to-br from-indigo-50 to-indigo-100/80 text-indigo-600 border border-white/60 shadow-sm'
+               }`}>
+                 {u.email[0]}
+               </div>
+               {/* Имя / Почта */}
+               <span className={`truncate text-base md:text-sm transition-colors ${
+                 isSelected ? 'font-bold text-slate-800' : 'font-medium text-slate-600 group-hover:text-slate-800'
+               }`}>
+                 {u.email}
+               </span>
+            </div>
+            
+            <div className="flex items-center gap-1 shrink-0">
+              {/* Бейдж непрочитанных (развернутый вид) */}
+              {unreadCounts[u.id] > 0 && (
+                <span className="bg-indigo-500 text-white text-[11px] font-bold px-2 py-0.5 rounded-full shadow-sm shadow-indigo-500/30">
+                  {unreadCounts[u.id]}
+                </span>
+              )}
+              {/* Крестик удаления из друзей */}
+              <button 
+                className="text-slate-300 hover:text-rose-500 hover:bg-rose-50 w-8 h-8 flex items-center justify-center rounded-full text-xl md:opacity-0 md:group-hover:opacity-100 transition-all duration-300 active:scale-90 shrink-0 border border-transparent hover:border-rose-100" 
+                onClick={(e) => removeContact(e, u.id)}
+                title="Удалить из друзей"
+              >
+                ×
+              </button>
+            </div>
+          </>
+        )}
+      </li>
+    )
+  })}
+</ul>
             </div>
           </div>
 
           {/* ПРАВАЯ КОЛОНКА (САМ ЧАТ) */}
-          <div className={`bg-cover bg-center shadow-md md:rounded-r-lg flex-col relative transition-all duration-300 ease-in-out z-10 w-full
+          <div className={`bg-cover bg-center shadow-md md:rounded-r-3xl flex-col relative transition-all duration-300 ease-in-out z-10 w-full
             ${selectedUser ? 'flex md:flex-1' : 'hidden md:flex md:flex-1'}`}>   
             {!selectedUser ? (
               <div className="flex-1 flex flex-col items-center justify-center text-gray-400 p-6 text-center">
@@ -412,7 +523,7 @@ export default function App() {
             ) : (
               <>
                 {/* ШАПКА ЧАТА: z-20 и bg-white гарантируют, что она не просвечивает и всегда сверху */}
-                <div className="p-3 md:p-4 border-none shadow-sm z-20 font-bold text-gray-800 flex items-center shrink-0 w-full">
+                <div className="p-3 md:p-4 bg-white/70 backdrop-blur-md border-b border-slate-200/60 shadow-sm z-20 font-bold text-gray-800 flex items-center shrink-0 w-full rounded-r-3xl">
                   <button 
                     onClick={() => setSelectedUser(null)}
                     className="md:hidden mr-3 text-blue-500 hover:bg-blue-50 p-2 rounded-full flex items-center justify-center active:scale-95 transition shrink-0"
@@ -430,11 +541,11 @@ export default function App() {
                 </div>
                 
                 {/* ОБЛАСТЬ СООБЩЕНИЙ */}
-                <div className="flex-1 overflow-y-auto p-3 md:p-4 flex flex-col gap-3 pb-4 w-full no-scrollbar">
+                <div className="bg-transparent flex-1 overflow-y-auto p-3 md:p-4 flex flex-col gap-3 pb-4 w-full no-scrollbar">
                   {messages.map((m) => {
                     const isMe = m.sender_id === session.user.id
                     return (
-                      <div key={m.id} className={`max-w-[85%] md:max-w-[75%] p-3 rounded-2xl shadow-sm relative flex flex-col shrink-0 ${isMe ? 'bg-blue-400 backdrop-blur-md text-white border border-blue-300/30 self-end rounded-tr-sm' : 'bg-emerald-300 backdrop-blur-md text-gray-800 border border-white/50 self-start rounded-tl-sm'}`}>
+                      <div key={m.id} className={`max-w-[85%] md:max-w-[75%] p-3 rounded-2xl shadow-sm relative flex flex-col shrink-0 ${isMe ? 'bg-indigo-500 shadow-md shadow-indigo-500/25 text-white border border-indigo-400/50 self-end rounded-2xl rounded-tr-sm' : 'bg-white/90 backdrop-blur-sm text-slate-800 border-slate-100 shadow-sm self-start rounded-2xl rounded-tl-sm'}`}>
                         {m.file_url && (
                           <div className="mb-2">
                             {m.file_url.match(/\.(jpeg|jpg|gif|png|webp)$/i) ? (
@@ -445,7 +556,7 @@ export default function App() {
                           </div>
                         )}
                         {m.content && <span className="break-words text-[14px] md:text-[15px] leading-relaxed">{m.content}</span>}
-                        <span className={`text-[9px] md:text-[10px] self-end mt-1 font-medium ${isMe ? 'text-blue-200' : 'text-gray-400'}`}>{formatTime(m.created_at)} {isMe && (m.is_read ? '✓✓' : '✓')}</span>
+                        <span className={`text-[9px] md:text-[10px] self-end mt-1 font-medium ${isMe ? 'text-blue-200' : 'text-gray-500'}`}>{formatTime(m.created_at)} {isMe && (m.is_read ? '✓✓' : '✓')}</span>
                       </div>
                     )
                   })}
@@ -474,13 +585,13 @@ export default function App() {
                     </div>
                   )}
 
-                  <div className="p-2 md:p-3 flex gap-2 md:gap-3 items-end shrink-0">
+                  <div className="p-2 md:p-3 flex gap-2 md:gap-3 items-end shrink-0 bg-white/70 backdrop-blur-md border-t border-slate-200/60  rounded-br-3xl">
                     <button onClick={() => fileInputRef.current?.click()} className="text-gray-400 hover:text-blue-500 p-2 md:p-3 rounded-full hover:bg-gray-100 transition-colors mb-1 md:mb-1 active:scale-95 shrink-0" disabled={isSending}><span className="text-xl md:text-xl">📎</span></button>
                     {/* @ts-ignore */}
                     <input type="file" className="hidden" ref={fileInputRef} onChange={handleFileUpload} accept="image/*, .pdf, .doc, .docx" />
                     {/* @ts-ignore */}
                     <input
-  className="border-none w-full md:w-auto md:flex-1 p-3 md:p-4 rounded-3xl outline-none focus:ring-2 focus:ring-blue-400 bg-gray-50 text-[14px] md:text-[15px] min-w-0"
+  className=" bg-slate-100/60 border border-slate-200/50 w-full md:w-auto md:flex-1 p-3 md:p-4 rounded-full shadow-inner outline-none focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:bg-white focus:border-indigo-300/50 transition-all text-[14px] md:text-[15px] min-w-0"
   value={text}
   onChange={(e) => setText(e.target.value)}
   onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
@@ -489,7 +600,20 @@ export default function App() {
   disabled={isSending}
 />
                     {/* @ts-ignore */}
-                    <button className={`text-white w-12 h-12 md:w-14 md:h-14 flex items-center justify-center rounded-full font-bold shadow-md transition-all mb-0.5 md:mb-1 shrink-0 ${isSending || (text.trim() === '' && pendingFile === null) ? 'bg-blue-300 cursor-not-allowed' : 'bg-blue-500 hover:bg-blue-600 active:scale-95'}`} onClick={sendMessage} disabled={isSending || (text.trim() === '' && pendingFile === null)}>{isSending ? '...' : <span className="text-lg md:text-xl">➤</span>}</button>
+                    <button 
+  className={`w-12 h-12 md:w-14 md:h-14 flex items-center justify-center rounded-full font-bold transition-all duration-300 mb-0.5 md:mb-1 shrink-0 
+  ${isSending || (text.trim() === '' && pendingFile === null) 
+    ? 'bg-slate-200 text-slate-400 shadow-none cursor-not-allowed' 
+    : 'bg-indigo-500 text-white shadow-md shadow-indigo-500/40 hover:bg-indigo-600 hover:shadow-lg hover:shadow-indigo-500/50 active:scale-95'}`} 
+  onClick={sendMessage} 
+  disabled={isSending || (text.trim() === '' && pendingFile === null)}
+>
+  {isSending ? (
+    <span className="animate-pulse text-slate-400">...</span>
+  ) : (
+    <span className="text-lg md:text-xl transform translate-x-0.5">➤</span>
+  )}
+</button>
                   </div>
                 </div>
 
