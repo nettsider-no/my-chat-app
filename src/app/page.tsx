@@ -303,18 +303,42 @@ export default function App() {
       ) : (
         <>
           {/* ЛЕВАЯ КОЛОНКА */}
-          <div className={`bg-white/60 backdrop-blur-xl border-r border-slate-200/60 shadow-md md:rounded-l-3xl flex-col transition-all duration-300 ease-in-out z-20 
+          <div className={`bg-white/80 backdrop-blur-xl border-r border-slate-200/60 shadow-md md:rounded-l-3xl flex-col transition-all duration-300 ease-in-out z-20 
             ${selectedUser ? 'hidden md:flex' : 'flex w-full'} 
             ${isCollapsed ? 'md:w-20 p-2 items-center' : 'md:w-1/3 p-4'}`}>
             
             <div className={`flex items-center mb-4 pb-2 border-none w-full shrink-0 ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
-              <button onClick={() => setIsCollapsed(!isCollapsed)} className="hidden md:block text-gray-500 hover:text-blue-500 hover:bg-gray-100 p-2 rounded-full transition" title={isCollapsed ? "Развернуть" : "Свернуть"}>{isCollapsed ? '▶' : '◀'} </button>
+              <button 
+  onClick={() => setIsCollapsed(!isCollapsed)} 
+  className="cursor-pointer hidden md:flex items-center justify-center w-10 h-10 text-slate-500 hover:text-indigo-600 hover:bg-white/80 bg-white/40 backdrop-blur-md border border-white/60 rounded-xl transition-all duration-300 shadow-sm active:scale-90" 
+  title={isCollapsed ? "Развернуть" : "Свернуть"}
+>
+  <svg 
+    xmlns="http://www.w3.org/2000/svg" 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    stroke="currentColor" 
+    strokeWidth="2.5" 
+    strokeLinecap="round" 
+    strokeLinejoin="round" 
+    className={`w-5 h-5 transition-transform duration-500 ${isCollapsed ? 'rotate-180' : ''}`}
+  >
+    <path d="M15 18l-6-6 6-6" />
+  </svg>
+</button> 
               
               {!isCollapsed && (
-                <div className="flex-1 md:ml-2 flex justify-between items-center overflow-hidden">
-                  <p className="font-bold truncate text-sm">Профиль: <span className="text-blue-500 block truncate">{session.user.email}</span></p>
+                <div className="flex-1 md:ml-2 pb-2 flex justify-between items-center overflow-hidden">
+                  <div className="flex flex-col ml-3 overflow-hidden leading-tight">
+  <span className="text-[10px] uppercase tracking-[0.15em] text-slate-400 font-bold">
+    Профиль
+  </span>
+  <span className="text-sm font-semibold text-slate-700 truncate">
+    {session.user.email}
+  </span>
+</div>
                   <button 
-  className="px-4 py-1.5 rounded-full text-xs md:text-sm font-medium transition-all duration-300 active:scale-95 shrink-0 text-slate-500 bg-slate-100/60 hover:bg-rose-50 hover:text-rose-600 border border-transparent hover:border-rose-200" 
+  className="cursor-pointer px-4 py-1.5 rounded-full shadow-md text-xs md:text-sm font-medium transition-all duration-300 active:scale-95 shrink-0 text-slate-500 bg-slate-100/60 hover:bg-rose-50 hover:text-rose-600 border border-transparent hover:border-rose-200" 
   onClick={() => supabase.auth.signOut()}
 >
   Выйти
@@ -324,12 +348,12 @@ export default function App() {
             </div>
             
             {!isCollapsed && (
-              <div className="mb-4 pb-4 border-b border-gray-300 w-full shrink-0">
+              <div className="mb-4 pb-4 w-full shrink-0">
                 <h3 className="text-gray-500 font-semibold mb-2 text-xs uppercase tracking-wider">Найти пользователя</h3>
                 <div className="flex gap-2">
-                  <input className="border  border-slate-200/50 pl-3.5 flex-1 rounded-xl text-sm text-slate-800 placeholder-slate-400 bg-slate-100/50 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:bg-white transition-all w-full" placeholder="Email для заявки" value={newContactEmail} onChange={e => setNewContactEmail(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && sendRequest(newContactEmail)} />
+                  <input className="border  border-slate-200/50 pl-3.5 flex-1 rounded-xl text-sm text-slate-800 shadow-lg placeholder-slate-400 bg-slate-100/50 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:bg-white transition-all w-full" placeholder="Email для заявки" value={newContactEmail} onChange={e => setNewContactEmail(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && sendRequest(newContactEmail)} />
                   <button 
-  className="w-10 h-10 md:w-11 md:h-11 flex items-center justify-center bg-indigo-500 text-white rounded-xl shadow-md shadow-indigo-500/30 hover:bg-indigo-600 hover:shadow-lg hover:shadow-indigo-500/40 active:scale-95 transition-all duration-300 shrink-0 ml-2"
+  className="cursor-pointer w-10 h-10 md:w-11 md:h-11 flex items-center justify-center bg-indigo-500 text-white rounded-xl shadow-md shadow-indigo-500/30 hover:bg-indigo-600 hover:shadow-lg hover:shadow-indigo-500/40 active:scale-95 transition-all duration-300 shrink-0 ml-2"
   onClick={() => sendRequest(newContactEmail)}
 >
   <span className="text-2xl leading-none font-light mb-0.5">+</span>
@@ -446,10 +470,10 @@ export default function App() {
         className={`cursor-pointer transition-all duration-300 w-full group flex items-center ${
           isCollapsed 
             ? 'justify-center p-1' 
-            : `p-3 md:p-3 rounded-2xl justify-between border ${
+            : `p-2 md:p-2 rounded-2xl justify-between border ${
                 isSelected 
-                  ? 'bg-white/70 backdrop-blur-md border-white/80 shadow-sm shadow-indigo-100/50' 
-                  : 'border-transparent hover:bg-white/40 hover:backdrop-blur-sm text-slate-700'
+                  ? 'bg-white/70 backdrop-blur-md border-slate-200/50 shadow-lg' 
+                  : 'border-slate-200/50 shadow-lg hover:bg-white/40 hover:backdrop-blur-sm text-slate-700'
               }`
         }`} 
         onClick={() => setSelectedUser(u)}
@@ -470,12 +494,12 @@ export default function App() {
           </div>
         ) : (
           <>
-            <div className="flex items-center truncate pr-2">
+            <div className="flex items-center truncate p-2">
               {/* Аватарка (развернутый вид) */}
                <div className={`w-10 h-10 md:w-9 md:h-9 rounded-full flex items-center justify-center mr-3 uppercase font-bold shrink-0 text-lg md:text-base transition-all duration-300 ${
                  isSelected
                    ? 'bg-indigo-500 text-white shadow-md shadow-indigo-500/30'
-                   : 'bg-gradient-to-br from-indigo-50 to-indigo-100/80 text-indigo-600 border border-white/60 shadow-sm'
+                   : 'bg-gradient-to-br from-indigo-50 to-indigo-100/80 text-indigo-600 shadow-sm'
                }`}>
                  {u.email[0]}
                </div>
@@ -496,7 +520,7 @@ export default function App() {
               )}
               {/* Крестик удаления из друзей */}
               <button 
-                className="text-slate-300 hover:text-rose-500 hover:bg-rose-50 w-8 h-8 flex items-center justify-center rounded-full text-xl md:opacity-0 md:group-hover:opacity-100 transition-all duration-300 active:scale-90 shrink-0 border border-transparent hover:border-rose-100" 
+                className="cursor-pointer text-slate-300 hover:text-rose-500 hover:bg-rose-50 w-8 h-8 flex items-center justify-center rounded-full text-xl  transition-all duration-300 active:scale-90 shrink-0 border border-transparent hover:border-rose-100" 
                 onClick={(e) => removeContact(e, u.id)}
                 title="Удалить из друзей"
               >
@@ -545,11 +569,11 @@ export default function App() {
                   {messages.map((m) => {
                     const isMe = m.sender_id === session.user.id
                     return (
-                      <div key={m.id} className={`max-w-[85%] md:max-w-[75%] p-3 rounded-2xl shadow-sm relative flex flex-col shrink-0 ${isMe ? 'bg-indigo-500 shadow-md shadow-indigo-500/25 text-white border border-indigo-400/50 self-end rounded-2xl rounded-tr-sm' : 'bg-white/90 backdrop-blur-sm text-slate-800 border-slate-100 shadow-sm self-start rounded-2xl rounded-tl-sm'}`}>
+                      <div key={m.id} className={`max-w-[85%] md:max-w-[75%] p-2 rounded-2xl shadow-sm relative flex flex-col shrink-0 ${isMe ? 'bg-indigo-500 shadow-md shadow-indigo-500/25 text-white border border-indigo-400/50 self-end rounded-2xl rounded-bl-sm' : 'bg-white/90 backdrop-blur-sm text-slate-800 border-slate-100 shadow-sm self-start rounded-2xl rounded-br-sm'}`}>
                         {m.file_url && (
                           <div className="mb-2">
                             {m.file_url.match(/\.(jpeg|jpg|gif|png|webp)$/i) ? (
-                               <img src={m.file_url} alt="Вложение" className="rounded-xl max-h-48 md:max-h-64 object-cover shadow-sm" />
+                               <img src={m.file_url} alt="Вложение" className="rounded-2xl max-h-48 md:max-h-64 object-cover shadow-sm" />
                             ) : (
                                <a href={m.file_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 bg-black/10 p-2 rounded-lg text-sm hover:underline">📎 Файл</a>
                             )}
