@@ -26,7 +26,7 @@ export default function App() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [pendingFile, setPendingFile] = useState<File | null>(null)
 
-  const [allReactions, setAllReactions] = useState([]);
+  const [allReactions, setAllReactions] = useState<any[]>([]);
 
   // --- ЛОГИКА ДОЛГОГО НАЖАТИЯ ДЛЯ РЕАКЦИЙ ---
   const [activeReactionMsgId, setActiveReactionMsgId] = useState<number | null>(null);
