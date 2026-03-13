@@ -26,6 +26,27 @@ export default function App() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [pendingFile, setPendingFile] = useState<File | null>(null)
 
+  const [allReactions, setAllReactions] = useState([]);
+
+  // --- ЛОГИКА ДОЛГОГО НАЖАТИЯ ДЛЯ РЕАКЦИЙ ---
+  const [activeReactionMsgId, setActiveReactionMsgId] = useState<number | null>(null);
+  const pressTimer = useRef<NodeJS.Timeout | null>(null);
+
+  const handlePressStart = (msgId: number) => {
+    // Запускаем таймер: если держим 400мс, открываем меню
+    pressTimer.current = setTimeout(() => {
+      setActiveReactionMsgId(msgId);
+    }, 400); 
+  };
+
+  const handlePressEnd = () => {
+    // Если отпустили раньше времени или увели палец — отменяем таймер
+    if (pressTimer.current) {
+      clearTimeout(pressTimer.current);
+      pressTimer.current = null;
+    }
+  };
+
   function showNotification(msg: string) {
     setToastMsg(msg)
     setTimeout(() => setToastMsg(null), 4000)
@@ -177,25 +198,33 @@ export default function App() {
   }
 
   // === ЛОГИКА АКТИВНОГО ЧАТА ===
+  // === ЛОГИКА АКТИВНОГО ЧАТА + РЕАКЦИИ ===
   useEffect(() => {
     if (!session || !selectedUser) return
+    
     async function fetchMessagesAndMarkRead() {
+      // 1. Грузим сообщения
       const { data } = await supabase.from('messages').select('*')
         .or(`and(sender_id.eq.${session.user.id},receiver_id.eq.${selectedUser.id}),and(sender_id.eq.${selectedUser.id},receiver_id.eq.${session.user.id})`)
         .order('created_at', { ascending: true })
       if (data) setMessages(data)
+      
+      // 2. Грузим реакции сразу при входе в чат
+      const { data: reactData } = await supabase.from('message_reactions').select('*');
+      if (reactData) setAllReactions(reactData);
+
+      // 3. Помечаем как прочитанные
       await supabase.from('messages').update({ is_read: true }).eq('sender_id', selectedUser.id).eq('receiver_id', session.user.id).eq('is_read', false)
       fetchSidebarData()
     }
     fetchMessagesAndMarkRead()
     
-    const channel = supabase.channel('realtime-private').on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, (payload) => {
+    // 4. Подписываемся на REALTIME (и для сообщений, и для реакций)
+    const channel = supabase.channel('realtime-chat-data').on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, (payload) => {
         if (payload.eventType === 'INSERT') {
           const msg = payload.new
-          if (msg.sender_id === selectedUser.id && msg.receiver_id === session.user.id) {
-            supabase.from('messages').update({ is_read: true }).eq('id', msg.id).then()
-            setMessages((prev) => [...prev, msg])
-          } else if (msg.sender_id === session.user.id && msg.receiver_id === selectedUser.id) {
+          if ((msg.sender_id === selectedUser.id && msg.receiver_id === session.user.id) || (msg.sender_id === session.user.id && msg.receiver_id === selectedUser.id)) {
+            if (msg.sender_id === selectedUser.id) supabase.from('messages').update({ is_read: true }).eq('id', msg.id).then()
             setMessages((prev) => [...prev, msg])
           }
         }
@@ -203,7 +232,14 @@ export default function App() {
           setMessages((prev) => prev.map(m => m.id === payload.new.id ? payload.new : m))
           fetchSidebarData()
         }
-    }).subscribe()
+    })
+    // Магия: слушаем изменения в таблице реакций
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'message_reactions' }, async () => {
+        const { data } = await supabase.from('message_reactions').select('*');
+        if (data) setAllReactions(data);
+    })
+    .subscribe()
+
     return () => { supabase.removeChannel(channel) }
   }, [session, selectedUser])
 
@@ -268,6 +304,57 @@ export default function App() {
 
   function formatTime(isoString: string) { return new Date(isoString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }
 
+const toggleReaction = async (messageId: number, emoji: string) => {
+    try {
+      // 1. ОПТИМИСТИЧНОЕ ОБНОВЛЕНИЕ UI (Делаем мгновенно визуально)
+      const existingLocal = allReactions.find((r: any) => 
+        r.message_id === messageId && 
+        r.user_id === session.user.id && 
+        r.emoji === emoji
+      );
+
+      if (existingLocal) {
+        // Если уже стоял — мгновенно убираем с экрана
+        // @ts-ignore
+        setAllReactions(prev => prev.filter(r => r.id !== existingLocal.id));
+      } else {
+        // Если не было — мгновенно рисуем на экране (даем фейковый ID)
+        const tempReaction = { 
+          id: Date.now(), 
+          message_id: messageId, 
+          user_id: session.user.id, 
+          emoji: emoji 
+        };
+        // @ts-ignore
+        setAllReactions(prev => [...prev, tempReaction]);
+      }
+
+      // 2. ОТПРАВЛЯЕМ В БАЗУ ДАННЫХ В ФОНЕ
+      const { data: existing } = await supabase
+        .from('message_reactions')
+        .select('id')
+        .eq('message_id', messageId)
+        .eq('user_id', session.user.id)
+        .eq('emoji', emoji)
+        .single();
+
+      if (existing) {
+        await supabase.from('message_reactions').delete().eq('id', existing.id);
+      } else {
+        await supabase.from('message_reactions').insert([{ 
+          message_id: messageId, 
+          user_id: session.user.id, 
+          emoji: emoji 
+        }]);
+      }
+    } catch (error) {
+      console.error('Ошибка при работе с реакцией:', error);
+      // Если произошла ошибка (например, нет интернета),
+      // в идеале тут нужно откатить локальный стейт назад, 
+      // но благодаря Realtime подписке он сам синхронизируется.
+    }
+  };
+
   // ==========================================
   // ВЕРСТКА С ИДЕАЛЬНОЙ ФИКСАЦИЕЙ ДЛЯ МОБИЛОК
   // ==========================================
@@ -310,7 +397,7 @@ export default function App() {
             <div className={`flex items-center mb-4 pb-2 border-none w-full shrink-0 ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
               <button 
   onClick={() => setIsCollapsed(!isCollapsed)} 
-  className="cursor-pointer hidden md:flex items-center justify-center w-10 h-10 text-slate-500 hover:text-indigo-600 hover:bg-white/80 bg-white/40 backdrop-blur-md border border-white/60 rounded-xl transition-all duration-300 shadow-sm active:scale-90" 
+  className="cursor-pointer hidden md:flex items-center justify-center w-10 h-10 text-slate-500 hover:text-indigo-600 hover:bg-white/80 bg-white/40 backdrop-blur-md border border-white/60 rounded-xl transition-all duration-300 shadow-lg active:scale-90" 
   title={isCollapsed ? "Развернуть" : "Свернуть"}
 >
   <svg 
@@ -565,30 +652,111 @@ export default function App() {
                 </div>
                 
                 {/* ОБЛАСТЬ СООБЩЕНИЙ */}
-                <div className="bg-transparent flex-1 overflow-y-auto p-3 md:p-4 flex flex-col gap-3 pb-4 w-full no-scrollbar">
-                  {messages.map((m) => {
-                    const isMe = m.sender_id === session.user.id
-                    return (
-                      <div key={m.id} className={`max-w-[85%] md:max-w-[75%] p-2 rounded-2xl shadow-sm relative flex flex-col shrink-0 ${isMe ? 'bg-indigo-500 shadow-md shadow-indigo-500/25 text-white border border-indigo-400/50 self-end rounded-2xl rounded-bl-sm' : 'bg-white/90 backdrop-blur-sm text-slate-800 border-slate-100 shadow-sm self-start rounded-2xl rounded-br-sm'}`}>
-                        {m.file_url && (
-                          <div className="mb-2">
-                            {m.file_url.match(/\.(jpeg|jpg|gif|png|webp)$/i) ? (
-                               <img src={m.file_url} alt="Вложение" className="rounded-2xl max-h-48 md:max-h-64 object-cover shadow-sm" />
-                            ) : (
-                               <a href={m.file_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 bg-black/10 p-2 rounded-lg text-sm hover:underline">📎 Файл</a>
-                            )}
-                          </div>
-                        )}
-                        {m.content && <span className="break-words text-[14px] md:text-[15px] leading-relaxed">{m.content}</span>}
-                        <span className={`text-[9px] md:text-[10px] self-end mt-1 font-medium ${isMe ? 'text-blue-200' : 'text-gray-500'}`}>{formatTime(m.created_at)} {isMe && (m.is_read ? '✓✓' : '✓')}</span>
-                      </div>
-                    )
-                  })}
+                {/* ОБЛАСТЬ СООБЩЕНИЙ */}
+              <div className="bg-transparent flex-1 overflow-y-auto p-3 md:p-4 flex flex-col gap-3 pb-4 w-full no-scrollbar scroll-smooth">
+{messages.map((m) => {
+  const isMe = m.sender_id === session.user.id;
+  const msgReactions = allReactions.filter((r: any) => r.message_id === m.id);
+  const isMenuOpen = activeReactionMsgId === m.id; // Проверяем, открыто ли меню для ЭТОГО сообщения
+  
+  return (
+    <div key={m.id} className={`relative flex flex-col mb-4 ${isMe ? 'items-end' : 'items-start'}`}>
+      
+      {/* МЕНЮ ВЫБОРА РЕАКЦИЙ (Появляется по долгому нажатию) */}
+      {isMenuOpen && (
+        <>
+          {/* Невидимый слой на весь экран: если кликнуть мимо меню, оно закроется */}
+          <div className="fixed inset-0 z-20" onClick={() => setActiveReactionMsgId(null)} />
+          
+          <div className={`absolute -top-10 z-30 flex gap-1 bg-white/95 backdrop-blur-md p-1.5 rounded-full shadow-xl border border-slate-200/50 animate-in zoom-in duration-200 ${isMe ? 'right-2' : 'left-2'}`}>
+            {['❤️', '👍', '🔥', '😂', '😢', '😁', '👑', '🐥'].map((emoji) => (
+              <button
+                key={emoji}
+                onClick={(e) => {
+                  e.stopPropagation(); // Блокируем клик, чтобы не сработал закрывающий слой
+                  toggleReaction(m.id, emoji);
+                  setActiveReactionMsgId(null); // Закрываем меню после выбора
+                }}
+                className="hover:scale-130 transition-transform px-1.5 py-0.5 text-base md:text-lg active:scale-90 cursor-pointer"
+              >
+                {emoji}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+
+      {/* ПУЗЫРЕК СООБЩЕНИЯ (Добавили события мыши и тачскрина) */}
+      <div 
+        onMouseDown={() => handlePressStart(m.id)}
+        onMouseUp={handlePressEnd}
+        onMouseLeave={handlePressEnd}
+        onTouchStart={() => handlePressStart(m.id)}
+        onTouchEnd={handlePressEnd}
+        onTouchMove={handlePressEnd}
+        onContextMenu={(e) => e.preventDefault()} // Отключаем стандартное меню "Копировать" на телефонах
+        className={`max-w-[85%] md:max-w-[70%] p-3 shadow-sm relative flex flex-col shrink-0 transition-all duration-300 select-none ${
+          isMe 
+            ? 'bg-indigo-500 text-white rounded-2xl rounded-tr-none shadow-md shadow-indigo-500/20 border border-white/10' 
+            : 'bg-white/80 backdrop-blur-md text-slate-800 rounded-2xl rounded-tl-none border border-white/60 shadow-sm'
+        }`}
+      >
+        {/* Блок с файлом/картинкой */}
+        {m.file_url && (
+          <div className="mb-2 overflow-hidden rounded-xl">
+            {m.file_url.match(/\.(jpeg|jpg|gif|png|webp)$/i) ? (
+               <img src={m.file_url} alt="Вложение" className="w-full h-full max-h-64 object-cover hover:scale-[1.02] transition-transform duration-500 rounded-xl shadow-sm pointer-events-none" />
+            ) : (
+               <a href={m.file_url} target="_blank" rel="noopener noreferrer" className={`flex items-center gap-2 p-3 rounded-xl text-sm transition-colors ${isMe ? 'bg-white/10 hover:bg-white/20' : 'bg-slate-100 hover:bg-slate-200'}`}>
+                 <span className="text-lg">📎</span> <span className="font-medium">Файл</span>
+               </a>
+            )}
+          </div>
+        )}
+
+        {/* Текст */}
+        {m.content && <span className="break-words text-[14px] md:text-[15px] leading-relaxed px-0.5 font-medium">{m.content}</span>}
+
+        {/* Время и статус */}
+        <div className={`flex items-center gap-1.5 self-end mt-1.5 px-0.5 ${isMe ? 'text-indigo-100/80' : 'text-slate-400'}`}>
+          <span className="text-[10px] font-medium tracking-tighter uppercase">{formatTime(m.created_at)}</span>
+          {isMe && <span className="text-[11px] font-bold leading-none">{m.is_read ? '✓✓' : '✓'}</span>}
+        </div>
+
+        {/* ОТОБРАЖЕНИЕ РЕАКЦИЙ ПОД СООБЩЕНИЕМ */}
+        {msgReactions.length > 0 && (
+          <div className={`absolute -bottom-3.5 flex flex-wrap gap-1 z-10 ${isMe ? 'right-2' : 'left-2'}`}>
+            {Array.from(new Set(msgReactions.map((r: any) => r.emoji))).map(emoji => {
+              const count = msgReactions.filter((r: any) => r.emoji === emoji).length;
+              const hasMyReaction = msgReactions.some((r: any) => r.emoji === emoji && r.user_id === session.user.id);
+              
+              return (
+                <button 
+                  key={emoji as string}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleReaction(m.id, emoji as string);
+                  }}
+                  className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold shadow-sm transition-all hover:scale-110 active:scale-90 cursor-pointer border ${
+                    hasMyReaction ? 'bg-indigo-50 border-indigo-200 text-indigo-600' : 'bg-white/95 border-slate-100 text-slate-500'
+                  }`}
+                >
+                  <span>{emoji as string}</span>
+                  {count > 1 && <span>{count}</span>}
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+})}
                   <div ref={messagesEndRef} className="shrink-0" />
                 </div>
                 
                 {/* ПАНЕЛЬ ВВОДА: Добавлен paddingBottom с учетом Safe Area (полоски на iPhone) */}
-                <div 
+                <div
                   className=" border-t border-gray-300 flex flex-col shrink-0 w-full"
                   style={{ paddingBottom: 'env(safe-area-inset-bottom, 16px)' }}
                 >
