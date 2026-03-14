@@ -31,6 +31,19 @@ export default function App() {
   // --- ЛОГИКА ДОЛГОГО НАЖАТИЯ ДЛЯ РЕАКЦИЙ ---
   const [activeReactionMsgId, setActiveReactionMsgId] = useState<number | null>(null);
 
+  // Таймер для мобильного долгого нажатия
+  const pressTimer = useRef<NodeJS.Timeout | null>(null);
+
+  const handlePressStart = (msgId: number) => {
+    pressTimer.current = setTimeout(() => {
+      setActiveReactionMsgId(msgId);
+    }, 400); // Если держим 400мс - открываем меню
+  };
+
+  const handlePressEnd = () => {
+    if (pressTimer.current) clearTimeout(pressTimer.current);
+  };
+
 // Добавляем функцию копирования
   const copyToClipboard = (text: string) => {
     if (!text) return;
@@ -714,6 +727,12 @@ const toggleReaction = async (messageId: number, emoji: string) => {
           e.preventDefault(); // Блокируем черное системное меню телефона / правый клик ПК
           setActiveReactionMsgId(m.id); // Открываем наше красивое меню
         }}
+        // --- ДОБАВЛЯЕМ СОБЫТИЯ ДЛЯ МОБИЛОК ---
+        onTouchStart={() => handlePressStart(m.id)}
+        onTouchEnd={handlePressEnd}
+        onTouchMove={handlePressEnd}
+        // Магия, которая отключает системное меню iOS/Android:
+        style={{ WebkitTouchCallout: 'none' }}
         /* УБРАЛИ select-none, теперь текст можно выделять мышкой на ПК! */
         className={`max-w-[85%] md:max-w-[70%] p-3 shadow-sm relative flex flex-col shrink-0 transition-all duration-300 ${
           isMe 
