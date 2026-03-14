@@ -30,21 +30,13 @@ export default function App() {
 
   // --- ЛОГИКА ДОЛГОГО НАЖАТИЯ ДЛЯ РЕАКЦИЙ ---
   const [activeReactionMsgId, setActiveReactionMsgId] = useState<number | null>(null);
-  const pressTimer = useRef<NodeJS.Timeout | null>(null);
 
-  const handlePressStart = (msgId: number) => {
-    // Запускаем таймер: если держим 400мс, открываем меню
-    pressTimer.current = setTimeout(() => {
-      setActiveReactionMsgId(msgId);
-    }, 400); 
-  };
-
-  const handlePressEnd = () => {
-    // Если отпустили раньше времени или увели палец — отменяем таймер
-    if (pressTimer.current) {
-      clearTimeout(pressTimer.current);
-      pressTimer.current = null;
-    }
+// Добавляем функцию копирования
+  const copyToClipboard = (text: string) => {
+    if (!text) return;
+    navigator.clipboard.writeText(text);
+    showNotification('📋 Текст скопирован!');
+    setActiveReactionMsgId(null); // Закрываем меню после копирования
   };
 
   function showNotification(msg: string) {
@@ -243,8 +235,20 @@ export default function App() {
     return () => { supabase.removeChannel(channel) }
   }, [session, selectedUser])
 
-  const scrollToBottom = () => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  useEffect(() => scrollToBottom(), [messages])
+// Функция теперь умеет принимать тип анимации
+const scrollToBottom = (behavior: ScrollBehavior = "smooth") => {
+  messagesEndRef.current?.scrollIntoView({ behavior })
+}
+
+// 1. При выборе нового друга — скроллим МГНОВЕННО
+useEffect(() => {
+  scrollToBottom("auto")
+}, [selectedUser])
+
+// 2. При добавлении новых сообщений — скроллим ПЛАВНО
+useEffect(() => {
+  scrollToBottom("smooth")
+}, [messages])
 
   function handleFileUpload(event: any) {
     const file = event.target.files[0]
@@ -624,8 +628,9 @@ const toggleReaction = async (messageId: number, emoji: string) => {
           </div>
 
           {/* ПРАВАЯ КОЛОНКА (САМ ЧАТ) */}
-          <div className={`bg-cover bg-center shadow-md md:rounded-r-3xl flex-col relative transition-all duration-300 ease-in-out z-10 w-full
-            ${selectedUser ? 'flex md:flex-1' : 'hidden md:flex md:flex-1'}`}>   
+          {/* ПРАВАЯ КОЛОНКА (САМ ЧАТ) */}
+<div className={`bg-cover bg-center shadow-md md:rounded-r-3xl flex-col relative transition-all duration-300 ease-in-out z-10 w-full h-full overflow-hidden
+  ${selectedUser ? 'flex md:flex-1' : 'hidden md:flex md:flex-1'}`}>   
             {!selectedUser ? (
               <div className="flex-1 flex flex-col items-center justify-center text-gray-400 p-6 text-center">
                 <span className="text-5xl md:text-6xl mb-4 opacity-50">💬</span>
@@ -657,55 +662,75 @@ const toggleReaction = async (messageId: number, emoji: string) => {
 {messages.map((m) => {
   const isMe = m.sender_id === session.user.id;
   const msgReactions = allReactions.filter((r: any) => r.message_id === m.id);
-  const isMenuOpen = activeReactionMsgId === m.id; // Проверяем, открыто ли меню для ЭТОГО сообщения
+  const isMenuOpen = activeReactionMsgId === m.id;
   
   return (
     <div key={m.id} className={`relative flex flex-col mb-4 ${isMe ? 'items-end' : 'items-start'}`}>
       
-      {/* МЕНЮ ВЫБОРА РЕАКЦИЙ (Появляется по долгому нажатию) */}
+      {/* 🚀 ПОЛНОЦЕННОЕ КОНТЕКСТНОЕ МЕНЮ (Эмодзи + Копировать) */}
       {isMenuOpen && (
         <>
-          {/* Невидимый слой на весь экран: если кликнуть мимо меню, оно закроется */}
           <div className="fixed inset-0 z-20" onClick={() => setActiveReactionMsgId(null)} />
           
-          <div className={`absolute -top-10 z-30 flex gap-1 bg-white/95 backdrop-blur-md p-1.5 rounded-full shadow-xl border border-slate-200/50 animate-in zoom-in duration-200 ${isMe ? 'right-2' : 'left-2'}`}>
-            {['❤️', '👍', '🔥', '😂', '😢', '😁', '👑', '🐥'].map((emoji) => (
-              <button
-                key={emoji}
+          <div className={`absolute bottom-full mb-1 z-30 flex flex-col gap-1.5 bg-white/95 backdrop-blur-md p-2 rounded-2xl shadow-xl border border-slate-200/50 animate-in zoom-in duration-200 ${isMe ? 'right-2 items-end' : 'left-2 items-start'}`}>
+            
+            {/* Ряд с эмодзи */}
+            <div className="flex gap-1">
+              {['❤️', '👍', '🔥', '😂', '😢', '😁', '👑', '🐥'].map((emoji) => (
+                <button
+                  key={emoji}
+                  onClick={(e) => {
+                    e.stopPropagation(); 
+                    toggleReaction(m.id, emoji);
+                    setActiveReactionMsgId(null); 
+                  }}
+                  className="hover:scale-130 transition-transform px-1.5 py-0.5 text-base md:text-lg active:scale-90 cursor-pointer"
+                >
+                  {emoji}
+                </button>
+              ))}
+            </div>
+
+            {/* Кнопка "Копировать" (показываем, только если есть текст) */}
+            {m.content && (
+              <button 
                 onClick={(e) => {
-                  e.stopPropagation(); // Блокируем клик, чтобы не сработал закрывающий слой
-                  toggleReaction(m.id, emoji);
-                  setActiveReactionMsgId(null); // Закрываем меню после выбора
+                  e.stopPropagation();
+                  copyToClipboard(m.content);
                 }}
-                className="hover:scale-130 transition-transform px-1.5 py-0.5 text-base md:text-lg active:scale-90 cursor-pointer"
+                className="text-[12px] font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-xl w-full text-center transition-colors active:scale-95"
               >
-                {emoji}
+                Копировать текст
               </button>
-            ))}
+            )}
           </div>
         </>
       )}
 
-      {/* ПУЗЫРЕК СООБЩЕНИЯ (Добавили события мыши и тачскрина) */}
+      {/* ПУЗЫРЕК СООБЩЕНИЯ */}
       <div 
-        onMouseDown={() => handlePressStart(m.id)}
-        onMouseUp={handlePressEnd}
-        onMouseLeave={handlePressEnd}
-        onTouchStart={() => handlePressStart(m.id)}
-        onTouchEnd={handlePressEnd}
-        onTouchMove={handlePressEnd}
-        onContextMenu={(e) => e.preventDefault()} // Отключаем стандартное меню "Копировать" на телефонах
-        className={`max-w-[85%] md:max-w-[70%] p-3 shadow-sm relative flex flex-col shrink-0 transition-all duration-300 select-none ${
+        /* ВОТ ОНА, МАГИЯ: Используем нативное системное событие */
+        onContextMenu={(e) => {
+          e.preventDefault(); // Блокируем черное системное меню телефона / правый клик ПК
+          setActiveReactionMsgId(m.id); // Открываем наше красивое меню
+        }}
+        /* УБРАЛИ select-none, теперь текст можно выделять мышкой на ПК! */
+        className={`max-w-[85%] md:max-w-[70%] p-3 shadow-sm relative flex flex-col shrink-0 transition-all duration-300 ${
           isMe 
             ? 'bg-indigo-500 text-white rounded-2xl rounded-tr-none shadow-md shadow-indigo-500/20 border border-white/10' 
             : 'bg-white/80 backdrop-blur-md text-slate-800 rounded-2xl rounded-tl-none border border-white/60 shadow-sm'
         }`}
       >
-        {/* Блок с файлом/картинкой */}
+        {/* ... (здесь остается твой старый код картинок: m.file_url) ... */}
         {m.file_url && (
           <div className="mb-2 overflow-hidden rounded-xl">
             {m.file_url.match(/\.(jpeg|jpg|gif|png|webp)$/i) ? (
-               <img src={m.file_url} alt="Вложение" className="w-full h-full max-h-64 object-cover hover:scale-[1.02] transition-transform duration-500 rounded-xl shadow-sm pointer-events-none" />
+               <img 
+                 src={m.file_url} 
+                 alt="Вложение" 
+                 onLoad={() => scrollToBottom("auto")} 
+                 className="w-full h-full max-h-64 object-cover hover:scale-[1.02] transition-transform duration-500 rounded-xl shadow-sm" 
+               />
             ) : (
                <a href={m.file_url} target="_blank" rel="noopener noreferrer" className={`flex items-center gap-2 p-3 rounded-xl text-sm transition-colors ${isMe ? 'bg-white/10 hover:bg-white/20' : 'bg-slate-100 hover:bg-slate-200'}`}>
                  <span className="text-lg">📎</span> <span className="font-medium">Файл</span>
@@ -714,16 +739,16 @@ const toggleReaction = async (messageId: number, emoji: string) => {
           </div>
         )}
 
-        {/* Текст */}
+        {/* ... (текст) ... */}
         {m.content && <span className="break-words text-[14px] md:text-[15px] leading-relaxed px-0.5 font-medium">{m.content}</span>}
 
-        {/* Время и статус */}
+        {/* ... (время и статус) ... */}
         <div className={`flex items-center gap-1.5 self-end mt-1.5 px-0.5 ${isMe ? 'text-indigo-100/80' : 'text-slate-400'}`}>
           <span className="text-[10px] font-medium tracking-tighter uppercase">{formatTime(m.created_at)}</span>
           {isMe && <span className="text-[11px] font-bold leading-none">{m.is_read ? '✓✓' : '✓'}</span>}
         </div>
 
-        {/* ОТОБРАЖЕНИЕ РЕАКЦИЙ ПОД СООБЩЕНИЕМ */}
+        {/* ... (отображение поставленных реакций) ... */}
         {msgReactions.length > 0 && (
           <div className={`absolute -bottom-3.5 flex flex-wrap gap-1 z-10 ${isMe ? 'right-2' : 'left-2'}`}>
             {Array.from(new Set(msgReactions.map((r: any) => r.emoji))).map(emoji => {
@@ -733,13 +758,8 @@ const toggleReaction = async (messageId: number, emoji: string) => {
               return (
                 <button 
                   key={emoji as string}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toggleReaction(m.id, emoji as string);
-                  }}
-                  className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold shadow-sm transition-all hover:scale-110 active:scale-90 cursor-pointer border ${
-                    hasMyReaction ? 'bg-indigo-50 border-indigo-200 text-indigo-600' : 'bg-white/95 border-slate-100 text-slate-500'
-                  }`}
+                  onClick={(e) => { e.stopPropagation(); toggleReaction(m.id, emoji as string); }}
+                  className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold shadow-sm transition-all hover:scale-110 active:scale-90 cursor-pointer border ${hasMyReaction ? 'bg-indigo-50 border-indigo-200 text-indigo-600' : 'bg-white/95 border-slate-100 text-slate-500'}`}
                 >
                   <span>{emoji as string}</span>
                   {count > 1 && <span>{count}</span>}
