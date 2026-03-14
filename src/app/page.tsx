@@ -722,19 +722,22 @@ const toggleReaction = async (messageId: number, emoji: string) => {
 
       {/* ПУЗЫРЕК СООБЩЕНИЯ */}
       <div 
-        /* ВОТ ОНА, МАГИЯ: Используем нативное системное событие */
         onContextMenu={(e) => {
-          e.preventDefault(); // Блокируем черное системное меню телефона / правый клик ПК
-          setActiveReactionMsgId(m.id); // Открываем наше красивое меню
+          e.preventDefault(); 
+          setActiveReactionMsgId(m.id); 
         }}
-        // --- ДОБАВЛЯЕМ СОБЫТИЯ ДЛЯ МОБИЛОК ---
         onTouchStart={() => handlePressStart(m.id)}
         onTouchEnd={handlePressEnd}
         onTouchMove={handlePressEnd}
-        // Магия, которая отключает системное меню iOS/Android:
-        style={{ WebkitTouchCallout: 'none' }}
-        /* УБРАЛИ select-none, теперь текст можно выделять мышкой на ПК! */
-        className={`max-w-[85%] md:max-w-[70%] p-3 shadow-sm relative flex flex-col shrink-0 transition-all duration-300 ${
+        
+        // 🛠 ПРАВКА 1: Добавили отключение серой/синей вспышки при тапе на мобилке
+        style={{ 
+          WebkitTouchCallout: 'none', 
+          WebkitTapHighlightColor: 'transparent' 
+        }}
+        
+        // 🛠 ПРАВКА 2: Добавили select-none md:select-text
+        className={`max-w-[85%] md:max-w-[70%] p-3 shadow-sm relative flex flex-col shrink-0 transition-all duration-300 select-none md:select-text ${
           isMe 
             ? 'bg-indigo-500 text-white rounded-2xl rounded-tr-none shadow-md shadow-indigo-500/20 border border-white/10' 
             : 'bg-white/80 backdrop-blur-md text-slate-800 rounded-2xl rounded-tl-none border border-white/60 shadow-sm'
