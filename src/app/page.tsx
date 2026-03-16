@@ -689,10 +689,10 @@ const toggleReaction = async (messageId: number, emoji: string) => {
             </div>
           </div>
 
-          {/* ПРАВАЯ КОЛОНКА (САМ ЧАТ) */}
-          {/* ПРАВАЯ КОЛОНКА (САМ ЧАТ) */}
-<div className={`bg-cover bg-center shadow-md md:rounded-r-3xl flex-col relative transition-all duration-300 ease-in-out z-10 w-full h-full overflow-hidden
-  ${selectedUser ? 'flex md:flex-1' : 'hidden md:flex md:flex-1'}`}>   
+{/* ПРАВАЯ КОЛОНКА (САМ ЧАТ) */}
+          <div className={`bg-cover bg-center shadow-md md:rounded-r-3xl flex-col relative transition-all duration-300 ease-in-out z-10 w-full h-full overflow-hidden
+            ${selectedUser ? 'flex md:flex-1' : 'hidden md:flex md:flex-1'}`}>   
+            
             {!selectedUser ? (
               <div className="flex-1 flex flex-col items-center justify-center text-gray-400 p-6 text-center">
                 <span className="text-5xl md:text-6xl mb-4 opacity-50">💬</span>
@@ -700,7 +700,7 @@ const toggleReaction = async (messageId: number, emoji: string) => {
               </div>
             ) : (
               <>
-                {/* ШАПКА ЧАТА: z-20 и bg-white гарантируют, что она не просвечивает и всегда сверху */}
+                {/* ШАПКА ЧАТА */}
                 <div className="p-3 md:p-4 bg-white/70 backdrop-blur-md border-b border-slate-200/60 shadow-sm z-20 font-bold text-gray-800 flex items-center shrink-0 w-full rounded-r-3xl">
                   <button 
                     onClick={() => setSelectedUser(null)}
@@ -719,166 +719,112 @@ const toggleReaction = async (messageId: number, emoji: string) => {
                 </div>
                 
                 {/* ОБЛАСТЬ СООБЩЕНИЙ */}
-                {/* ОБЛАСТЬ СООБЩЕНИЙ */}
-              <div className="bg-transparent flex-1 overflow-y-auto p-3 md:p-4 flex flex-col gap-3 pb-4 w-full no-scrollbar">
-{messages.map((m) => {
-  const isMe = m.sender_id === session.user.id;
-  const msgReactions = allReactions.filter((r: any) => r.message_id === m.id);
-  const isMenuOpen = activeReactionMsgId === m.id;
-  
-  return (
-    <div key={m.id} className={`relative flex flex-col mb-4 ${isMe ? 'items-end' : 'items-start'}`}>
-      
-      {/* 🚀 ПОЛНОЦЕННОЕ КОНТЕКСТНОЕ МЕНЮ (Эмодзи + Копировать) */}
-      {isMenuOpen && (
-        <>
-          <div className="fixed inset-0 z-20" onClick={() => setActiveReactionMsgId(null)} />
-          
-          <div className={`absolute bottom-full mb-1 z-30 flex flex-col gap-1.5 bg-white/95 backdrop-blur-md p-2 rounded-2xl shadow-xl border border-slate-200/50 animate-in zoom-in duration-200 ${isMe ? 'right-2 items-end' : 'left-2 items-start'}`}>
-            
-            {/* Ряд с эмодзи */}
-            <div className="flex gap-1">
-              {['❤️', '👍', '🔥', '😂', '😢', '😁', '👑', '🐥'].map((emoji) => (
-                <button
-                  key={emoji}
-                  onClick={(e) => {
-                    e.stopPropagation(); 
-                    toggleReaction(m.id, emoji);
-                    setActiveReactionMsgId(null); 
-                  }}
-                  className="hover:scale-130 transition-transform px-1.5 py-0.5 text-base md:text-lg active:scale-90 cursor-pointer"
-                >
-                  {emoji}
-                </button>
-              ))}
-            </div>
+                <div className="bg-transparent flex-1 overflow-y-auto p-3 md:p-4 flex flex-col gap-3 pb-4 w-full no-scrollbar">
+                  {messages.map((m) => {
+                    const isMe = m.sender_id === session.user.id;
+                    const msgReactions = allReactions.filter((r: any) => r.message_id === m.id);
+                    const isMenuOpen = activeReactionMsgId === m.id;
+                    
+                    return (
+                      <div key={m.id} className={`relative flex flex-col mb-4 ${isMe ? 'items-end' : 'items-start'}`}>
+                        
+                        {/* КОНТЕКСТНОЕ МЕНЮ (Эмодзи + Копировать + Перевести) */}
+                        {isMenuOpen && (
+                          <>
+                            <div className="fixed inset-0 z-20" onClick={() => setActiveReactionMsgId(null)} />
+                            <div className={`absolute bottom-full mb-1 z-30 flex flex-col gap-1.5 bg-white/95 backdrop-blur-md p-2 rounded-2xl shadow-xl border border-slate-200/50 animate-in zoom-in duration-200 ${isMe ? 'right-2 items-end' : 'left-2 items-start'}`}>
+                              <div className="flex gap-1">
+                                {['❤️', '👍', '🔥', '😂', '😢', '😁', '👑', '🐥'].map((emoji) => (
+                                  <button
+                                    key={emoji}
+                                    onClick={(e) => { e.stopPropagation(); toggleReaction(m.id, emoji); setActiveReactionMsgId(null); }}
+                                    className="hover:scale-130 transition-transform px-1.5 py-0.5 text-base md:text-lg active:scale-90 cursor-pointer"
+                                  >
+                                    {emoji}
+                                  </button>
+                                ))}
+                              </div>
+                              {m.content && (
+                                <button onClick={(e) => { e.stopPropagation(); copyToClipboard(m.content); }} className="text-[12px] font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-xl w-full text-center transition-colors active:scale-95">
+                                  Копировать текст
+                                </button>
+                              )}
+                              {m.content && (
+                                <button onClick={(e) => { e.stopPropagation(); handleAiAction('translate', 'Русский', m.id, m.content); }} className="text-[12px] font-semibold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 border border-indigo-100 px-3 py-1.5 rounded-xl w-full text-center transition-colors active:scale-95 mt-0.5 flex items-center justify-center gap-1">
+                                  <span>🤖</span> Перевести
+                                </button>
+                              )}
+                            </div>
+                          </>
+                        )}
 
-            {/* Кнопка "Копировать" (показываем, только если есть текст) */}
-            {m.content && (
-              <button 
-                onClick={(e) => {
-                  e.stopPropagation();
-                  copyToClipboard(m.content);
-                }}
-                className="text-[12px] font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-xl w-full text-center transition-colors active:scale-95"
-              >
-                Копировать текст
-              </button>
-            )}
+                        {/* ПУЗЫРЕК СООБЩЕНИЯ */}
+                        <div 
+                          onContextMenu={(e) => { e.preventDefault(); setActiveReactionMsgId(m.id); }}
+                          onTouchStart={() => handlePressStart(m.id)}
+                          onTouchEnd={handlePressEnd}
+                          onTouchMove={handlePressEnd}
+                          style={{ WebkitTouchCallout: 'none', WebkitTapHighlightColor: 'transparent' }}
+                          className={`max-w-[85%] md:max-w-[70%] p-3 shadow-sm relative flex flex-col shrink-0 transition-all duration-300 select-none md:select-text ${isMe ? 'bg-indigo-500 text-white rounded-2xl rounded-tr-none shadow-md shadow-indigo-500/20 border border-white/10' : 'bg-white/80 backdrop-blur-md text-slate-800 rounded-2xl rounded-tl-none border border-white/60 shadow-sm'}`}
+                        >
+                          {m.file_url && (
+                            <div className="mb-2 overflow-hidden rounded-xl">
+                              {m.file_url.match(/\.(jpeg|jpg|gif|png|webp)$/i) ? (
+                                 <img src={m.file_url} alt="Вложение" onLoad={() => scrollToBottom("auto")} className="w-full h-full max-h-64 object-cover hover:scale-[1.02] transition-transform duration-500 rounded-xl shadow-sm" />
+                              ) : (
+                                 <a href={m.file_url} target="_blank" rel="noopener noreferrer" className={`flex items-center gap-2 p-3 rounded-xl text-sm transition-colors ${isMe ? 'bg-white/10 hover:bg-white/20' : 'bg-slate-100 hover:bg-slate-200'}`}>
+                                   <span className="text-lg">📎</span> <span className="font-medium">Файл</span>
+                                 </a>
+                              )}
+                            </div>
+                          )}
 
-            {/* НОВАЯ КНОПКА: Перевести ИИ */}
-            {m.content && (
-              <button 
-                onClick={(e) => { 
-                  e.stopPropagation();
-                  handleAiAction('translate', 'Русский', m.id, m.content); 
-                }}
-                className="text-[12px] font-semibold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 border border-indigo-100 px-3 py-1.5 rounded-xl w-full text-center transition-colors active:scale-95 mt-0.5 flex items-center justify-center gap-1"
-              >
-                <span>🤖</span> Перевести
-              </button>
-            )}
-          </div>
-        </>
-      )}
+                          {m.content && (
+                            <span className="break-words text-[14px] md:text-[15px] leading-relaxed px-0.5 font-medium max-md:pointer-events-none select-none md:select-text">
+                              {m.content}
+                            </span>
+                          )}
 
-      {/* ПУЗЫРЕК СООБЩЕНИЯ */}
-      <div 
-        onContextMenu={(e) => {
-          e.preventDefault(); 
-          setActiveReactionMsgId(m.id); 
-        }}
-        onTouchStart={() => handlePressStart(m.id)}
-        onTouchEnd={handlePressEnd}
-        onTouchMove={handlePressEnd}
-        
-        // 🛠 ПРАВКА 1: Добавили отключение серой/синей вспышки при тапе на мобилке
-        style={{ 
-          WebkitTouchCallout: 'none', 
-          WebkitTapHighlightColor: 'transparent' 
-        }}
-        
-        // 🛠 ПРАВКА 2: Добавили select-none md:select-text
-        className={`max-w-[85%] md:max-w-[70%] p-3 shadow-sm relative flex flex-col shrink-0 transition-all duration-300 select-none md:select-text ${
-          isMe 
-            ? 'bg-indigo-500 text-white rounded-2xl rounded-tr-none shadow-md shadow-indigo-500/20 border border-white/10' 
-            : 'bg-white/80 backdrop-blur-md text-slate-800 rounded-2xl rounded-tl-none border border-white/60 shadow-sm'
-        }`}
-      >
-        {/* ... (здесь остается твой старый код картинок: m.file_url) ... */}
-        {m.file_url && (
-          <div className="mb-2 overflow-hidden rounded-xl">
-            {m.file_url.match(/\.(jpeg|jpg|gif|png|webp)$/i) ? (
-               <img 
-                 src={m.file_url} 
-                 alt="Вложение" 
-                 onLoad={() => scrollToBottom("auto")} 
-                 className="w-full h-full max-h-64 object-cover hover:scale-[1.02] transition-transform duration-500 rounded-xl shadow-sm" 
-               />
-            ) : (
-               <a href={m.file_url} target="_blank" rel="noopener noreferrer" className={`flex items-center gap-2 p-3 rounded-xl text-sm transition-colors ${isMe ? 'bg-white/10 hover:bg-white/20' : 'bg-slate-100 hover:bg-slate-200'}`}>
-                 <span className="text-lg">📎</span> <span className="font-medium">Файл</span>
-               </a>
-            )}
-          </div>
-        )}
+                          {/* ВЫВОД ПЕРЕВОДА */}
+                          {translations[m.id] && (
+                            <div className="mt-2 pt-2 border-t border-slate-200/50 flex flex-col gap-0.5">
+                              <span className="text-[10px] uppercase font-bold text-indigo-400 tracking-wider">🤖 Перевод</span>
+                              <span className={`break-words text-[13px] md:text-[14px] leading-relaxed italic ${isMe ? 'text-indigo-50' : 'text-slate-600'}`}>
+                                {translations[m.id]}
+                              </span>
+                            </div>
+                          )}
 
-        {/* Текст */}
-{m.content && (
-  <span className="break-words text-[14px] md:text-[15px] leading-relaxed px-0.5 font-medium max-md:pointer-events-none select-none md:select-text">
-    {m.content}
-  </span>
-)}
+                          <div className={`flex items-center gap-1.5 self-end mt-1.5 px-0.5 ${isMe ? 'text-indigo-100/80' : 'text-slate-400'}`}>
+                            <span className="text-[10px] font-medium tracking-tighter uppercase">{formatTime(m.created_at)}</span>
+                            {isMe && <span className="text-[11px] font-bold leading-none">{m.is_read ? '✓✓' : '✓'}</span>}
+                          </div>
 
-{/* НОВЫЙ БЛОК: Вывод перевода, если он есть */}
-        {translations[m.id] && (
-          <div className="mt-2 pt-2 border-t border-slate-200/50 flex flex-col gap-0.5">
-            <span className="text-[10px] uppercase font-bold text-indigo-400 tracking-wider">🤖 Перевод</span>
-            <span className={`break-words text-[13px] md:text-[14px] leading-relaxed italic ${isMe ? 'text-indigo-50' : 'text-slate-600'}`}>
-              {translations[m.id]}
-            </span>
-          </div>
-        )}
-
-        {/* ... (время и статус) ... */}
-        <div className={`flex items-center gap-1.5 self-end mt-1.5 px-0.5 ${isMe ? 'text-indigo-100/80' : 'text-slate-400'}`}>
-          <span className="text-[10px] font-medium tracking-tighter uppercase">{formatTime(m.created_at)}</span>
-          {isMe && <span className="text-[11px] font-bold leading-none">{m.is_read ? '✓✓' : '✓'}</span>}
-        </div>
-
-        {/* ... (отображение поставленных реакций) ... */}
-        {msgReactions.length > 0 && (
-          <div className={`absolute -bottom-3.5 flex flex-wrap gap-1 z-10 ${isMe ? 'right-2' : 'left-2'}`}>
-            {Array.from(new Set(msgReactions.map((r: any) => r.emoji))).map(emoji => {
-              const count = msgReactions.filter((r: any) => r.emoji === emoji).length;
-              const hasMyReaction = msgReactions.some((r: any) => r.emoji === emoji && r.user_id === session.user.id);
-              
-              return (
-                <button 
-                  key={emoji as string}
-                  onClick={(e) => { e.stopPropagation(); toggleReaction(m.id, emoji as string); }}
-                  className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold shadow-sm transition-all hover:scale-110 active:scale-90 cursor-pointer border ${hasMyReaction ? 'bg-indigo-50 border-indigo-200 text-indigo-600' : 'bg-white/95 border-slate-100 text-slate-500'}`}
-                >
-                  <span>{emoji as string}</span>
-                  {count > 1 && <span>{count}</span>}
-                </button>
-              );
-            })}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-})}
+                          {msgReactions.length > 0 && (
+                            <div className={`absolute -bottom-3.5 flex flex-wrap gap-1 z-10 ${isMe ? 'right-2' : 'left-2'}`}>
+                              {Array.from(new Set(msgReactions.map((r: any) => r.emoji))).map(emoji => {
+                                const count = msgReactions.filter((r: any) => r.emoji === emoji).length;
+                                const hasMyReaction = msgReactions.some((r: any) => r.emoji === emoji && r.user_id === session.user.id);
+                                return (
+                                  <button key={emoji as string} onClick={(e) => { e.stopPropagation(); toggleReaction(m.id, emoji as string); }} className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold shadow-sm transition-all hover:scale-110 active:scale-90 cursor-pointer border ${hasMyReaction ? 'bg-indigo-50 border-indigo-200 text-indigo-600' : 'bg-white/95 border-slate-100 text-slate-500'}`}>
+                                    <span>{emoji as string}</span>
+                                    {count > 1 && <span>{count}</span>}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
                   <div ref={messagesEndRef} className="shrink-0" />
                 </div>
                 
-                {/* ПАНЕЛЬ ВВОДА: Добавлен paddingBottom с учетом Safe Area (полоски на iPhone) */}
-                <div
-                  className=" border-t border-gray-300 flex flex-col shrink-0 w-full"
-                  style={{ paddingBottom: 'env(safe-area-inset-bottom, 16px)' }}
-                >
-                  {/* @ts-ignore */}
+                {/* ПАНЕЛЬ ВВОДА */}
+                <div className="border-t border-gray-300 flex flex-col shrink-0 w-full" style={{ paddingBottom: 'env(safe-area-inset-bottom, 16px)' }}>
+                  
+                  {/* ПРЕДПРОСМОТР ФАЙЛА */}
                   {pendingFile && (
                     <div className="p-2 md:p-3 bg-gray-50 border-b flex items-start gap-3 transition-all shrink-0">
                       <div className="relative inline-block shrink-0">
@@ -895,69 +841,83 @@ const toggleReaction = async (messageId: number, emoji: string) => {
                     </div>
                   )}
 
-                  {/* МЕНЮ СТИЛЕЙ (Магическая палочка) */}
-                  {showStyleMenu && (
-                    <div className="absolute bottom-full left-4 mb-2 bg-white/95 backdrop-blur-md p-2 rounded-2xl shadow-xl border border-slate-200/50 flex flex-col gap-1 z-30 w-48 animate-in slide-in-from-bottom-2">
-                      <span className="text-xs text-slate-400 font-bold px-2 py-1 uppercase tracking-wider">Изменить стиль</span>
-                      {['Деловой и вежливый', 'Дружеский и веселый', 'Строгий и короткий', 'Дерзкий (Сленг)'].map(style => (
-                        <button key={style} onClick={() => handleAiAction('style', style)} className="text-sm text-left px-3 py-2 hover:bg-indigo-50 hover:text-indigo-600 rounded-xl transition-colors">
-                          {style}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* МЕНЮ ПЕРЕВОДА (Глобус) */}
-                  {showTranslateMenu && (
-                    <div className="absolute bottom-full left-14 mb-2 bg-white/95 backdrop-blur-md p-2 rounded-2xl shadow-xl border border-slate-200/50 flex flex-col gap-1 z-30 w-52 animate-in slide-in-from-bottom-2">
-                      <span className="text-xs text-slate-400 font-bold px-2 py-1 uppercase tracking-wider">Перевести текст</span>
-                      {['Английский', 'Норвежский', 'Русский'].map(lang => (
-                        <button key={lang} onClick={() => handleAiAction('translate', lang)} className="text-sm text-left px-3 py-2 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-colors">
-                          {lang}
-                        </button>
-                      ))}
-                      <div className="flex gap-1 mt-1 border-t border-slate-100 pt-1.5 px-1">
-                        <input value={customLang} onChange={e => setCustomLang(e.target.value)} placeholder="Свой язык..." className="text-xs p-1.5 border border-slate-200 rounded-lg flex-1 outline-none focus:border-blue-400" />
-                        <button onClick={() => handleAiAction('translate', customLang)} className="bg-blue-500 text-white text-xs px-2 rounded-lg hover:bg-blue-600">Go</button>
-                      </div>
-                    </div>
-                  )}
-
-
-                  <div className="p-2 md:p-3 flex gap-2 md:gap-3 items-end shrink-0 bg-white/70 backdrop-blur-md border-t border-slate-200/60  rounded-br-3xl">
-                    <button onClick={() => fileInputRef.current?.click()} className="text-gray-400 hover:text-blue-500 p-2 md:p-3 rounded-full hover:bg-gray-100 transition-colors mb-1 md:mb-1 active:scale-95 shrink-0" disabled={isSending}><span className="text-xl md:text-xl">📎</span></button>
+                  {/* СТРОКА С КНОПКАМИ И ИНПУТОМ */}
+                  <div className="p-2 md:p-3 flex gap-1 md:gap-2 items-end shrink-0 bg-white/70 backdrop-blur-md border-t border-slate-200/60 rounded-br-3xl z-40 relative">
+                    
+                    {/* КНОПКА ФАЙЛА */}
+                    <button type="button" onClick={() => fileInputRef.current?.click()} className="text-gray-400 hover:text-blue-500 p-2 md:p-2.5 rounded-full hover:bg-gray-100 transition-colors mb-1 md:mb-1 active:scale-95 shrink-0" disabled={isSending}>
+                      <span className="text-xl md:text-xl">📎</span>
+                    </button>
                     {/* @ts-ignore */}
                     <input type="file" className="hidden" ref={fileInputRef} onChange={handleFileUpload} accept="image/*, .pdf, .doc, .docx" />
-                    <button type="button" onClick={() => { setShowStyleMenu(!showStyleMenu); setShowTranslateMenu(false); }} className={`p-2 md:p-2.5 rounded-full transition-colors mb-1 active:scale-95 shrink-0 ${showStyleMenu ? 'bg-indigo-100 text-indigo-600' : 'text-slate-400 hover:text-indigo-500 hover:bg-slate-100'}`} disabled={isSending || isAiLoading} title="Магическая палочка"><span className="text-xl">🪄</span></button>
-                    <button type="button" onClick={() => { setShowTranslateMenu(!showTranslateMenu); setShowStyleMenu(false); }} className={`p-2 md:p-2.5 rounded-full transition-colors mb-1 active:scale-95 shrink-0 ${showTranslateMenu ? 'bg-blue-100 text-blue-600' : 'text-slate-400 hover:text-blue-500 hover:bg-slate-100'}`} disabled={isSending || isAiLoading} title="Перевод"><span className="text-xl">🌐</span></button>
-                    {/* @ts-ignore */}
+                    
+                    {/* 🪄 МАГИЧЕСКАЯ ПАЛОЧКА */}
+                    <div className="relative flex items-end">
+                      {showStyleMenu && (
+                        <div className="absolute bottom-full left-0 mb-3 bg-white/95 backdrop-blur-md p-2 rounded-2xl shadow-xl border border-slate-200/50 flex flex-col gap-1 w-48 animate-in zoom-in-95 origin-bottom-left" style={{ zIndex: 9999 }}>
+                          <span className="text-xs text-slate-400 font-bold px-2 py-1 uppercase tracking-wider">Изменить стиль</span>
+                          {['Деловой и вежливый', 'Дружеский и веселый', 'Строгий и короткий', 'Дерзкий (Сленг)'].map(style => (
+                            <button key={style} type="button" onClick={() => handleAiAction('style', style)} className="text-sm text-left px-3 py-2 hover:bg-indigo-50 hover:text-indigo-600 rounded-xl transition-colors">
+                              {style}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                      <button type="button" onClick={() => { setShowStyleMenu(!showStyleMenu); setShowTranslateMenu(false); }} className={`p-2 md:p-2.5 rounded-full transition-colors mb-1 active:scale-95 shrink-0 ${showStyleMenu ? 'bg-indigo-100 text-indigo-600' : 'text-slate-400 hover:text-indigo-500 hover:bg-slate-100'}`} disabled={isSending || isAiLoading} title="Магическая палочка">
+                        <span className="text-xl">🪄</span>
+                      </button>
+                    </div>
+
+                    {/* 🌐 ПЕРЕВОД */}
+                    <div className="relative flex items-end">
+                      {showTranslateMenu && (
+                        <div className="absolute bottom-full left-0 mb-3 bg-white/95 backdrop-blur-md p-2 rounded-2xl shadow-xl border border-slate-200/50 flex flex-col gap-1 w-52 animate-in zoom-in-95 origin-bottom-left" style={{ zIndex: 9999 }}>
+                          <span className="text-xs text-slate-400 font-bold px-2 py-1 uppercase tracking-wider">Перевести текст</span>
+                          {['Английский', 'Норвежский', 'Русский'].map(lang => (
+                            <button key={lang} type="button" onClick={() => handleAiAction('translate', lang)} className="text-sm text-left px-3 py-2 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-colors">
+                              {lang}
+                            </button>
+                          ))}
+                          <div className="flex gap-1 mt-1 border-t border-slate-100 pt-1.5 px-1">
+                            <input value={customLang} onChange={e => setCustomLang(e.target.value)} placeholder="Свой язык..." className="text-xs p-1.5 border border-slate-200 rounded-lg flex-1 outline-none focus:border-blue-400 text-slate-800" />
+                            <button type="button" onClick={() => handleAiAction('translate', customLang)} className="bg-blue-500 text-white text-xs px-2 py-1.5 rounded-lg hover:bg-blue-600">Go</button>
+                          </div>
+                        </div>
+                      )}
+                      <button type="button" onClick={() => { setShowTranslateMenu(!showTranslateMenu); setShowStyleMenu(false); }} className={`p-2 md:p-2.5 rounded-full transition-colors mb-1 active:scale-95 shrink-0 ${showTranslateMenu ? 'bg-blue-100 text-blue-600' : 'text-slate-400 hover:text-blue-500 hover:bg-slate-100'}`} disabled={isSending || isAiLoading} title="Перевод">
+                        <span className="text-xl">🌐</span>
+                      </button>
+                    </div>
+
+                    {/* ПОЛЕ ВВОДА ТЕКСТА */}
                     <input
-  className=" bg-slate-100/60 border border-slate-200/50 w-full md:w-auto md:flex-1 p-3 md:p-4 rounded-full shadow-inner outline-none focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:bg-white focus:border-indigo-300/50 transition-all text-[14px] md:text-[15px] min-w-0"
-  value={text}
-  onChange={(e) => setText(e.target.value)}
-  onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
-  onPaste={handlePaste}
-  placeholder={isAiLoading ? "✨ Загрузка..." : "Сообщение..."}
-  disabled={isSending || isAiLoading}
-/>
-                    {/* @ts-ignore */}
+                      className="bg-slate-100/60 border border-slate-200/50 w-full md:w-auto md:flex-1 p-3 md:p-4 rounded-full shadow-inner outline-none focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:bg-white focus:border-indigo-300/50 transition-all text-[14px] md:text-[15px] min-w-0 text-slate-800"
+                      value={text}
+                      onChange={(e) => setText(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
+                      onPaste={handlePaste}
+                      placeholder={isAiLoading ? "✨ ИИ думает..." : "Сообщение..."}
+                      disabled={isSending || isAiLoading}
+                    />
+                    
+                    {/* КНОПКА ОТПРАВКИ */}
                     <button 
-  className={`w-12 h-12 md:w-14 md:h-14 flex items-center justify-center rounded-full font-bold transition-all duration-300 mb-0.5 md:mb-1 shrink-0 
-  ${isSending || (text.trim() === '' && pendingFile === null) 
-    ? 'bg-slate-200 text-slate-400 shadow-none cursor-not-allowed' 
-    : 'bg-indigo-500 text-white shadow-md shadow-indigo-500/40 hover:bg-indigo-600 hover:shadow-lg hover:shadow-indigo-500/50 active:scale-95'}`} 
-  onClick={sendMessage} 
-  disabled={isSending || isAiLoading || (text.trim() === '' && pendingFile === null)}
->
-  {isSending ? (
-    <span className="animate-pulse text-slate-400">...</span>
-  ) : (
-    <span className="text-lg md:text-xl transform translate-x-0.5">➤</span>
-  )}
-</button>
+                      className={`w-12 h-12 md:w-14 md:h-14 flex items-center justify-center rounded-full font-bold transition-all duration-300 mb-0.5 md:mb-1 shrink-0 
+                      ${isSending || isAiLoading || (text.trim() === '' && pendingFile === null) 
+                        ? 'bg-slate-200 text-slate-400 shadow-none cursor-not-allowed' 
+                        : 'bg-indigo-500 text-white shadow-md shadow-indigo-500/40 hover:bg-indigo-600 hover:shadow-lg hover:shadow-indigo-500/50 active:scale-95'}`} 
+                      onClick={sendMessage} 
+                      disabled={isSending || isAiLoading || (text.trim() === '' && pendingFile === null)}
+                    >
+                      {isSending ? (
+                        <span className="animate-pulse text-slate-400">...</span>
+                      ) : (
+                        <span className="text-lg md:text-xl transform translate-x-0.5">➤</span>
+                      )}
+                    </button>
+                    
                   </div>
                 </div>
-
               </>
             )}
           </div>
