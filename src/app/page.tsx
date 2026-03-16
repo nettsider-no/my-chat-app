@@ -28,6 +28,55 @@ export default function App() {
 
   const [allReactions, setAllReactions] = useState<any[]>([]);
 
+  // === ИИ ФИШКИ (Состояния) ===
+  const [isAiLoading, setIsAiLoading] = useState(false);
+  const [showStyleMenu, setShowStyleMenu] = useState(false);
+  const [showTranslateMenu, setShowTranslateMenu] = useState(false);
+  const [customLang, setCustomLang] = useState('');
+  const [translations, setTranslations] = useState<Record<number, string>>({}); // Храним переводы чужих сообщений
+
+  // === ФУНКЦИЯ ОБРАЩЕНИЯ К ИИ ===
+  const handleAiAction = async (action: 'style' | 'translate', modifier: string, msgId?: number, msgContent?: string) => {
+    // Определяем, с каким текстом работаем (из поля ввода или из чужого сообщения)
+    const targetText = msgId ? msgContent : text;
+    
+    if (!targetText?.trim()) {
+      return showNotification('⚠️ Введите текст для обработки ИИ');
+    }
+
+    setIsAiLoading(true);
+    setShowStyleMenu(false);
+    setShowTranslateMenu(false);
+
+    try {
+      // Берем 3 последних сообщения для контекста
+      const context = messages.slice(-10).map(m => m.content).filter(Boolean);
+
+      const res = await fetch('/api/ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: targetText, action, modifier, context })
+      });
+
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+
+      if (msgId) {
+        // Если переводили чужое сообщение — сохраняем перевод под пузырьком
+        setTranslations(prev => ({ ...prev, [msgId]: data.result }));
+        showNotification('✅ Сообщение переведено!');
+      } else {
+        // Если меняли свой текст — просто заменяем его в инпуте (без отправки!)
+        setText(data.result);
+        showNotification('✨ Текст обновлен!');
+      }
+    } catch (error: any) {
+      showNotification('❌ Ошибка ИИ: ' + error.message);
+    } finally {
+      setIsAiLoading(false);
+    }
+  };
+
   // --- ЛОГИКА ДОЛГОГО НАЖАТИЯ ДЛЯ РЕАКЦИЙ ---
   const [activeReactionMsgId, setActiveReactionMsgId] = useState<number | null>(null);
 
@@ -671,7 +720,7 @@ const toggleReaction = async (messageId: number, emoji: string) => {
                 
                 {/* ОБЛАСТЬ СООБЩЕНИЙ */}
                 {/* ОБЛАСТЬ СООБЩЕНИЙ */}
-              <div className="bg-transparent flex-1 overflow-y-auto p-3 md:p-4 flex flex-col gap-3 pb-4 w-full no-scrollbar scroll-smooth">
+              <div className="bg-transparent flex-1 overflow-y-auto p-3 md:p-4 flex flex-col gap-3 pb-4 w-full no-scrollbar">
 {messages.map((m) => {
   const isMe = m.sender_id === session.user.id;
   const msgReactions = allReactions.filter((r: any) => r.message_id === m.id);
@@ -714,6 +763,19 @@ const toggleReaction = async (messageId: number, emoji: string) => {
                 className="text-[12px] font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-xl w-full text-center transition-colors active:scale-95"
               >
                 Копировать текст
+              </button>
+            )}
+
+            {/* НОВАЯ КНОПКА: Перевести ИИ */}
+            {m.content && (
+              <button 
+                onClick={(e) => { 
+                  e.stopPropagation();
+                  handleAiAction('translate', 'Русский', m.id, m.content); 
+                }}
+                className="text-[12px] font-semibold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 border border-indigo-100 px-3 py-1.5 rounded-xl w-full text-center transition-colors active:scale-95 mt-0.5 flex items-center justify-center gap-1"
+              >
+                <span>🤖</span> Перевести
               </button>
             )}
           </div>
@@ -761,8 +823,22 @@ const toggleReaction = async (messageId: number, emoji: string) => {
           </div>
         )}
 
-        {/* ... (текст) ... */}
-        {m.content && <span className="break-words text-[14px] md:text-[15px] leading-relaxed px-0.5 font-medium">{m.content}</span>}
+        {/* Текст */}
+{m.content && (
+  <span className="break-words text-[14px] md:text-[15px] leading-relaxed px-0.5 font-medium max-md:pointer-events-none select-none md:select-text">
+    {m.content}
+  </span>
+)}
+
+{/* НОВЫЙ БЛОК: Вывод перевода, если он есть */}
+        {translations[m.id] && (
+          <div className="mt-2 pt-2 border-t border-slate-200/50 flex flex-col gap-0.5">
+            <span className="text-[10px] uppercase font-bold text-indigo-400 tracking-wider">🤖 Перевод</span>
+            <span className={`break-words text-[13px] md:text-[14px] leading-relaxed italic ${isMe ? 'text-indigo-50' : 'text-slate-600'}`}>
+              {translations[m.id]}
+            </span>
+          </div>
+        )}
 
         {/* ... (время и статус) ... */}
         <div className={`flex items-center gap-1.5 self-end mt-1.5 px-0.5 ${isMe ? 'text-indigo-100/80' : 'text-slate-400'}`}>
@@ -819,10 +895,41 @@ const toggleReaction = async (messageId: number, emoji: string) => {
                     </div>
                   )}
 
+                  {/* МЕНЮ СТИЛЕЙ (Магическая палочка) */}
+                  {showStyleMenu && (
+                    <div className="absolute bottom-full left-4 mb-2 bg-white/95 backdrop-blur-md p-2 rounded-2xl shadow-xl border border-slate-200/50 flex flex-col gap-1 z-30 w-48 animate-in slide-in-from-bottom-2">
+                      <span className="text-xs text-slate-400 font-bold px-2 py-1 uppercase tracking-wider">Изменить стиль</span>
+                      {['Деловой и вежливый', 'Дружеский и веселый', 'Строгий и короткий', 'Дерзкий (Сленг)'].map(style => (
+                        <button key={style} onClick={() => handleAiAction('style', style)} className="text-sm text-left px-3 py-2 hover:bg-indigo-50 hover:text-indigo-600 rounded-xl transition-colors">
+                          {style}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* МЕНЮ ПЕРЕВОДА (Глобус) */}
+                  {showTranslateMenu && (
+                    <div className="absolute bottom-full left-14 mb-2 bg-white/95 backdrop-blur-md p-2 rounded-2xl shadow-xl border border-slate-200/50 flex flex-col gap-1 z-30 w-52 animate-in slide-in-from-bottom-2">
+                      <span className="text-xs text-slate-400 font-bold px-2 py-1 uppercase tracking-wider">Перевести текст</span>
+                      {['Английский', 'Норвежский', 'Русский'].map(lang => (
+                        <button key={lang} onClick={() => handleAiAction('translate', lang)} className="text-sm text-left px-3 py-2 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-colors">
+                          {lang}
+                        </button>
+                      ))}
+                      <div className="flex gap-1 mt-1 border-t border-slate-100 pt-1.5 px-1">
+                        <input value={customLang} onChange={e => setCustomLang(e.target.value)} placeholder="Свой язык..." className="text-xs p-1.5 border border-slate-200 rounded-lg flex-1 outline-none focus:border-blue-400" />
+                        <button onClick={() => handleAiAction('translate', customLang)} className="bg-blue-500 text-white text-xs px-2 rounded-lg hover:bg-blue-600">Go</button>
+                      </div>
+                    </div>
+                  )}
+
+
                   <div className="p-2 md:p-3 flex gap-2 md:gap-3 items-end shrink-0 bg-white/70 backdrop-blur-md border-t border-slate-200/60  rounded-br-3xl">
                     <button onClick={() => fileInputRef.current?.click()} className="text-gray-400 hover:text-blue-500 p-2 md:p-3 rounded-full hover:bg-gray-100 transition-colors mb-1 md:mb-1 active:scale-95 shrink-0" disabled={isSending}><span className="text-xl md:text-xl">📎</span></button>
                     {/* @ts-ignore */}
                     <input type="file" className="hidden" ref={fileInputRef} onChange={handleFileUpload} accept="image/*, .pdf, .doc, .docx" />
+                    <button onClick={() => { setShowStyleMenu(!showStyleMenu); setShowTranslateMenu(false); }} className={`p-2 md:p-2.5 rounded-full transition-colors mb-1 active:scale-95 shrink-0 ${showStyleMenu ? 'bg-indigo-100 text-indigo-600' : 'text-slate-400 hover:text-indigo-500 hover:bg-slate-100'}`} disabled={isSending || isAiLoading} title="Магическая палочка"><span className="text-xl">🪄</span></button>
+                    <button onClick={() => { setShowTranslateMenu(!showTranslateMenu); setShowStyleMenu(false); }} className={`p-2 md:p-2.5 rounded-full transition-colors mb-1 active:scale-95 shrink-0 ${showTranslateMenu ? 'bg-blue-100 text-blue-600' : 'text-slate-400 hover:text-blue-500 hover:bg-slate-100'}`} disabled={isSending || isAiLoading} title="Перевод"><span className="text-xl">🌐</span></button>
                     {/* @ts-ignore */}
                     <input
   className=" bg-slate-100/60 border border-slate-200/50 w-full md:w-auto md:flex-1 p-3 md:p-4 rounded-full shadow-inner outline-none focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:bg-white focus:border-indigo-300/50 transition-all text-[14px] md:text-[15px] min-w-0"
@@ -830,8 +937,8 @@ const toggleReaction = async (messageId: number, emoji: string) => {
   onChange={(e) => setText(e.target.value)}
   onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
   onPaste={handlePaste}
-  placeholder="Сообщение..."
-  disabled={isSending}
+  placeholder={isAiLoading ? "✨ Загрузка..." : "Сообщение..."}
+  disabled={isSending || isAiLoading}
 />
                     {/* @ts-ignore */}
                     <button 
@@ -840,7 +947,7 @@ const toggleReaction = async (messageId: number, emoji: string) => {
     ? 'bg-slate-200 text-slate-400 shadow-none cursor-not-allowed' 
     : 'bg-indigo-500 text-white shadow-md shadow-indigo-500/40 hover:bg-indigo-600 hover:shadow-lg hover:shadow-indigo-500/50 active:scale-95'}`} 
   onClick={sendMessage} 
-  disabled={isSending || (text.trim() === '' && pendingFile === null)}
+  disabled={isSending || isAiLoading || (text.trim() === '' && pendingFile === null)}
 >
   {isSending ? (
     <span className="animate-pulse text-slate-400">...</span>
