@@ -157,7 +157,9 @@ export default function App() {
     const { data, error } = await supabase.auth.signUp({ email, password })
     if (error) {
       if (error.message.includes('User already registered')) showNotification('⚠️ Этот Email уже занят. Попробуйте "Войти".')
-      else showNotification('❌ Ошибка: ' + error.message)
+      else if (error.message === 'Failed to fetch' || error.message.toLowerCase().includes('failed to fetch')) {
+        showNotification('❌ Не удалось подключиться к Supabase (Failed to fetch). Проверьте интернет/AdBlock/VPN и переменные NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY, затем перезапустите dev-сервер.')
+      } else showNotification('❌ Ошибка: ' + error.message)
       return
     }
     if (data.user) {
@@ -172,7 +174,9 @@ export default function App() {
     const { error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) {
       if (error.message.includes('Invalid login credentials')) showNotification('❌ Неверный Email или пароль. Жмите "Регистрация".')
-      else showNotification('❌ Ошибка входа: ' + error.message)
+      else if (error.message === 'Failed to fetch' || error.message.toLowerCase().includes('failed to fetch')) {
+        showNotification('❌ Не удалось подключиться к Supabase (Failed to fetch). Проверьте интернет/AdBlock/VPN и переменные NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY, затем перезапустите dev-сервер.')
+      } else showNotification('❌ Ошибка входа: ' + error.message)
     } else {
       showNotification('✅ Успешный вход!')
     }
