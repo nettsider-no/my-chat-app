@@ -26,7 +26,6 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   viewportFit: "cover",
-  interactiveWidget: "resizes-content",
 };
 
 // ВЕРСТКА: Добавляем GeistSans и CSS-переменные для картинок
@@ -36,8 +35,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ru">
+    <html lang="ru" suppressHydrationWarning>
       <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var k='messenger-theme';var t=localStorage.getItem(k);if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t);}catch(e){}})();`,
+          }}
+        />
         {/* Внедряем CSS-переменные прямо здесь для удобства */}
         <style dangerouslySetInnerHTML={{
           __html: `

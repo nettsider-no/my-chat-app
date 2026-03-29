@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import type { ChangeEvent, ClipboardEvent, MouseEvent } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
+import { applyTheme, readStoredTheme, type ThemeMode } from '@/lib/theme'
 import type {
   Profile,
   OutgoingContact,
@@ -41,6 +42,24 @@ export default function App() {
   const [pendingFile, setPendingFile] = useState<File | null>(null)
 
   const [allReactions, setAllReactions] = useState<MessageReaction[]>([])
+
+  const [theme, setTheme] = useState<ThemeMode>('dark')
+
+  useEffect(() => {
+    const stored = readStoredTheme()
+    if (stored) {
+      setTheme(stored)
+      applyTheme(stored)
+    }
+  }, [])
+
+  const toggleTheme = useCallback(() => {
+    setTheme((prev) => {
+      const next: ThemeMode = prev === 'dark' ? 'light' : 'dark'
+      applyTheme(next)
+      return next
+    })
+  }, [])
 
   const showNotification = useCallback((msg: string) => {
     setToastMsg(msg)
@@ -544,6 +563,9 @@ export default function App() {
     }
   }
 
+  const themeBtnBase =
+    'flex items-center justify-center rounded-[10px] mac-neu-raised border border-[var(--mac-border)] transition-all active:scale-95 hover:brightness-105 shrink-0 text-[var(--mac-text-primary)]'
+
   // ==========================================
   // ВЕРСТКА (macOS / Messages)
   // ==========================================
@@ -570,7 +592,16 @@ export default function App() {
               </span>
               <div className="flex-1 min-w-[52px]" />
             </div>
-            <div className="mac-glass p-6 md:p-8 flex flex-col gap-5 border-0 border-t border-[var(--mac-border-subtle)] rounded-none">
+            <div className="mac-glass p-6 md:p-8 flex flex-col gap-5 border-0 border-t border-[var(--mac-border-subtle)] rounded-none relative">
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className={`absolute top-4 right-4 z-10 ${themeBtnBase} w-10 h-10 text-lg`}
+              title={theme === 'light' ? 'Тёмная тема' : 'Светлая тема'}
+              aria-label={theme === 'light' ? 'Включить тёмную тему' : 'Включить светлую тему'}
+            >
+              <span aria-hidden>{theme === 'light' ? '🌙' : '☀️'}</span>
+            </button>
             <div className="text-center mt-1 mb-1">
               <div className="w-16 h-16 md:w-20 md:h-20 mac-neu-raised text-3xl md:text-4xl rounded-[18px] flex items-center justify-center mx-auto mb-4">💬</div>
               <h2 className="text-xl md:text-2xl font-bold text-[var(--mac-text-primary)] tracking-tight">Мессенджер</h2>
@@ -609,7 +640,13 @@ export default function App() {
             ${selectedUser ? 'hidden md:flex' : 'flex w-full flex-1'} 
             ${isCollapsed ? 'md:w-20 p-2 items-center' : 'md:w-1/3 p-4'}`}>
             
-            <div className={`flex items-center mb-4 pb-2 border-none w-full shrink-0 ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
+            <div
+              className={`flex mb-4 pb-2 border-none w-full shrink-0 ${
+                isCollapsed
+                  ? 'flex-col items-center gap-2 md:gap-2'
+                  : 'flex-row items-center justify-between'
+              }`}
+            >
               <button 
   type="button"
   onClick={() => setIsCollapsed(!isCollapsed)} 
@@ -628,11 +665,23 @@ export default function App() {
   >
     <path d="M15 18l-6-6 6-6" />
   </svg>
-</button> 
+</button>
+
+              {isCollapsed && (
+                <button
+                  type="button"
+                  onClick={toggleTheme}
+                  className={`hidden md:flex ${themeBtnBase} w-10 h-10 text-lg`}
+                  title={theme === 'light' ? 'Тёмная тема' : 'Светлая тема'}
+                  aria-label={theme === 'light' ? 'Включить тёмную тему' : 'Включить светлую тему'}
+                >
+                  <span aria-hidden>{theme === 'light' ? '🌙' : '☀️'}</span>
+                </button>
+              )}
               
               {!isCollapsed && (
-                <div className="flex-1 md:ml-2 pb-2 flex justify-between items-center overflow-hidden">
-                  <div className="flex flex-col ml-3 overflow-hidden leading-tight">
+                <div className="flex-1 md:ml-2 pb-2 flex justify-between items-center overflow-hidden gap-2 min-w-0">
+                  <div className="flex flex-col ml-3 overflow-hidden leading-tight min-w-0">
   <span className="text-[10px] uppercase tracking-[0.15em] text-[var(--mac-text-secondary)] font-bold">
     Профиль
   </span>
@@ -640,6 +689,16 @@ export default function App() {
     {session.user.email}
   </span>
 </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={toggleTheme}
+                    className={`${themeBtnBase} w-9 h-9 md:w-10 md:h-10 text-base md:text-lg`}
+                    title={theme === 'light' ? 'Тёмная тема' : 'Светлая тема'}
+                    aria-label={theme === 'light' ? 'Включить тёмную тему' : 'Включить светлую тему'}
+                  >
+                    <span aria-hidden>{theme === 'light' ? '🌙' : '☀️'}</span>
+                  </button>
                   <button 
   type="button"
   className="cursor-pointer px-4 py-1.5 rounded-full text-xs md:text-sm font-medium transition-all duration-300 active:scale-95 shrink-0 mac-neu-raised text-[var(--mac-danger)] hover:brightness-110 border border-[var(--mac-border)]" 
@@ -647,6 +706,7 @@ export default function App() {
 >
   Выйти
 </button>
+                  </div>
                 </div>
               )}
             </div>
@@ -869,11 +929,21 @@ export default function App() {
                     </svg>
                     <span>Назад</span>
                   </button>
-                  
+                  <button
+                    type="button"
+                    onClick={toggleTheme}
+                    className={`md:hidden ${themeBtnBase} min-h-[48px] w-12 shrink-0 rounded-[12px] text-xl`}
+                    title={theme === 'light' ? 'Тёмная тема' : 'Светлая тема'}
+                    aria-label={theme === 'light' ? 'Включить тёмную тему' : 'Включить светлую тему'}
+                  >
+                    <span aria-hidden>{theme === 'light' ? '🌙' : '☀️'}</span>
+                  </button>
+                  <div className="flex flex-1 min-w-0 items-center">
                   <div className="w-10 h-10 rounded-full mac-neu-raised flex items-center justify-center mr-3 uppercase text-lg shrink-0 font-semibold text-[var(--mac-imessage-sent)] border border-[var(--mac-border)]">{selectedUser.email[0]}</div>
                   <div className="flex flex-col overflow-hidden min-w-0">
                     <span className="text-base md:text-lg truncate font-semibold text-[var(--mac-text-primary)]">{selectedUser.email}</span>
                     <span className="text-[10px] md:text-xs text-[var(--mac-success)] font-medium">В сети</span>
+                  </div>
                   </div>
                 </div>
                 
@@ -938,7 +1008,7 @@ export default function App() {
                           onTouchEnd={handlePressEnd}
                           onTouchMove={handlePressEnd}
                           style={{ WebkitTouchCallout: 'none', WebkitTapHighlightColor: 'transparent' }}
-                          className={`max-w-[85%] md:max-w-[70%] px-3.5 py-2.5 md:px-4 md:py-3 relative flex flex-col shrink-0 transition-all duration-300 select-none md:select-text rounded-[18px] md:rounded-[20px] shadow-[0_1px_3px_rgba(0,0,0,0.35)] ${isMe ? 'rounded-br-[5px] bg-[var(--mac-imessage-sent)] text-white border border-white/12' : 'rounded-bl-[5px] bg-[var(--mac-imessage-received)] text-[var(--mac-text-primary)] border border-[var(--mac-imessage-received-border)] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]'}`}
+                          className={`max-w-[85%] md:max-w-[70%] px-3.5 py-2.5 md:px-4 md:py-3 relative flex flex-col shrink-0 transition-all duration-300 select-none md:select-text rounded-[18px] md:rounded-[20px] ${isMe ? 'rounded-br-[5px] mac-msg-sent bg-[var(--mac-imessage-sent)] text-white border border-white/12' : 'rounded-bl-[5px] mac-msg-in bg-[var(--mac-imessage-received)] text-[var(--mac-text-primary)] border border-[var(--mac-imessage-received-border)]'}`}
                         >
                           {m.file_url && (
                             <div className="mb-2 overflow-hidden rounded-xl">
@@ -998,7 +1068,7 @@ export default function App() {
                 </div>
                 
                 {/* ПАНЕЛЬ ВВОДА — safe-area для home indicator + место над клавиатурой (iOS) */}
-                <div className="border-t border-[var(--mac-border-subtle)] flex flex-col shrink-0 w-full mac-glass pb-composer-safe max-md:shadow-[0_-8px_32px_rgba(0,0,0,0.35)]">
+                <div className="border-t border-[var(--mac-border-subtle)] flex flex-col shrink-0 w-full mac-glass pb-composer-safe max-md:mac-composer-mobile-shadow">
                   
                   {/* ПРЕДПРОСМОТР ФАЙЛА */}
                   {pendingFile && (
