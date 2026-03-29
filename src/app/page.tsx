@@ -43,7 +43,7 @@ export default function App() {
 
   const [allReactions, setAllReactions] = useState<MessageReaction[]>([])
 
-  const [theme, setTheme] = useState<ThemeMode>('dark')
+  const [theme, setTheme] = useState<ThemeMode>('light')
 
   useEffect(() => {
     const stored = readStoredTheme()
