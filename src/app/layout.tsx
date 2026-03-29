@@ -20,11 +20,13 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#3b82f6",
+  themeColor: "#1c1c1e",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
+  viewportFit: "cover",
+  interactiveWidget: "resizes-content",
 };
 
 // ВЕРСТКА: Добавляем GeistSans и CSS-переменные для картинок
@@ -46,7 +48,7 @@ export default function RootLayout({
         }} />
       </head>
       {/* Класс {GeistSans.className} применит шрифт ко всему сайту */}
-      <body className={`${GeistSans.className} antialiased`}>
+      <body className={`${GeistSans.className} antialiased mac-desktop-bg min-h-dvh`}>
         
         {/* --- КОД ONESIGNAL (Оставляем как есть) --- */}
         <Script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" strategy="beforeInteractive" />

@@ -541,48 +541,75 @@ export default function App() {
   }
 
   // ==========================================
-  // ВЕРСТКА С ИДЕАЛЬНОЙ ФИКСАЦИЕЙ ДЛЯ МОБИЛОК
+  // ВЕРСТКА (macOS / Messages)
   // ==========================================
   return (
-    <div className="flex h-[100dvh] bg-gradient-to-br from-slate-100 to-indigo-50 text-slate-800 md:p-4 relative overflow-hidden w-full transition-all duration-500 antialiased">
+    <div className="flex flex-col h-[100dvh] min-h-0 w-full relative overflow-hidden text-[var(--mac-text-primary)] antialiased md:p-4">
       
       {toastMsg && (
-        <div className="absolute top-8 left-1/2 transform -translate-x-1/2 bg-gray-900/90 backdrop-blur-sm text-white px-6 py-3 rounded-full shadow-2xl z-50 flex items-center gap-3 animate-bounce border border-gray-700">
-          <span className="font-medium text-sm md:text-base whitespace-nowrap">{toastMsg}</span>
+        <div className="absolute top-8 left-1/2 -translate-x-1/2 mac-glass-strong z-50 flex items-center gap-3 px-5 py-2.5 rounded-full mac-window-shadow border border-[var(--mac-border)] animate-bounce">
+          <span className="font-medium text-sm md:text-base whitespace-nowrap text-[var(--mac-text-primary)]">{toastMsg}</span>
         </div>
       )}
 
-      {/* ЭКРАН ЛОГИНА: Теперь идеально по центру и не обрезается */}
       {!session ? (
         <div className="flex-1 flex items-center justify-center w-full h-full p-4">
-          <div className="max-w-sm w-full bg-white/70 backdrop-blur-xl border border-white/50 shadow-2xl shadow-indigo-200/60 rounded-3xl flex flex-col gap-5 relative overflow-hidden shrink-0 p-6 md:p-8">
-            <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-300 to-indigo-400"></div>
-            <div className="text-center mt-2 mb-2">
-              <div className="w-16 h-16 md:w-20 md:h-20 bg-blue-50 text-3xl md:text-4xl rounded-full flex items-center justify-center mx-auto mb-4 shadow-inner">💬</div>
-              <h2 className="text-xl md:text-2xl font-extrabold text-gray-800 tracking-tight">Мессенджер</h2>
-              <p className="text-gray-500 text-xs md:text-sm mt-2">Войдите в аккаунт или создайте новый</p>
+          <div className="max-w-sm w-full mac-window-shadow flex flex-col gap-0 relative overflow-hidden shrink-0 rounded-[14px] md:rounded-[16px] border border-[var(--mac-border)] bg-[var(--mac-window-bg)]">
+            <div className="mac-titlebar flex h-9 md:h-10 shrink-0 items-center relative px-3 md:px-4">
+              <div className="flex items-center gap-1.5 md:gap-2" aria-hidden="true">
+                <span className="mac-traffic mac-traffic-close" />
+                <span className="mac-traffic mac-traffic-minimize" />
+                <span className="mac-traffic mac-traffic-zoom" />
+              </div>
+              <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-[11px] md:text-xs font-semibold text-[var(--mac-text-secondary)] tracking-wide">
+                Вход
+              </span>
+              <div className="flex-1 min-w-[52px]" />
+            </div>
+            <div className="mac-glass p-6 md:p-8 flex flex-col gap-5 border-0 border-t border-[var(--mac-border-subtle)] rounded-none">
+            <div className="text-center mt-1 mb-1">
+              <div className="w-16 h-16 md:w-20 md:h-20 mac-neu-raised text-3xl md:text-4xl rounded-[18px] flex items-center justify-center mx-auto mb-4">💬</div>
+              <h2 className="text-xl md:text-2xl font-bold text-[var(--mac-text-primary)] tracking-tight">Мессенджер</h2>
+              <p className="text-[var(--mac-text-secondary)] text-xs md:text-sm mt-2">Войдите в аккаунт или создайте новый</p>
             </div>
             <div className="flex flex-col gap-3">
-              <input className="border border-gray-200 p-3.5 w-full rounded-xl bg-gray-50 focus:ring-2 focus:ring-blue-400 outline-none transition-all text-sm" placeholder="Ваш Email" value={email} onChange={e => setEmail(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleLogin()}/>
-              <input className="border border-gray-200 p-3.5 w-full rounded-xl bg-gray-50 focus:ring-2 focus:ring-blue-400 outline-none transition-all text-sm" type="password" placeholder="Ваш Пароль" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleLogin()}/>
+              <input className="mac-neu-inset p-3.5 w-full rounded-[10px] text-sm text-[var(--mac-text-primary)] placeholder:text-[var(--mac-text-secondary)] outline-none focus:ring-2 focus:ring-[var(--mac-accent)]/40 transition-all" placeholder="Ваш Email" value={email} onChange={e => setEmail(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleLogin()}/>
+              <input className="mac-neu-inset p-3.5 w-full rounded-[10px] text-sm text-[var(--mac-text-primary)] placeholder:text-[var(--mac-text-secondary)] outline-none focus:ring-2 focus:ring-[var(--mac-accent)]/40 transition-all" type="password" placeholder="Ваш Пароль" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleLogin()}/>
             </div>
-            <div className="flex gap-2 md:gap-3 mt-2">
-              <button className="bg-blue-500 hover:bg-blue-600 text-white p-3 md:p-3.5 flex-1 rounded-xl font-bold text-sm md:text-base shadow-md shadow-blue-500/30 transition-all active:scale-95" onClick={handleLogin}>Войти</button>
-              <button className="bg-gray-100 hover:bg-gray-200 text-gray-700 p-3 md:p-3.5 flex-1 rounded-xl font-bold text-sm md:text-base shadow-sm transition-all active:scale-95" onClick={handleSignUp}>Рег-ция</button>
+            <div className="flex gap-2 md:gap-3 mt-1">
+              <button type="button" className="mac-neu-raised flex-1 py-3 md:py-3.5 rounded-[10px] font-semibold text-sm md:text-base text-white bg-[var(--mac-imessage-sent)] border-[var(--mac-accent)]/30 hover:brightness-110 transition-all active:scale-[0.98]" onClick={handleLogin}>Войти</button>
+              <button type="button" className="mac-neu-raised flex-1 py-3 md:py-3.5 rounded-[10px] font-semibold text-sm md:text-base text-[var(--mac-text-primary)] hover:bg-[var(--mac-elevated)] transition-all active:scale-[0.98]" onClick={handleSignUp}>Рег-ция</button>
+            </div>
             </div>
           </div>
         </div>
       ) : (
-        <>
+        <div className="flex flex-1 flex-col min-h-0 w-full max-md:min-h-0">
+          <div className="flex flex-col flex-1 min-h-0 w-full max-md:rounded-none max-md:border-x-0 md:rounded-[12px] overflow-hidden mac-window-shadow border border-[var(--mac-border)] bg-[var(--mac-window-bg)] max-md:pt-safe">
+            <header
+              className={`mac-titlebar flex h-8 md:h-9 shrink-0 items-center relative px-3 md:px-4 z-30 ${selectedUser ? 'max-md:hidden' : ''}`}
+            >
+              <div className="flex items-center gap-1.5 md:gap-2" aria-hidden="true">
+                <span className="mac-traffic mac-traffic-close" />
+                <span className="mac-traffic mac-traffic-minimize" />
+                <span className="mac-traffic mac-traffic-zoom" />
+              </div>
+              <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-[11px] md:text-xs font-semibold text-[var(--mac-text-secondary)] tracking-wide truncate max-w-[45%]">
+                Messenger
+              </span>
+              <div className="flex-1 min-w-[52px]" />
+            </header>
+            <div className="flex flex-1 min-h-0 min-w-0 overflow-hidden">
           {/* ЛЕВАЯ КОЛОНКА */}
-          <div className={`bg-white/80 backdrop-blur-xl border-r border-slate-200/60 shadow-md md:rounded-l-3xl flex-col transition-all duration-300 ease-in-out z-20 
-            ${selectedUser ? 'hidden md:flex' : 'flex w-full'} 
+          <div className={`flex flex-col min-h-0 min-w-0 overflow-hidden transition-all duration-300 ease-in-out z-20 border-r border-[var(--mac-border-subtle)] bg-[var(--mac-sidebar-bg)]/95 backdrop-blur-xl md:backdrop-blur-2xl
+            ${selectedUser ? 'hidden md:flex' : 'flex w-full flex-1'} 
             ${isCollapsed ? 'md:w-20 p-2 items-center' : 'md:w-1/3 p-4'}`}>
             
             <div className={`flex items-center mb-4 pb-2 border-none w-full shrink-0 ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
               <button 
+  type="button"
   onClick={() => setIsCollapsed(!isCollapsed)} 
-  className="cursor-pointer hidden md:flex items-center justify-center w-10 h-10 text-slate-500 hover:text-indigo-600 hover:bg-white/80 bg-white/40 backdrop-blur-md border border-white/60 rounded-xl transition-all duration-300 shadow-lg active:scale-90" 
+  className="cursor-pointer hidden md:flex items-center justify-center w-10 h-10 text-[var(--mac-text-secondary)] hover:text-[var(--mac-accent)] mac-neu-raised rounded-[10px] transition-all duration-300 active:scale-90" 
   title={isCollapsed ? "Развернуть" : "Свернуть"}
 >
   <svg 
@@ -602,15 +629,16 @@ export default function App() {
               {!isCollapsed && (
                 <div className="flex-1 md:ml-2 pb-2 flex justify-between items-center overflow-hidden">
                   <div className="flex flex-col ml-3 overflow-hidden leading-tight">
-  <span className="text-[10px] uppercase tracking-[0.15em] text-slate-400 font-bold">
+  <span className="text-[10px] uppercase tracking-[0.15em] text-[var(--mac-text-secondary)] font-bold">
     Профиль
   </span>
-  <span className="text-sm font-semibold text-slate-700 truncate">
+  <span className="text-sm font-semibold text-[var(--mac-text-primary)] truncate">
     {session.user.email}
   </span>
 </div>
                   <button 
-  className="cursor-pointer px-4 py-1.5 rounded-full shadow-md text-xs md:text-sm font-medium transition-all duration-300 active:scale-95 shrink-0 text-slate-500 bg-slate-100/60 hover:bg-rose-50 hover:text-rose-600 border border-transparent hover:border-rose-200" 
+  type="button"
+  className="cursor-pointer px-4 py-1.5 rounded-full text-xs md:text-sm font-medium transition-all duration-300 active:scale-95 shrink-0 mac-neu-raised text-[var(--mac-danger)] hover:brightness-110 border border-[var(--mac-border)]" 
   onClick={() => supabase.auth.signOut()}
 >
   Выйти
@@ -621,11 +649,12 @@ export default function App() {
             
             {!isCollapsed && (
               <div className="mb-4 pb-4 w-full shrink-0">
-                <h3 className="text-gray-500 font-semibold mb-2 text-xs uppercase tracking-wider">Найти пользователя</h3>
+                <h3 className="text-[var(--mac-text-secondary)] font-semibold mb-2 text-xs uppercase tracking-wider">Найти пользователя</h3>
                 <div className="flex gap-2">
-                  <input className="border  border-slate-200/50 pl-3.5 flex-1 rounded-xl text-sm text-slate-800 shadow-lg placeholder-slate-400 bg-slate-100/50 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:bg-white transition-all w-full" placeholder="Email для заявки" value={newContactEmail} onChange={e => setNewContactEmail(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && sendRequest(newContactEmail)} />
+                  <input className="mac-neu-inset pl-3.5 flex-1 rounded-[10px] text-sm text-[var(--mac-text-primary)] placeholder:text-[var(--mac-text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--mac-accent)]/30 transition-all w-full" placeholder="Email для заявки" value={newContactEmail} onChange={e => setNewContactEmail(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && sendRequest(newContactEmail)} />
                   <button 
-  className="cursor-pointer w-10 h-10 md:w-11 md:h-11 flex items-center justify-center bg-indigo-500 text-white rounded-xl shadow-md shadow-indigo-500/30 hover:bg-indigo-600 hover:shadow-lg hover:shadow-indigo-500/40 active:scale-95 transition-all duration-300 shrink-0 ml-2"
+  type="button"
+  className="cursor-pointer w-10 h-10 md:w-11 md:h-11 flex items-center justify-center mac-neu-raised text-white bg-[var(--mac-imessage-sent)] rounded-[10px] hover:brightness-110 active:scale-95 transition-all duration-300 shrink-0 ml-2 border border-[var(--mac-accent)]/25"
   onClick={() => sendRequest(newContactEmail)}
 >
   <span className="text-2xl leading-none font-light mb-0.5">+</span>
@@ -634,11 +663,11 @@ export default function App() {
               </div>
             )}
 
-            <div className="flex-1 overflow-y-auto overflow-x-hidden w-full no-scrollbar pb-20 md:pb-0">
+            <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden w-full no-scrollbar max-md:pb-[max(1.5rem,env(safe-area-inset-bottom,0px))] md:pb-0">
               {incomingRequests.length > 0 && (
 <div className="mb-4 w-full shrink-0">
   {!isCollapsed && (
-    <h3 className="text-slate-400 font-medium mb-3 text-xs uppercase tracking-widest px-2">
+    <h3 className="text-[var(--mac-text-secondary)] font-medium mb-3 text-xs uppercase tracking-widest px-2">
       Новые запросы
     </h3>
   )}
@@ -649,34 +678,36 @@ export default function App() {
         className={`w-full transition-all duration-300 ${
           isCollapsed 
             ? 'flex justify-center' 
-            : 'p-3.5 rounded-2xl bg-white/50 backdrop-blur-md border border-white/60 shadow-sm flex flex-col gap-3'
+            : 'p-3.5 rounded-[14px] mac-glass flex flex-col gap-3'
         }`}
       >
         {isCollapsed ? (
            <div 
-             className="relative w-12 h-12 bg-gradient-to-br from-indigo-50 to-indigo-100/80 text-indigo-600 rounded-full flex justify-center items-center font-medium uppercase text-lg shadow-sm shadow-indigo-200/50 border border-white/60 cursor-pointer hover:scale-105 transition-all" 
+             className="relative w-12 h-12 mac-neu-raised text-[var(--mac-accent)] rounded-full flex justify-center items-center font-medium uppercase text-lg border border-[var(--mac-border)] cursor-pointer hover:scale-105 transition-all" 
              onClick={() => setIsCollapsed(false)}
            >
              {u.email[0]}
              {/* Красивый бейдж уведомления */}
-             <span className="absolute -top-1 -right-1 bg-rose-500 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold shadow-sm shadow-rose-500/30 border-[1.5px] border-white">
+             <span className="absolute -top-1 -right-1 bg-[var(--mac-danger)] text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold border border-[var(--mac-border)]">
                !
              </span>
            </div>
         ) : (
            <>
-             <span className="truncate text-sm font-medium text-slate-700 text-center">
+             <span className="truncate text-sm font-medium text-[var(--mac-text-primary)] text-center">
                {u.email}
              </span>
              <div className="flex gap-2 w-full">
                <button 
-                 className="bg-emerald-500 text-white text-xs py-2.5 flex-1 rounded-xl hover:bg-emerald-600 shadow-sm shadow-emerald-500/30 active:scale-95 transition-all font-medium" 
+                 type="button"
+                 className="mac-neu-raised text-white text-xs py-2.5 flex-1 rounded-[10px] bg-[var(--mac-success)] hover:brightness-110 active:scale-95 transition-all font-medium border border-white/10" 
                  onClick={() => acceptRequest(u.id)}
                >
                  Принять
                </button>
                <button 
-                 className="bg-slate-100/80 text-slate-500 text-xs py-2.5 flex-1 rounded-xl border border-slate-200/50 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 active:scale-95 transition-all font-medium" 
+                 type="button"
+                 className="mac-neu-raised text-[var(--mac-text-secondary)] text-xs py-2.5 flex-1 rounded-[10px] border border-[var(--mac-border)] hover:text-[var(--mac-danger)] active:scale-95 transition-all font-medium" 
                  onClick={() => rejectRequest(u.id)}
                >
                  Отклонить
@@ -692,26 +723,26 @@ export default function App() {
 
               {!isCollapsed && outgoingRequests.length > 0 && (
                 <div className="mb-4 w-full shrink-0">
-  <h3 className="text-slate-400 font-medium mb-3 text-xs uppercase tracking-widest px-2">
+  <h3 className="text-[var(--mac-text-secondary)] font-medium mb-3 text-xs uppercase tracking-widest px-2">
     Мои заявки
   </h3>
   <ul className="w-full flex flex-col gap-2">
     {outgoingRequests.map(u => (
       <li 
         key={u.id} 
-        className="p-3.5 rounded-2xl border border-white/60 bg-white/40 backdrop-blur-md shadow-sm text-sm flex justify-between items-center group transition-all duration-300 hover:bg-white/60"
+        className="p-3.5 rounded-[14px] mac-glass text-sm flex justify-between items-center group transition-all duration-300 hover:brightness-110"
       >
         <div className="flex flex-col truncate pr-2 w-full">
-          <span className="font-medium text-slate-700 truncate">{u.email}</span>
+          <span className="font-medium text-[var(--mac-text-primary)] truncate">{u.email}</span>
           
           {/* Красивые бейджики статусов */}
           <div className="mt-1.5">
             {u.requestStatus === 'pending' ? (
-              <span className="text-amber-600 bg-amber-50 border border-amber-200/50 px-2 py-0.5 rounded-md text-[11px] font-medium flex items-center gap-1.5 w-fit shadow-sm">
+              <span className="text-amber-200 bg-amber-500/15 border border-amber-400/25 px-2 py-0.5 rounded-md text-[11px] font-medium flex items-center gap-1.5 w-fit">
                 <span className="animate-pulse">⏳</span> Ожидает
               </span>
             ) : (
-              <span className="text-rose-500 bg-rose-50 border border-rose-200/50 px-2 py-0.5 rounded-md text-[11px] font-medium flex items-center gap-1.5 w-fit shadow-sm">
+              <span className="text-[var(--mac-danger)] bg-red-500/12 border border-red-400/20 px-2 py-0.5 rounded-md text-[11px] font-medium flex items-center gap-1.5 w-fit">
                 🚫 Отклонено
               </span>
             )}
@@ -720,7 +751,8 @@ export default function App() {
 
         {/* Элегантная кнопка отмены */}
         <button 
-          className="text-slate-400 hover:text-rose-500 hover:bg-rose-50 w-8 h-8 flex items-center justify-center rounded-full text-xl md:opacity-0 md:group-hover:opacity-100 transition-all duration-300 active:scale-90 shrink-0 border border-transparent hover:border-rose-100" 
+          type="button"
+          className="text-[var(--mac-text-secondary)] hover:text-[var(--mac-danger)] mac-neu-raised w-8 h-8 flex items-center justify-center rounded-full text-xl md:opacity-0 md:group-hover:opacity-100 transition-all duration-300 active:scale-90 shrink-0" 
           onClick={() => cancelOutgoingRequest(u.id)}
           title="Отменить заявку"
         >
@@ -732,7 +764,7 @@ export default function App() {
 </div>
               )}
 
-              {!isCollapsed && <h3 className="text-gray-500 font-semibold mb-2 text-xs uppercase tracking-wider md:text-center mt-6">Мои друзья</h3>}
+              {!isCollapsed && <h3 className="text-[var(--mac-text-secondary)] font-semibold mb-2 text-xs uppercase tracking-wider md:text-center mt-6">Мои друзья</h3>}
               <ul className="w-full flex flex-col gap-1.5">
   {contacts.map(u => {
     const isSelected = selectedUser?.id === u.id;
@@ -742,10 +774,10 @@ export default function App() {
         className={`cursor-pointer transition-all duration-300 w-full group flex items-center ${
           isCollapsed 
             ? 'justify-center p-1' 
-            : `p-2 md:p-2 rounded-2xl justify-between border ${
+            : `p-2 md:p-2 rounded-[12px] justify-between border ${
                 isSelected 
-                  ? 'bg-white/70 backdrop-blur-md border-slate-200/50 shadow-lg' 
-                  : 'border-slate-200/50 shadow-lg hover:bg-white/40 hover:backdrop-blur-sm text-slate-700'
+                  ? 'mac-glass-strong border-[var(--mac-accent)]/35 ring-1 ring-[var(--mac-accent)]/20' 
+                  : 'border-[var(--mac-border-subtle)] mac-neu-raised hover:brightness-110 text-[var(--mac-text-primary)]'
               }`
         }`} 
         onClick={() => setSelectedUser(u)}
@@ -753,13 +785,13 @@ export default function App() {
         {isCollapsed ? (
           <div className={`relative w-12 h-12 rounded-full flex justify-center items-center font-bold uppercase text-xl transition-all duration-300 ${
             isSelected 
-              ? 'bg-gradient-to-br from-indigo-500 to-indigo-600 text-white shadow-md shadow-indigo-500/40 ring-4 ring-indigo-50/50' 
-              : 'bg-white/60 text-slate-500 hover:bg-white/80 border border-white/50 shadow-sm'
+              ? 'bg-[var(--mac-imessage-sent)] text-white mac-window-shadow border border-white/15' 
+              : 'mac-neu-raised text-[var(--mac-text-secondary)] border border-[var(--mac-border)]'
           }`}>
             {u.email[0]}
             {/* Кружок непрочитанных (свернутый вид) */}
             {unreadCounts[u.id] > 0 && (
-              <span className="absolute -top-1 -right-1 bg-rose-500 text-white text-[10px] min-w-[18px] h-[18px] rounded-full flex items-center justify-center font-bold border-2 border-white shadow-sm shadow-rose-500/30">
+              <span className="absolute -top-1 -right-1 bg-[var(--mac-danger)] text-white text-[10px] min-w-[18px] h-[18px] rounded-full flex items-center justify-center font-bold border border-[var(--mac-border)]">
                 {unreadCounts[u.id] > 9 ? '9+' : unreadCounts[u.id]}
               </span>
             )}
@@ -770,14 +802,14 @@ export default function App() {
               {/* Аватарка (развернутый вид) */}
                <div className={`w-10 h-10 md:w-9 md:h-9 rounded-full flex items-center justify-center mr-3 uppercase font-bold shrink-0 text-lg md:text-base transition-all duration-300 ${
                  isSelected
-                   ? 'bg-indigo-500 text-white shadow-md shadow-indigo-500/30'
-                   : 'bg-gradient-to-br from-indigo-50 to-indigo-100/80 text-indigo-600 shadow-sm'
+                   ? 'bg-[var(--mac-imessage-sent)] text-white border border-white/15'
+                   : 'mac-neu-raised text-[var(--mac-accent)] border border-[var(--mac-border)]'
                }`}>
                  {u.email[0]}
                </div>
                {/* Имя / Почта */}
                <span className={`truncate text-base md:text-sm transition-colors ${
-                 isSelected ? 'font-bold text-slate-800' : 'font-medium text-slate-600 group-hover:text-slate-800'
+                 isSelected ? 'font-bold text-[var(--mac-text-primary)]' : 'font-medium text-[var(--mac-text-secondary)] group-hover:text-[var(--mac-text-primary)]'
                }`}>
                  {u.email}
                </span>
@@ -786,13 +818,14 @@ export default function App() {
             <div className="flex items-center gap-1 shrink-0">
               {/* Бейдж непрочитанных (развернутый вид) */}
               {unreadCounts[u.id] > 0 && (
-                <span className="bg-indigo-500 text-white text-[11px] font-bold px-2 py-0.5 rounded-full shadow-sm shadow-indigo-500/30">
+                <span className="bg-[var(--mac-imessage-sent)] text-white text-[11px] font-bold px-2 py-0.5 rounded-full border border-white/10">
                   {unreadCounts[u.id]}
                 </span>
               )}
               {/* Крестик удаления из друзей */}
               <button 
-                className="cursor-pointer text-slate-300 hover:text-rose-500 hover:bg-rose-50 w-8 h-8 flex items-center justify-center rounded-full text-xl  transition-all duration-300 active:scale-90 shrink-0 border border-transparent hover:border-rose-100" 
+                type="button"
+                className="cursor-pointer text-[var(--mac-text-secondary)] hover:text-[var(--mac-danger)] mac-neu-raised w-8 h-8 flex items-center justify-center rounded-full text-xl transition-all duration-300 active:scale-90 shrink-0" 
                 onClick={(e) => removeContact(e, u.id)}
                 title="Удалить из друзей"
               >
@@ -809,36 +842,39 @@ export default function App() {
           </div>
 
 {/* ПРАВАЯ КОЛОНКА (САМ ЧАТ) */}
-          <div className={`bg-cover bg-center shadow-md md:rounded-r-3xl flex-col relative transition-all duration-300 ease-in-out z-10 w-full h-full overflow-hidden
-            ${selectedUser ? 'flex md:flex-1' : 'hidden md:flex md:flex-1'}`}>   
+          <div className={`flex flex-col relative transition-all duration-300 ease-in-out z-10 w-full min-h-0 flex-1 overflow-hidden bg-[var(--mac-chat-bg)] border-l border-[var(--mac-border-subtle)] max-md:border-l-0
+            ${selectedUser ? 'flex md:flex-1 max-md:w-full max-md:flex-1' : 'hidden md:flex md:flex-1'}`}>   
             
             {!selectedUser ? (
-              <div className="flex-1 flex flex-col items-center justify-center text-gray-400 p-6 text-center">
-                <span className="text-5xl md:text-6xl mb-4 opacity-50">💬</span>
-                <p className="text-base md:text-lg">Выберите друга слева, чтобы начать общение</p>
+              <div className="flex-1 flex flex-col items-center justify-center text-[var(--mac-text-secondary)] p-6 text-center">
+                <div className="w-20 h-20 md:w-24 md:h-24 mac-neu-raised rounded-[20px] flex items-center justify-center text-4xl md:text-5xl mb-5 opacity-90">💬</div>
+                <p className="text-base md:text-lg font-medium text-[var(--mac-text-primary)]">Выберите друга слева, чтобы начать общение</p>
+                <p className="text-xs md:text-sm mt-2 text-[var(--mac-text-secondary)]">Как в Messages на Mac</p>
               </div>
             ) : (
               <>
                 {/* ШАПКА ЧАТА */}
-                <div className="p-3 md:p-4 bg-white/70 backdrop-blur-md border-b border-slate-200/60 shadow-sm z-20 font-bold text-gray-800 flex items-center shrink-0 w-full rounded-r-3xl">
+                <div className="p-3 md:p-4 mac-glass border-b border-[var(--mac-border-subtle)] z-20 flex items-center shrink-0 w-full gap-2">
                   <button 
+                    type="button"
                     onClick={() => setSelectedUser(null)}
-                    className="md:hidden mr-3 text-blue-500 hover:bg-blue-50 p-2 rounded-full flex items-center justify-center active:scale-95 transition shrink-0"
+                    className="md:hidden flex items-center justify-center gap-2 min-h-[48px] px-4 py-2.5 rounded-[12px] mac-neu-raised text-[var(--mac-accent)] hover:brightness-110 active:scale-[0.98] transition shrink-0 font-semibold text-base border border-[var(--mac-border)]"
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-6 h-6">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-7 h-7 shrink-0" aria-hidden="true">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
                     </svg>
+                    <span>Назад</span>
                   </button>
                   
-                  <div className="w-10 h-10 bg-gradient-to-tr from-blue-400 to-blue-600 text-white shadow-md rounded-full flex items-center justify-center mr-3 uppercase text-lg shrink-0">{selectedUser.email[0]}</div>
-                  <div className="flex flex-col overflow-hidden">
-                    <span className="text-base md:text-lg truncate">{selectedUser.email}</span>
-                    <span className="text-[10px] md:text-xs text-green-500 font-medium">В сети</span>
+                  <div className="w-10 h-10 rounded-full mac-neu-raised flex items-center justify-center mr-3 uppercase text-lg shrink-0 font-semibold text-[var(--mac-imessage-sent)] border border-[var(--mac-border)]">{selectedUser.email[0]}</div>
+                  <div className="flex flex-col overflow-hidden min-w-0">
+                    <span className="text-base md:text-lg truncate font-semibold text-[var(--mac-text-primary)]">{selectedUser.email}</span>
+                    <span className="text-[10px] md:text-xs text-[var(--mac-success)] font-medium">В сети</span>
                   </div>
                 </div>
                 
                 {/* ОБЛАСТЬ СООБЩЕНИЙ */}
-                <div className="bg-transparent flex-1 overflow-y-auto p-3 md:p-4 flex flex-col gap-3 pb-4 w-full no-scrollbar">
+                <div className="bg-transparent flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-3 md:p-4 flex flex-col gap-3 pb-3 w-full no-scrollbar">
                   {messages.map((m) => {
                     const isMe = m.sender_id === session.user.id;
                     const msgReactions = allReactions.filter((r) => r.message_id === m.id)
@@ -851,7 +887,7 @@ export default function App() {
                         {isMenuOpen && (
                           <>
                             <div className="fixed inset-0 z-20" onClick={() => setActiveReactionMsgId(null)} />
-                            <div className={`absolute bottom-full mb-1 z-30 flex flex-col gap-1.5 bg-white/95 backdrop-blur-md p-2 rounded-2xl shadow-xl border border-slate-200/50 animate-in zoom-in duration-200 ${isMe ? 'right-2 items-end' : 'left-2 items-start'}`}>
+                            <div className={`absolute bottom-full mb-1 z-30 flex flex-col gap-1.5 mac-glass-strong p-2 rounded-[14px] mac-window-shadow border border-[var(--mac-border)] animate-in zoom-in duration-200 ${isMe ? 'right-2 items-end' : 'left-2 items-start'}`}>
                               <div className="flex gap-1">
                                 {['❤️', '👍', '🔥', '😂', '😢', '😁', '👑', '🐥'].map((emoji) => (
                                   <button
@@ -870,7 +906,7 @@ export default function App() {
                                     e.stopPropagation()
                                     if (m.content) copyToClipboard(m.content)
                                   }}
-                                  className="text-[12px] font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-xl w-full text-center transition-colors active:scale-95"
+                                  className="text-[12px] font-semibold text-[var(--mac-text-primary)] mac-neu-inset hover:brightness-110 px-3 py-1.5 rounded-[10px] w-full text-center transition-colors active:scale-95"
                                 >
                                   Копировать текст
                                 </button>
@@ -882,7 +918,7 @@ export default function App() {
                                     e.stopPropagation()
                                     if (m.content) void handleAiAction('translate', 'Русский', m.id, m.content)
                                   }}
-                                  className="text-[12px] font-semibold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 border border-indigo-100 px-3 py-1.5 rounded-xl w-full text-center transition-colors active:scale-95 mt-0.5 flex items-center justify-center gap-1"
+                                  className="text-[12px] font-semibold text-[var(--mac-accent)] mac-neu-raised border border-[var(--mac-accent)]/25 px-3 py-1.5 rounded-[10px] w-full text-center transition-colors active:scale-95 mt-0.5 flex items-center justify-center gap-1 hover:brightness-110"
                                 >
                                   <span>🤖</span> Перевести
                                 </button>
@@ -898,7 +934,7 @@ export default function App() {
                           onTouchEnd={handlePressEnd}
                           onTouchMove={handlePressEnd}
                           style={{ WebkitTouchCallout: 'none', WebkitTapHighlightColor: 'transparent' }}
-                          className={`max-w-[85%] md:max-w-[70%] p-3 shadow-sm relative flex flex-col shrink-0 transition-all duration-300 select-none md:select-text ${isMe ? 'bg-indigo-500 text-white rounded-2xl rounded-tr-none shadow-md shadow-indigo-500/20 border border-white/10' : 'bg-white/80 backdrop-blur-md text-slate-800 rounded-2xl rounded-tl-none border border-white/60 shadow-sm'}`}
+                          className={`max-w-[85%] md:max-w-[70%] px-3.5 py-2.5 md:px-4 md:py-3 relative flex flex-col shrink-0 transition-all duration-300 select-none md:select-text rounded-[18px] md:rounded-[20px] shadow-[0_1px_3px_rgba(0,0,0,0.35)] ${isMe ? 'rounded-br-[5px] bg-[var(--mac-imessage-sent)] text-white border border-white/12' : 'rounded-bl-[5px] bg-[var(--mac-imessage-received)] text-[var(--mac-text-primary)] border border-[var(--mac-imessage-received-border)] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]'}`}
                         >
                           {m.file_url && (
                             <div className="mb-2 overflow-hidden rounded-xl">
@@ -906,7 +942,7 @@ export default function App() {
                                 /* eslint-disable-next-line @next/next/no-img-element -- remote Supabase URLs; next/image needs domain config */
                                 <img src={m.file_url} alt="Вложение" onLoad={() => scrollToBottom('auto')} className="w-full h-full max-h-64 object-cover hover:scale-[1.02] transition-transform duration-500 rounded-xl shadow-sm" />
                               ) : (
-                                 <a href={m.file_url} target="_blank" rel="noopener noreferrer" className={`flex items-center gap-2 p-3 rounded-xl text-sm transition-colors ${isMe ? 'bg-white/10 hover:bg-white/20' : 'bg-slate-100 hover:bg-slate-200'}`}>
+                                 <a href={m.file_url} target="_blank" rel="noopener noreferrer" className={`flex items-center gap-2 p-3 rounded-[12px] text-sm transition-colors ${isMe ? 'bg-black/15 hover:bg-black/25' : 'bg-black/25 hover:bg-black/35'}`}>
                                    <span className="text-lg">📎</span> <span className="font-medium">Файл</span>
                                  </a>
                               )}
@@ -921,15 +957,15 @@ export default function App() {
 
                           {/* ВЫВОД ПЕРЕВОДА */}
                           {translations[m.id] && (
-                            <div className="mt-2 pt-2 border-t border-slate-200/50 flex flex-col gap-0.5">
-                              <span className="text-[10px] uppercase font-bold text-indigo-400 tracking-wider">🤖 Перевод</span>
-                              <span className={`break-words text-[13px] md:text-[14px] leading-relaxed italic ${isMe ? 'text-indigo-50' : 'text-slate-600'}`}>
+                            <div className={`mt-2 pt-2 border-t flex flex-col gap-0.5 ${isMe ? 'border-white/15' : 'border-white/10'}`}>
+                              <span className="text-[10px] uppercase font-bold text-[var(--mac-accent)] tracking-wider opacity-90">🤖 Перевод</span>
+                              <span className={`break-words text-[13px] md:text-[14px] leading-relaxed italic ${isMe ? 'text-white/85' : 'text-[var(--mac-text-secondary)]'}`}>
                                 {translations[m.id]}
                               </span>
                             </div>
                           )}
 
-                          <div className={`flex items-center gap-1.5 self-end mt-1.5 px-0.5 ${isMe ? 'text-indigo-100/80' : 'text-slate-400'}`}>
+                          <div className={`flex items-center gap-1.5 self-end mt-1.5 px-0.5 ${isMe ? 'text-white/50' : 'text-[var(--mac-text-secondary)]'}`}>
                             <span className="text-[10px] font-medium tracking-tighter uppercase">{formatTime(m.created_at)}</span>
                             {isMe && <span className="text-[11px] font-bold leading-none">{m.is_read ? '✓✓' : '✓'}</span>}
                           </div>
@@ -942,7 +978,7 @@ export default function App() {
                                   (r) => r.emoji === emoji && r.user_id === session.user.id
                                 )
                                 return (
-                                  <button key={emoji} onClick={(e) => { e.stopPropagation(); toggleReaction(m.id, emoji); }} className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold shadow-sm transition-all hover:scale-110 active:scale-90 cursor-pointer border ${hasMyReaction ? 'bg-indigo-50 border-indigo-200 text-indigo-600' : 'bg-white/95 border-slate-100 text-slate-500'}`}>
+                                  <button type="button" key={emoji} onClick={(e) => { e.stopPropagation(); toggleReaction(m.id, emoji); }} className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold transition-all hover:scale-110 active:scale-90 cursor-pointer border mac-neu-raised ${hasMyReaction ? 'border-[var(--mac-accent)]/40 text-[var(--mac-accent)]' : 'border-[var(--mac-border)] text-[var(--mac-text-secondary)]'}`}>
                                     <span>{emoji}</span>
                                     {count > 1 && <span>{count}</span>}
                                   </button>
@@ -957,33 +993,33 @@ export default function App() {
                   <div ref={messagesEndRef} className="shrink-0" />
                 </div>
                 
-                {/* ПАНЕЛЬ ВВОДА */}
-                <div className="border-t border-gray-300 flex flex-col shrink-0 w-full" style={{ paddingBottom: 'env(safe-area-inset-bottom, 16px)' }}>
+                {/* ПАНЕЛЬ ВВОДА — safe-area для home indicator + место над клавиатурой (iOS) */}
+                <div className="border-t border-[var(--mac-border-subtle)] flex flex-col shrink-0 w-full mac-glass pb-composer-safe max-md:shadow-[0_-8px_32px_rgba(0,0,0,0.35)]">
                   
                   {/* ПРЕДПРОСМОТР ФАЙЛА */}
                   {pendingFile && (
-                    <div className="p-2 md:p-3 bg-gray-50 border-b flex items-start gap-3 transition-all shrink-0">
+                    <div className="p-2 md:p-3 mac-neu-inset border-b border-[var(--mac-border-subtle)] flex items-start gap-3 transition-all shrink-0 mx-2 mt-2 rounded-[10px]">
                       <div className="relative inline-block shrink-0">
                         {pendingFile.type.startsWith('image/') ? (
                           /* eslint-disable-next-line @next/next/no-img-element -- blob preview URL from createObjectURL */
-                          <img src={URL.createObjectURL(pendingFile)} alt="Превью" className="h-14 w-14 md:h-16 md:w-16 object-cover rounded-lg border shadow-sm" />
+                          <img src={URL.createObjectURL(pendingFile)} alt="Превью" className="h-14 w-14 md:h-16 md:w-16 object-cover rounded-[8px] border border-[var(--mac-border)]" />
                         ) : (
-                          <div className="h-14 w-14 md:h-16 md:w-16 bg-white border rounded-lg shadow-sm flex items-center justify-center text-2xl">📄</div>
+                          <div className="h-14 w-14 md:h-16 md:w-16 mac-neu-raised rounded-[8px] flex items-center justify-center text-2xl border border-[var(--mac-border)]">📄</div>
                         )}
-                        <button type="button" onClick={() => setPendingFile(null)} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600 shadow-md">×</button>
+                        <button type="button" onClick={() => setPendingFile(null)} className="absolute -top-2 -right-2 w-5 h-5 rounded-full mac-neu-raised text-[var(--mac-danger)] text-xs flex items-center justify-center hover:brightness-110 border border-[var(--mac-border)]">×</button>
                       </div>
-                      <div className="flex flex-col justify-center h-14 md:h-16">
-                         <span className="text-xs md:text-sm font-medium text-gray-700 truncate max-w-[150px] md:max-w-[200px]">{pendingFile.name || 'Изображение'}</span>
-                         <span className="text-[10px] md:text-xs text-gray-400">Готово к отправке</span>
+                      <div className="flex flex-col justify-center h-14 md:h-16 min-w-0">
+                         <span className="text-xs md:text-sm font-medium text-[var(--mac-text-primary)] truncate max-w-[150px] md:max-w-[200px]">{pendingFile.name || 'Изображение'}</span>
+                         <span className="text-[10px] md:text-xs text-[var(--mac-text-secondary)]">Готово к отправке</span>
                       </div>
                     </div>
                   )}
 
                   {/* СТРОКА С КНОПКАМИ И ИНПУТОМ */}
-                  <div className="p-2 md:p-3 flex gap-1 md:gap-2 items-end shrink-0 bg-white/70 backdrop-blur-md border-t border-slate-200/60 rounded-br-3xl z-40 relative">
+                  <div className="p-2 max-md:px-3 max-md:pb-1 md:p-3 flex gap-1 md:gap-2 items-end shrink-0 border-t border-[var(--mac-border-subtle)] z-40 relative">
                     
                     {/* КНОПКА ФАЙЛА */}
-                    <button type="button" onClick={() => fileInputRef.current?.click()} className="text-gray-400 hover:text-blue-500 p-2 md:p-2.5 rounded-full hover:bg-gray-100 transition-colors mb-1 md:mb-1 active:scale-95 shrink-0" disabled={isSending}>
+                    <button type="button" onClick={() => fileInputRef.current?.click()} className="text-[var(--mac-text-secondary)] hover:text-[var(--mac-accent)] p-2 md:p-2.5 rounded-full mac-neu-raised mb-1 md:mb-1 active:scale-95 shrink-0 transition-colors" disabled={isSending}>
                       <span className="text-xl md:text-xl">📎</span>
                     </button>
                     <input type="file" className="hidden" ref={fileInputRef} onChange={handleFileUpload} accept="image/*,.pdf,.doc,.docx" />
@@ -991,16 +1027,16 @@ export default function App() {
                     {/* 🪄 МАГИЧЕСКАЯ ПАЛОЧКА */}
                     <div className="relative flex items-end">
                       {showStyleMenu && (
-                        <div className="absolute bottom-full left-0 mb-3 bg-white/95 backdrop-blur-md p-2 rounded-2xl shadow-xl border border-slate-200/50 flex flex-col gap-1 w-48 animate-in zoom-in-95 origin-bottom-left" style={{ zIndex: 9999 }}>
-                          <span className="text-xs text-slate-400 font-bold px-2 py-1 uppercase tracking-wider">Изменить стиль</span>
+                        <div className="absolute bottom-full left-0 mb-3 mac-glass-strong p-2 rounded-[14px] mac-window-shadow border border-[var(--mac-border)] flex flex-col gap-1 w-48 animate-in zoom-in-95 origin-bottom-left" style={{ zIndex: 9999 }}>
+                          <span className="text-xs text-[var(--mac-text-secondary)] font-bold px-2 py-1 uppercase tracking-wider">Изменить стиль</span>
                           {['Деловой и вежливый', 'Дружеский и веселый', 'Строгий и короткий', 'Дерзкий (Сленг)'].map(style => (
-                            <button key={style} type="button" onClick={() => handleAiAction('style', style)} className="text-sm text-left px-3 py-2 hover:bg-indigo-50 hover:text-indigo-600 rounded-xl transition-colors">
+                            <button key={style} type="button" onClick={() => handleAiAction('style', style)} className="text-sm text-left px-3 py-2 text-[var(--mac-text-primary)] hover:bg-[var(--mac-elevated)] rounded-[10px] transition-colors">
                               {style}
                             </button>
                           ))}
                         </div>
                       )}
-                      <button type="button" onClick={() => { setShowStyleMenu(!showStyleMenu); setShowTranslateMenu(false); }} className={`p-2 md:p-2.5 rounded-full transition-colors mb-1 active:scale-95 shrink-0 ${showStyleMenu ? 'bg-indigo-100 text-indigo-600' : 'text-slate-400 hover:text-indigo-500 hover:bg-slate-100'}`} disabled={isSending || isAiLoading} title="Магическая палочка">
+                      <button type="button" onClick={() => { setShowStyleMenu(!showStyleMenu); setShowTranslateMenu(false); }} className={`p-2 md:p-2.5 rounded-full mb-1 active:scale-95 shrink-0 transition-colors mac-neu-raised ${showStyleMenu ? 'text-[var(--mac-accent)] ring-1 ring-[var(--mac-accent)]/35' : 'text-[var(--mac-text-secondary)] hover:text-[var(--mac-accent)]'}`} disabled={isSending || isAiLoading} title="Магическая палочка">
                         <span className="text-xl">🪄</span>
                       </button>
                     </div>
@@ -1008,27 +1044,27 @@ export default function App() {
                     {/* 🌐 ПЕРЕВОД */}
                     <div className="relative flex items-end">
                       {showTranslateMenu && (
-                        <div className="absolute bottom-full left-0 mb-3 bg-white/95 backdrop-blur-md p-2 rounded-2xl shadow-xl border border-slate-200/50 flex flex-col gap-1 w-52 animate-in zoom-in-95 origin-bottom-left" style={{ zIndex: 9999 }}>
-                          <span className="text-xs text-slate-400 font-bold px-2 py-1 uppercase tracking-wider">Перевести текст</span>
+                        <div className="absolute bottom-full left-0 mb-3 mac-glass-strong p-2 rounded-[14px] mac-window-shadow border border-[var(--mac-border)] flex flex-col gap-1 w-52 animate-in zoom-in-95 origin-bottom-left" style={{ zIndex: 9999 }}>
+                          <span className="text-xs text-[var(--mac-text-secondary)] font-bold px-2 py-1 uppercase tracking-wider">Перевести текст</span>
                           {['Английский', 'Норвежский', 'Русский'].map(lang => (
-                            <button key={lang} type="button" onClick={() => handleAiAction('translate', lang)} className="text-sm text-left px-3 py-2 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-colors">
+                            <button key={lang} type="button" onClick={() => handleAiAction('translate', lang)} className="text-sm text-left px-3 py-2 text-[var(--mac-text-primary)] hover:bg-[var(--mac-elevated)] rounded-[10px] transition-colors">
                               {lang}
                             </button>
                           ))}
-                          <div className="flex gap-1 mt-1 border-t border-slate-100 pt-1.5 px-1">
-                            <input value={customLang} onChange={e => setCustomLang(e.target.value)} placeholder="Свой язык..." className="text-xs p-1.5 border border-slate-200 rounded-lg flex-1 outline-none focus:border-blue-400 text-slate-800" />
-                            <button type="button" onClick={() => handleAiAction('translate', customLang)} className="bg-blue-500 text-white text-xs px-2 py-1.5 rounded-lg hover:bg-blue-600">Go</button>
+                          <div className="flex gap-1 mt-1 border-t border-[var(--mac-border-subtle)] pt-1.5 px-1">
+                            <input value={customLang} onChange={e => setCustomLang(e.target.value)} placeholder="Свой язык..." className="text-xs p-1.5 mac-neu-inset rounded-[8px] flex-1 outline-none focus:ring-1 focus:ring-[var(--mac-accent)]/40 text-[var(--mac-text-primary)] placeholder:text-[var(--mac-text-secondary)]" />
+                            <button type="button" onClick={() => handleAiAction('translate', customLang)} className="mac-neu-raised text-white text-xs px-2 py-1.5 rounded-[8px] bg-[var(--mac-imessage-sent)] hover:brightness-110">Go</button>
                           </div>
                         </div>
                       )}
-                      <button type="button" onClick={() => { setShowTranslateMenu(!showTranslateMenu); setShowStyleMenu(false); }} className={`p-2 md:p-2.5 rounded-full transition-colors mb-1 active:scale-95 shrink-0 ${showTranslateMenu ? 'bg-blue-100 text-blue-600' : 'text-slate-400 hover:text-blue-500 hover:bg-slate-100'}`} disabled={isSending || isAiLoading} title="Перевод">
+                      <button type="button" onClick={() => { setShowTranslateMenu(!showTranslateMenu); setShowStyleMenu(false); }} className={`p-2 md:p-2.5 rounded-full mb-1 active:scale-95 shrink-0 transition-colors mac-neu-raised ${showTranslateMenu ? 'text-[var(--mac-accent)] ring-1 ring-[var(--mac-accent)]/35' : 'text-[var(--mac-text-secondary)] hover:text-[var(--mac-accent)]'}`} disabled={isSending || isAiLoading} title="Перевод">
                         <span className="text-xl">🌐</span>
                       </button>
                     </div>
 
                     {/* ПОЛЕ ВВОДА ТЕКСТА */}
                     <input
-                      className="bg-slate-100/60 border border-slate-200/50 w-full md:w-auto md:flex-1 p-3 md:p-4 rounded-full shadow-inner outline-none focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:bg-white focus:border-indigo-300/50 transition-all text-[14px] md:text-[15px] min-w-0 text-slate-800"
+                      className="mac-neu-inset w-full md:w-auto md:flex-1 p-3 md:p-4 rounded-full outline-none focus:ring-2 focus:ring-[var(--mac-accent)]/35 transition-all text-[14px] md:text-[15px] min-w-0 text-[var(--mac-text-primary)] placeholder:text-[var(--mac-text-secondary)]"
                       value={text}
                       onChange={(e) => setText(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
@@ -1039,15 +1075,16 @@ export default function App() {
                     
                     {/* КНОПКА ОТПРАВКИ */}
                     <button 
-                      className={`w-12 h-12 md:w-14 md:h-14 flex items-center justify-center rounded-full font-bold transition-all duration-300 mb-0.5 md:mb-1 shrink-0 
+                      type="button"
+                      className={`w-12 h-12 md:w-14 md:h-14 flex items-center justify-center rounded-full font-bold transition-all duration-300 mb-0.5 md:mb-1 shrink-0 mac-neu-raised
                       ${isSending || isAiLoading || (text.trim() === '' && pendingFile === null) 
-                        ? 'bg-slate-200 text-slate-400 shadow-none cursor-not-allowed' 
-                        : 'bg-indigo-500 text-white shadow-md shadow-indigo-500/40 hover:bg-indigo-600 hover:shadow-lg hover:shadow-indigo-500/50 active:scale-95'}`} 
+                        ? 'opacity-40 cursor-not-allowed text-[var(--mac-text-secondary)]' 
+                        : 'bg-[var(--mac-imessage-sent)] text-white hover:brightness-110 active:scale-95 border-[var(--mac-accent)]/30'}`} 
                       onClick={sendMessage} 
                       disabled={isSending || isAiLoading || (text.trim() === '' && pendingFile === null)}
                     >
                       {isSending ? (
-                        <span className="animate-pulse text-slate-400">...</span>
+                        <span className="animate-pulse text-white/70">...</span>
                       ) : (
                         <span className="text-lg md:text-xl transform translate-x-0.5">➤</span>
                       )}
@@ -1058,7 +1095,9 @@ export default function App() {
               </>
             )}
           </div>
-        </>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

@@ -8,7 +8,7 @@ export default function manifest(): MetadataRoute.Manifest {
     start_url: '/',                   // С какой страницы запускать приложение
     display: 'standalone',            // МАГИЯ ЗДЕСЬ: Убирает браузерную строку!
     background_color: '#ffffff',      // Цвет фона при запуске
-    theme_color: '#3b82f6',           // Цвет верхней полоски телефона (в цвет кнопок)
+    theme_color: '#1c1c1e',
     icons: [
       {
         src: '/icon-512.png',          // Путь к твоей новой стеклянной иконке

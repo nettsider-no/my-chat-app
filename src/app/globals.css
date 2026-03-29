@@ -1,8 +1,28 @@
 @import "tailwindcss";
 
+/* macOS-style dark theme (default) */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: dark;
+  --mac-desktop-bg: #0d0d0f;
+  --mac-desktop-bg-mid: #141418;
+  --mac-window-bg: #1c1c1e;
+  --mac-sidebar-bg: #252528;
+  --mac-chat-bg: #1a1a1c;
+  --mac-titlebar-bg: rgba(40, 40, 42, 0.65);
+  --mac-elevated: rgba(58, 58, 60, 0.55);
+  --mac-border: rgba(255, 255, 255, 0.09);
+  --mac-border-subtle: rgba(255, 255, 255, 0.06);
+  --mac-text-primary: #f2f2f7;
+  --mac-text-secondary: #8e8e93;
+  --mac-imessage-sent: #0a84ff;
+  --mac-imessage-sent-pressed: #409cff;
+  --mac-imessage-received: #3a3a3c;
+  --mac-imessage-received-border: rgba(255, 255, 255, 0.06);
+  --mac-accent: #0a84ff;
+  --mac-danger: #ff453a;
+  --mac-success: #32d74b;
+  --background: var(--mac-desktop-bg);
+  --foreground: var(--mac-text-primary);
 }
 
 @theme inline {
@@ -12,16 +32,10 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 html {
   scroll-behavior: smooth;
 }
+
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
@@ -30,8 +44,124 @@ html {
   scrollbar-width: none;
 }
 
+/* Glass + vibrancy */
+.mac-glass {
+  background: linear-gradient(
+    165deg,
+    rgba(72, 72, 74, 0.45) 0%,
+    rgba(44, 44, 46, 0.5) 100%
+  );
+  backdrop-filter: blur(48px) saturate(190%);
+  -webkit-backdrop-filter: blur(48px) saturate(190%);
+  border: 1px solid var(--mac-border);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.mac-glass-strong {
+  background: rgba(44, 44, 46, 0.78);
+  backdrop-filter: blur(56px) saturate(200%);
+  -webkit-backdrop-filter: blur(56px) saturate(200%);
+  border: 1px solid var(--mac-border);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.2);
+}
+
+/* Window chrome */
+.mac-window-shadow {
+  box-shadow:
+    0 0 0 0.5px rgba(0, 0, 0, 0.65),
+    0 0 0 1px rgba(255, 255, 255, 0.04) inset,
+    0 2px 4px rgba(0, 0, 0, 0.35),
+    0 24px 80px rgba(0, 0, 0, 0.55),
+    0 12px 32px rgba(0, 0, 0, 0.4);
+}
+
+.mac-titlebar {
+  background: linear-gradient(
+    180deg,
+    rgba(55, 55, 58, 0.92) 0%,
+    rgba(38, 38, 40, 0.88) 100%
+  );
+  border-bottom: 1px solid var(--mac-border-subtle);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+/* Traffic lights (decorative) */
+.mac-traffic {
+  display: block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 0.5px rgba(0, 0, 0, 0.45),
+    inset 0 1px 1px rgba(255, 255, 255, 0.35),
+    inset 0 -1px 1px rgba(0, 0, 0, 0.25);
+}
+.mac-traffic-close {
+  background: linear-gradient(180deg, #ff857d 0%, #ff5f57 100%);
+}
+.mac-traffic-minimize {
+  background: linear-gradient(180deg, #ffd76f 0%, #febc2e 100%);
+}
+.mac-traffic-zoom {
+  background: linear-gradient(180deg, #6ee577 0%, #28c840 100%);
+}
+
+@media (min-width: 768px) {
+  .mac-traffic {
+    width: 13px;
+    height: 13px;
+  }
+}
+
+/* Soft neumorphic inset (inputs, wells) */
+.mac-neu-inset {
+  background: rgba(0, 0, 0, 0.35);
+  box-shadow:
+    inset 0 2px 6px rgba(0, 0, 0, 0.45),
+    inset 0 1px 2px rgba(0, 0, 0, 0.35),
+    inset 0 -1px 1px rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.35);
+}
+
+/* Raised neumorphic control */
+.mac-neu-raised {
+  background: linear-gradient(180deg, #3a3a3c 0%, #2c2c2e 100%);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.08),
+    0 4px 12px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--mac-border);
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--mac-desktop-bg);
+  color: var(--mac-text-primary);
+  font-family:
+    var(--font-geist-sans),
+    -apple-system,
+    BlinkMacSystemFont,
+    "SF Pro Text",
+    "SF Pro Display",
+    system-ui,
+    sans-serif;
+  letter-spacing: -0.01em;
+}
+
+/* Subtle desktop vignette */
+.mac-desktop-bg {
+  background:
+    radial-gradient(ellipse 120% 80% at 50% -20%, rgba(10, 132, 255, 0.12), transparent 50%),
+    radial-gradient(ellipse 80% 50% at 100% 100%, rgba(88, 86, 214, 0.08), transparent 45%),
+    linear-gradient(180deg, var(--mac-desktop-bg-mid) 0%, var(--mac-desktop-bg) 100%);
+}
+
+/* iOS / PWA: composer & lists respect home indicator */
+.pb-composer-safe {
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 0px));
+}
+
+.pt-safe {
+  padding-top: env(safe-area-inset-top, 0px);
 }
