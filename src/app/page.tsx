@@ -1,32 +1,51 @@
 'use client'
-import { useState, useEffect, useRef } from 'react'
+
+import { useState, useEffect, useRef, useCallback } from 'react'
+import type { ChangeEvent, ClipboardEvent, MouseEvent } from 'react'
+import type { Session } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
+import type {
+  Profile,
+  OutgoingContact,
+  ChatMessage,
+  MessageReaction,
+  ContactAcceptedRow,
+  ContactPendingIncomingRow,
+  ContactOutgoingRow,
+  UnreadMessageRow,
+  ContactsPayloadNew,
+} from '@/src/types/chat'
 
 export default function App() {
-  const [session, setSession] = useState<any>(null)
+  const [session, setSession] = useState<Session | null>(null)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  
-  const [contacts, setContacts] = useState<any[]>([])
-  const [incomingRequests, setIncomingRequests] = useState<any[]>([])
-  const [outgoingRequests, setOutgoingRequests] = useState<any[]>([])
+
+  const [contacts, setContacts] = useState<Profile[]>([])
+  const [incomingRequests, setIncomingRequests] = useState<Profile[]>([])
+  const [outgoingRequests, setOutgoingRequests] = useState<OutgoingContact[]>([])
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({})
-  
-  const [selectedUser, setSelectedUser] = useState<any>(null)
+
+  const [selectedUser, setSelectedUser] = useState<Profile | null>(null)
   const [newContactEmail, setNewContactEmail] = useState('')
-  
+
   const [toastMsg, setToastMsg] = useState<string | null>(null)
   const [isCollapsed, setIsCollapsed] = useState(false)
-  
-  const [messages, setMessages] = useState<any[]>([])
+
+  const [messages, setMessages] = useState<ChatMessage[]>([])
   const [text, setText] = useState('')
-  const [isSending, setIsSending] = useState(false) 
+  const [isSending, setIsSending] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  
+
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [pendingFile, setPendingFile] = useState<File | null>(null)
 
-  const [allReactions, setAllReactions] = useState<any[]>([]);
+  const [allReactions, setAllReactions] = useState<MessageReaction[]>([])
+
+  const showNotification = useCallback((msg: string) => {
+    setToastMsg(msg)
+    setTimeout(() => setToastMsg(null), 4000)
+  }, [])
 
   // === ИИ ФИШКИ (Состояния) ===
   const [isAiLoading, setIsAiLoading] = useState(false);
@@ -58,20 +77,21 @@ export default function App() {
         body: JSON.stringify({ text: targetText, action, modifier, context })
       });
 
-      const data = await res.json();
-      if (data.error) throw new Error(data.error);
+      const data: { error?: string; result?: string } = await res.json()
+      if (data.error) throw new Error(data.error)
+      const result = data.result
+      if (typeof result !== 'string') throw new Error('Пустой ответ ИИ')
 
       if (msgId) {
-        // Если переводили чужое сообщение — сохраняем перевод под пузырьком
-        setTranslations(prev => ({ ...prev, [msgId]: data.result }));
-        showNotification('✅ Сообщение переведено!');
+        setTranslations((prev) => ({ ...prev, [msgId]: result }))
+        showNotification('✅ Сообщение переведено!')
       } else {
-        // Если меняли свой текст — просто заменяем его в инпуте (без отправки!)
-        setText(data.result);
-        showNotification('✨ Текст обновлен!');
+        setText(result)
+        showNotification('✨ Текст обновлен!')
       }
-    } catch (error: any) {
-      showNotification('❌ Ошибка ИИ: ' + error.message);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Неизвестная ошибка'
+      showNotification('❌ Ошибка ИИ: ' + message)
     } finally {
       setIsAiLoading(false);
     }
@@ -81,7 +101,7 @@ export default function App() {
   const [activeReactionMsgId, setActiveReactionMsgId] = useState<number | null>(null);
 
   // Таймер для мобильного долгого нажатия
-  const pressTimer = useRef<NodeJS.Timeout | null>(null);
+  const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const handlePressStart = (msgId: number) => {
     pressTimer.current = setTimeout(() => {
@@ -101,42 +121,30 @@ export default function App() {
     setActiveReactionMsgId(null); // Закрываем меню после копирования
   };
 
-  function showNotification(msg: string) {
-    setToastMsg(msg)
-    setTimeout(() => setToastMsg(null), 4000)
-  }
-
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session)
-      // === МАГИЯ ONESIGNAL: Говорим сервису, кто мы такие ===
-      if (session) {
-        // @ts-ignore
-        window.OneSignalDeferred = window.OneSignalDeferred || [];
-        // @ts-ignore
-        window.OneSignalDeferred.push(async function(OneSignal) {
-          await OneSignal.login(session.user.id);
-        });
+    supabase.auth.getSession().then(({ data: { session: s } }) => {
+      setSession(s)
+      if (s?.user.id) {
+        window.OneSignalDeferred = window.OneSignalDeferred ?? []
+        window.OneSignalDeferred.push(async (OneSignal) => {
+          await OneSignal.login(s.user.id)
+        })
       }
     })
-    
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session)
-      if (session) {
-        // @ts-ignore
-        window.OneSignalDeferred = window.OneSignalDeferred || [];
-        // @ts-ignore
-        window.OneSignalDeferred.push(async function(OneSignal) {
-          await OneSignal.login(session.user.id);
-        });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, s) => {
+      setSession(s)
+      window.OneSignalDeferred = window.OneSignalDeferred ?? []
+      if (s?.user.id) {
+        window.OneSignalDeferred.push(async (OneSignal) => {
+          await OneSignal.login(s.user.id)
+        })
       } else {
-        // Если вышли из аккаунта - отвязываем пуши
-        // @ts-ignore
-        window.OneSignalDeferred = window.OneSignalDeferred || [];
-        // @ts-ignore
-        window.OneSignalDeferred.push(async function(OneSignal) {
-          await OneSignal.logout();
-        });
+        window.OneSignalDeferred.push(async (OneSignal) => {
+          await OneSignal.logout()
+        })
       }
     })
     return () => subscription.unsubscribe()
@@ -170,155 +178,276 @@ export default function App() {
     }
   }
 
-  async function fetchSidebarData() {
+  const fetchSidebarData = useCallback(async () => {
     if (!session) return
-    const { data: contactsData } = await supabase.from('contacts').select('contact_id, profiles(id, email)').eq('owner_id', session.user.id).eq('status', 'accepted')
-    setContacts(contactsData ? contactsData.map((c: any) => c.profiles) : [])
+    const userId = session.user.id
 
-    const { data: pendingData } = await supabase.from('contacts').select('owner_id').eq('contact_id', session.user.id).eq('status', 'pending')
-    if (pendingData && pendingData.length > 0) {
-      const { data: reqProfiles } = await supabase.from('profiles').select('*').in('id', pendingData.map(r => r.owner_id))
-      setIncomingRequests(reqProfiles || [])
+    const { data: contactsData } = await supabase
+      .from('contacts')
+      .select('contact_id, profiles(id, email)')
+      .eq('owner_id', userId)
+      .eq('status', 'accepted')
+    const acceptedRows = (contactsData ?? []) as ContactAcceptedRow[]
+    setContacts(
+      acceptedRows.flatMap((c) => {
+        if (!c.profiles) return []
+        return Array.isArray(c.profiles) ? c.profiles : [c.profiles]
+      })
+    )
+
+    const { data: pendingData } = await supabase
+      .from('contacts')
+      .select('owner_id')
+      .eq('contact_id', userId)
+      .eq('status', 'pending')
+    const pendingRows = (pendingData ?? []) as ContactPendingIncomingRow[]
+    if (pendingRows.length > 0) {
+      const { data: reqProfiles } = await supabase
+        .from('profiles')
+        .select('*')
+        .in(
+          'id',
+          pendingRows.map((r) => r.owner_id)
+        )
+      setIncomingRequests((reqProfiles as Profile[] | null) ?? [])
     } else setIncomingRequests([])
 
-    const { data: outData } = await supabase.from('contacts').select('contact_id, status').eq('owner_id', session.user.id).in('status', ['pending', 'rejected'])
-    if (outData && outData.length > 0) {
-      const { data: outProfiles } = await supabase.from('profiles').select('*').in('id', outData.map(r => r.contact_id))
+    const { data: outData } = await supabase
+      .from('contacts')
+      .select('contact_id, status')
+      .eq('owner_id', userId)
+      .in('status', ['pending', 'rejected'])
+    const outRows = (outData ?? []) as ContactOutgoingRow[]
+    if (outRows.length > 0) {
+      const { data: outProfiles } = await supabase
+        .from('profiles')
+        .select('*')
+        .in(
+          'id',
+          outRows.map((r) => r.contact_id)
+        )
       if (outProfiles) {
-        setOutgoingRequests(outProfiles.map(p => ({ ...p, requestStatus: outData.find(o => o.contact_id === p.id)?.status })))
+        const profiles = outProfiles as Profile[]
+        setOutgoingRequests(
+          profiles.map((p) => {
+            const raw = outRows.find((o) => o.contact_id === p.id)?.status
+            const requestStatus: 'pending' | 'rejected' =
+              raw === 'rejected' ? 'rejected' : 'pending'
+            return { ...p, requestStatus }
+          })
+        )
       }
     } else setOutgoingRequests([])
 
-    const { data: incomingMsgs } = await supabase.from('messages').select('sender_id, is_read').eq('receiver_id', session.user.id)
+    const { data: incomingMsgs } = await supabase
+      .from('messages')
+      .select('sender_id, is_read')
+      .eq('receiver_id', userId)
     const counts: Record<string, number> = {}
-    incomingMsgs?.forEach(msg => { if (!msg.is_read) counts[msg.sender_id] = (counts[msg.sender_id] || 0) + 1 })
+    const unreadRows = (incomingMsgs ?? []) as UnreadMessageRow[]
+    unreadRows.forEach((msg) => {
+      if (!msg.is_read) counts[msg.sender_id] = (counts[msg.sender_id] || 0) + 1
+    })
     setUnreadCounts(counts)
-  }
+  }, [session])
 
   // === ИСПРАВЛЕННЫЙ ГЛОБАЛЬНЫЙ REALTIME ===
   useEffect(() => {
-    fetchSidebarData()
+    void fetchSidebarData()
     if (!session) return
-    
-    // Слушаем заявки
-    const contactsChannel = supabase.channel('realtime-contacts').on('postgres_changes', { event: '*', schema: 'public', table: 'contacts' }, async (payload) => {
-        if (payload.eventType === 'UPDATE' && payload.new.owner_id === session.user.id) {
-            const { data: profile } = await supabase.from('profiles').select('email').eq('id', payload.new.contact_id).single()
-            const userEmail = profile ? profile.email : 'Пользователь'
-            if (payload.new.status === 'accepted') showNotification(`🎉 ${userEmail} принял(а) вашу заявку!`)
-            else if (payload.new.status === 'rejected') showNotification(`❌ ${userEmail} отклонил(а) заявку.`)
+
+    const contactsChannel = supabase
+      .channel('realtime-contacts')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'contacts' },
+        async (payload) => {
+          if (payload.eventType === 'UPDATE' && payload.new) {
+            const row = payload.new as ContactsPayloadNew
+            if (row.owner_id === session.user.id) {
+              const { data: profile } = await supabase
+                .from('profiles')
+                .select('email')
+                .eq('id', row.contact_id)
+                .single()
+              const userEmail = profile?.email ?? 'Пользователь'
+              if (row.status === 'accepted')
+                showNotification(`🎉 ${userEmail} принял(а) вашу заявку!`)
+              else if (row.status === 'rejected')
+                showNotification(`❌ ${userEmail} отклонил(а) заявку.`)
+            }
+          }
+          void fetchSidebarData()
         }
-        fetchSidebarData()
-    }).subscribe()
+      )
+      .subscribe()
 
-    // Слушаем ВСЕ новые сообщения, чтобы зажигать цифру "1" даже если мы не в чате!
-    const badgesChannel = supabase.channel('realtime-badges').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `receiver_id=eq.${session.user.id}` }, () => {
-        fetchSidebarData() 
-    }).subscribe()
+    const badgesChannel = supabase
+      .channel('realtime-badges')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `receiver_id=eq.${session.user.id}`,
+        },
+        () => {
+          void fetchSidebarData()
+        }
+      )
+      .subscribe()
 
-    return () => { 
+    return () => {
       supabase.removeChannel(contactsChannel)
       supabase.removeChannel(badgesChannel)
     }
-  }, [session])
+  }, [session, fetchSidebarData, showNotification])
 
   async function sendRequest(emailToAdd: string) {
-    if (!emailToAdd.trim() || emailToAdd === session?.user.email) return
+    if (!session) return
+    if (!emailToAdd.trim() || emailToAdd === session.user.email) return
     const { data: profile } = await supabase.from('profiles').select('*').eq('email', emailToAdd).single()
     if (!profile) return showNotification('⚠️ Пользователь не найден.')
-    const { data: existing } = await supabase.from('contacts').select('*').eq('owner_id', session.user.id).eq('contact_id', profile.id)
-    if (existing && existing.length > 0) return showNotification('⚠️ Вы уже взаимодействовали с этим пользователем.')
-    const { error } = await supabase.from('contacts').insert([{ owner_id: session.user.id, contact_id: profile.id, status: 'pending' }])
-    if (!error) { setNewContactEmail(''); showNotification('📨 Заявка отправлена!'); fetchSidebarData(); }
+    const p = profile as Profile
+    const { data: existing } = await supabase
+      .from('contacts')
+      .select('*')
+      .eq('owner_id', session.user.id)
+      .eq('contact_id', p.id)
+    if (existing && existing.length > 0)
+      return showNotification('⚠️ Вы уже взаимодействовали с этим пользователем.')
+    const { error } = await supabase
+      .from('contacts')
+      .insert([{ owner_id: session.user.id, contact_id: p.id, status: 'pending' }])
+    if (!error) {
+      setNewContactEmail('')
+      showNotification('📨 Заявка отправлена!')
+      void fetchSidebarData()
+    }
   }
   async function acceptRequest(senderId: string) {
-    await supabase.from('contacts').update({ status: 'accepted' }).eq('owner_id', senderId).eq('contact_id', session.user.id)
-    await supabase.from('contacts').insert([{ owner_id: session.user.id, contact_id: senderId, status: 'accepted' }])
+    if (!session) return
+    await supabase
+      .from('contacts')
+      .update({ status: 'accepted' })
+      .eq('owner_id', senderId)
+      .eq('contact_id', session.user.id)
+    await supabase
+      .from('contacts')
+      .insert([{ owner_id: session.user.id, contact_id: senderId, status: 'accepted' }])
   }
   async function rejectRequest(senderId: string) {
-    await supabase.from('contacts').update({ status: 'rejected' }).eq('owner_id', senderId).eq('contact_id', session.user.id)
-    fetchSidebarData()
+    if (!session) return
+    await supabase
+      .from('contacts')
+      .update({ status: 'rejected' })
+      .eq('owner_id', senderId)
+      .eq('contact_id', session.user.id)
+    void fetchSidebarData()
   }
   async function cancelOutgoingRequest(contactId: string) {
+    if (!session) return
     await supabase.from('contacts').delete().match({ owner_id: session.user.id, contact_id: contactId })
-    fetchSidebarData()
+    void fetchSidebarData()
   }
-  async function removeContact(e: any, contactId: string) {
+  async function removeContact(e: MouseEvent<HTMLButtonElement>, contactId: string) {
     e.stopPropagation()
-    if (!window.confirm("Удалить из контактов?")) return
+    if (!session) return
+    if (!window.confirm('Удалить из контактов?')) return
     await supabase.from('contacts').delete().match({ owner_id: session.user.id, contact_id: contactId })
     await supabase.from('contacts').delete().match({ owner_id: contactId, contact_id: session.user.id })
     if (selectedUser?.id === contactId) setSelectedUser(null)
   }
 
-  // === ЛОГИКА АКТИВНОГО ЧАТА ===
   // === ЛОГИКА АКТИВНОГО ЧАТА + РЕАКЦИИ ===
   useEffect(() => {
     if (!session || !selectedUser) return
-    
-    async function fetchMessagesAndMarkRead() {
-      // 1. Грузим сообщения
-      const { data } = await supabase.from('messages').select('*')
-        .or(`and(sender_id.eq.${session.user.id},receiver_id.eq.${selectedUser.id}),and(sender_id.eq.${selectedUser.id},receiver_id.eq.${session.user.id})`)
-        .order('created_at', { ascending: true })
-      if (data) setMessages(data)
-      
-      // 2. Грузим реакции сразу при входе в чат
-      const { data: reactData } = await supabase.from('message_reactions').select('*');
-      if (reactData) setAllReactions(reactData);
+    const userId = session.user.id
+    const peerId = selectedUser.id
 
-      // 3. Помечаем как прочитанные
-      await supabase.from('messages').update({ is_read: true }).eq('sender_id', selectedUser.id).eq('receiver_id', session.user.id).eq('is_read', false)
-      fetchSidebarData()
+    async function fetchMessagesAndMarkRead() {
+      const { data } = await supabase
+        .from('messages')
+        .select('*')
+        .or(
+          `and(sender_id.eq.${userId},receiver_id.eq.${peerId}),and(sender_id.eq.${peerId},receiver_id.eq.${userId})`
+        )
+        .order('created_at', { ascending: true })
+      if (data) setMessages(data as ChatMessage[])
+
+      const { data: reactData } = await supabase.from('message_reactions').select('*')
+      if (reactData) setAllReactions(reactData as MessageReaction[])
+
+      await supabase
+        .from('messages')
+        .update({ is_read: true })
+        .eq('sender_id', peerId)
+        .eq('receiver_id', userId)
+        .eq('is_read', false)
+      void fetchSidebarData()
     }
-    fetchMessagesAndMarkRead()
-    
-    // 4. Подписываемся на REALTIME (и для сообщений, и для реакций)
-    const channel = supabase.channel('realtime-chat-data').on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, (payload) => {
-        if (payload.eventType === 'INSERT') {
-          const msg = payload.new
-          if ((msg.sender_id === selectedUser.id && msg.receiver_id === session.user.id) || (msg.sender_id === session.user.id && msg.receiver_id === selectedUser.id)) {
-            if (msg.sender_id === selectedUser.id) supabase.from('messages').update({ is_read: true }).eq('id', msg.id).then()
-            setMessages((prev) => [...prev, msg])
+    void fetchMessagesAndMarkRead()
+
+    const channel = supabase
+      .channel('realtime-chat-data')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'messages' },
+        (payload) => {
+          if (payload.eventType === 'INSERT' && payload.new) {
+            const msg = payload.new as ChatMessage
+            if (
+              (msg.sender_id === peerId && msg.receiver_id === userId) ||
+              (msg.sender_id === userId && msg.receiver_id === peerId)
+            ) {
+              if (msg.sender_id === peerId) {
+                void supabase.from('messages').update({ is_read: true }).eq('id', msg.id)
+              }
+              setMessages((prev) => [...prev, msg])
+            }
+          }
+          if (payload.eventType === 'UPDATE' && payload.new) {
+            const updated = payload.new as ChatMessage
+            setMessages((prev) => prev.map((m) => (m.id === updated.id ? updated : m)))
+            void fetchSidebarData()
           }
         }
-        if (payload.eventType === 'UPDATE') {
-          setMessages((prev) => prev.map(m => m.id === payload.new.id ? payload.new : m))
-          fetchSidebarData()
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'message_reactions' },
+        async () => {
+          const { data } = await supabase.from('message_reactions').select('*')
+          if (data) setAllReactions(data as MessageReaction[])
         }
-    })
-    // Магия: слушаем изменения в таблице реакций
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'message_reactions' }, async () => {
-        const { data } = await supabase.from('message_reactions').select('*');
-        if (data) setAllReactions(data);
-    })
-    .subscribe()
+      )
+      .subscribe()
 
-    return () => { supabase.removeChannel(channel) }
-  }, [session, selectedUser])
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [session, selectedUser, fetchSidebarData])
 
-// Функция теперь умеет принимать тип анимации
-const scrollToBottom = (behavior: ScrollBehavior = "smooth") => {
-  messagesEndRef.current?.scrollIntoView({ behavior })
-}
+  const scrollToBottom = useCallback((behavior: ScrollBehavior = 'smooth') => {
+    messagesEndRef.current?.scrollIntoView({ behavior })
+  }, [])
 
-// 1. При выборе нового друга — скроллим МГНОВЕННО
-useEffect(() => {
-  scrollToBottom("auto")
-}, [selectedUser])
+  useEffect(() => {
+    scrollToBottom('auto')
+  }, [selectedUser, scrollToBottom])
 
-// 2. При добавлении новых сообщений — скроллим ПЛАВНО
-useEffect(() => {
-  scrollToBottom("smooth")
-}, [messages])
+  useEffect(() => {
+    scrollToBottom('smooth')
+  }, [messages, scrollToBottom])
 
-  function handleFileUpload(event: any) {
-    const file = event.target.files[0]
+  function handleFileUpload(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0]
     if (file) setPendingFile(file)
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
-  function handlePaste(event: React.ClipboardEvent<HTMLInputElement>) {
+  function handlePaste(event: ClipboardEvent<HTMLInputElement>) {
     const items = event.clipboardData.items
     for (let i = 0; i < items.length; i++) {
       if (items[i].type.indexOf('image') !== -1 || items[i].kind === 'file') {
@@ -333,9 +462,10 @@ useEffect(() => {
   }
 
   async function sendMessage() {
+    if (!session) return
     if ((!text.trim() && !pendingFile) || !selectedUser || isSending) return
     setIsSending(true)
-    let uploadedUrl = null
+    let uploadedUrl: string | null = null
 
     if (pendingFile) {
       showNotification('⏳ Загружаем файл...')
@@ -370,56 +500,45 @@ useEffect(() => {
 
   function formatTime(isoString: string) { return new Date(isoString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }
 
-const toggleReaction = async (messageId: number, emoji: string) => {
+  const toggleReaction = async (messageId: number, emoji: string) => {
+    if (!session) return
+    const userId = session.user.id
     try {
-      // 1. ОПТИМИСТИЧНОЕ ОБНОВЛЕНИЕ UI (Делаем мгновенно визуально)
-      const existingLocal = allReactions.find((r: any) => 
-        r.message_id === messageId && 
-        r.user_id === session.user.id && 
-        r.emoji === emoji
-      );
+      const existingLocal = allReactions.find(
+        (r) => r.message_id === messageId && r.user_id === userId && r.emoji === emoji
+      )
 
       if (existingLocal) {
-        // Если уже стоял — мгновенно убираем с экрана
-        // @ts-ignore
-        setAllReactions(prev => prev.filter(r => r.id !== existingLocal.id));
+        setAllReactions((prev) => prev.filter((r) => r.id !== existingLocal.id))
       } else {
-        // Если не было — мгновенно рисуем на экране (даем фейковый ID)
-        const tempReaction = { 
-          id: Date.now(), 
-          message_id: messageId, 
-          user_id: session.user.id, 
-          emoji: emoji 
-        };
-        // @ts-ignore
-        setAllReactions(prev => [...prev, tempReaction]);
+        const tempReaction: MessageReaction = {
+          id: Date.now(),
+          message_id: messageId,
+          user_id: userId,
+          emoji,
+        }
+        setAllReactions((prev) => [...prev, tempReaction])
       }
 
-      // 2. ОТПРАВЛЯЕМ В БАЗУ ДАННЫХ В ФОНЕ
       const { data: existing } = await supabase
         .from('message_reactions')
         .select('id')
         .eq('message_id', messageId)
-        .eq('user_id', session.user.id)
+        .eq('user_id', userId)
         .eq('emoji', emoji)
-        .single();
+        .single()
 
       if (existing) {
-        await supabase.from('message_reactions').delete().eq('id', existing.id);
+        await supabase.from('message_reactions').delete().eq('id', existing.id)
       } else {
-        await supabase.from('message_reactions').insert([{ 
-          message_id: messageId, 
-          user_id: session.user.id, 
-          emoji: emoji 
-        }]);
+        await supabase.from('message_reactions').insert([
+          { message_id: messageId, user_id: userId, emoji },
+        ])
       }
     } catch (error) {
-      console.error('Ошибка при работе с реакцией:', error);
-      // Если произошла ошибка (например, нет интернета),
-      // в идеале тут нужно откатить локальный стейт назад, 
-      // но благодаря Realtime подписке он сам синхронизируется.
+      console.error('Ошибка при работе с реакцией:', error)
     }
-  };
+  }
 
   // ==========================================
   // ВЕРСТКА С ИДЕАЛЬНОЙ ФИКСАЦИЕЙ ДЛЯ МОБИЛОК
@@ -722,7 +841,7 @@ const toggleReaction = async (messageId: number, emoji: string) => {
                 <div className="bg-transparent flex-1 overflow-y-auto p-3 md:p-4 flex flex-col gap-3 pb-4 w-full no-scrollbar">
                   {messages.map((m) => {
                     const isMe = m.sender_id === session.user.id;
-                    const msgReactions = allReactions.filter((r: any) => r.message_id === m.id);
+                    const msgReactions = allReactions.filter((r) => r.message_id === m.id)
                     const isMenuOpen = activeReactionMsgId === m.id;
                     
                     return (
@@ -745,12 +864,26 @@ const toggleReaction = async (messageId: number, emoji: string) => {
                                 ))}
                               </div>
                               {m.content && (
-                                <button onClick={(e) => { e.stopPropagation(); copyToClipboard(m.content); }} className="text-[12px] font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-xl w-full text-center transition-colors active:scale-95">
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    if (m.content) copyToClipboard(m.content)
+                                  }}
+                                  className="text-[12px] font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-xl w-full text-center transition-colors active:scale-95"
+                                >
                                   Копировать текст
                                 </button>
                               )}
                               {m.content && (
-                                <button onClick={(e) => { e.stopPropagation(); handleAiAction('translate', 'Русский', m.id, m.content); }} className="text-[12px] font-semibold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 border border-indigo-100 px-3 py-1.5 rounded-xl w-full text-center transition-colors active:scale-95 mt-0.5 flex items-center justify-center gap-1">
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    if (m.content) void handleAiAction('translate', 'Русский', m.id, m.content)
+                                  }}
+                                  className="text-[12px] font-semibold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 border border-indigo-100 px-3 py-1.5 rounded-xl w-full text-center transition-colors active:scale-95 mt-0.5 flex items-center justify-center gap-1"
+                                >
                                   <span>🤖</span> Перевести
                                 </button>
                               )}
@@ -770,7 +903,8 @@ const toggleReaction = async (messageId: number, emoji: string) => {
                           {m.file_url && (
                             <div className="mb-2 overflow-hidden rounded-xl">
                               {m.file_url.match(/\.(jpeg|jpg|gif|png|webp)$/i) ? (
-                                 <img src={m.file_url} alt="Вложение" onLoad={() => scrollToBottom("auto")} className="w-full h-full max-h-64 object-cover hover:scale-[1.02] transition-transform duration-500 rounded-xl shadow-sm" />
+                                /* eslint-disable-next-line @next/next/no-img-element -- remote Supabase URLs; next/image needs domain config */
+                                <img src={m.file_url} alt="Вложение" onLoad={() => scrollToBottom('auto')} className="w-full h-full max-h-64 object-cover hover:scale-[1.02] transition-transform duration-500 rounded-xl shadow-sm" />
                               ) : (
                                  <a href={m.file_url} target="_blank" rel="noopener noreferrer" className={`flex items-center gap-2 p-3 rounded-xl text-sm transition-colors ${isMe ? 'bg-white/10 hover:bg-white/20' : 'bg-slate-100 hover:bg-slate-200'}`}>
                                    <span className="text-lg">📎</span> <span className="font-medium">Файл</span>
@@ -802,12 +936,14 @@ const toggleReaction = async (messageId: number, emoji: string) => {
 
                           {msgReactions.length > 0 && (
                             <div className={`absolute -bottom-3.5 flex flex-wrap gap-1 z-10 ${isMe ? 'right-2' : 'left-2'}`}>
-                              {Array.from(new Set(msgReactions.map((r: any) => r.emoji))).map(emoji => {
-                                const count = msgReactions.filter((r: any) => r.emoji === emoji).length;
-                                const hasMyReaction = msgReactions.some((r: any) => r.emoji === emoji && r.user_id === session.user.id);
+                              {Array.from(new Set(msgReactions.map((r) => r.emoji))).map((emoji) => {
+                                const count = msgReactions.filter((r) => r.emoji === emoji).length
+                                const hasMyReaction = msgReactions.some(
+                                  (r) => r.emoji === emoji && r.user_id === session.user.id
+                                )
                                 return (
-                                  <button key={emoji as string} onClick={(e) => { e.stopPropagation(); toggleReaction(m.id, emoji as string); }} className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold shadow-sm transition-all hover:scale-110 active:scale-90 cursor-pointer border ${hasMyReaction ? 'bg-indigo-50 border-indigo-200 text-indigo-600' : 'bg-white/95 border-slate-100 text-slate-500'}`}>
-                                    <span>{emoji as string}</span>
+                                  <button key={emoji} onClick={(e) => { e.stopPropagation(); toggleReaction(m.id, emoji); }} className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold shadow-sm transition-all hover:scale-110 active:scale-90 cursor-pointer border ${hasMyReaction ? 'bg-indigo-50 border-indigo-200 text-indigo-600' : 'bg-white/95 border-slate-100 text-slate-500'}`}>
+                                    <span>{emoji}</span>
                                     {count > 1 && <span>{count}</span>}
                                   </button>
                                 );
@@ -828,13 +964,15 @@ const toggleReaction = async (messageId: number, emoji: string) => {
                   {pendingFile && (
                     <div className="p-2 md:p-3 bg-gray-50 border-b flex items-start gap-3 transition-all shrink-0">
                       <div className="relative inline-block shrink-0">
-                        {/* @ts-ignore */}
-                        {pendingFile.type.startsWith('image/') ? <img src={URL.createObjectURL(pendingFile)} alt="Превью" className="h-14 w-14 md:h-16 md:w-16 object-cover rounded-lg border shadow-sm" /> : <div className="h-14 w-14 md:h-16 md:w-16 bg-white border rounded-lg shadow-sm flex items-center justify-center text-2xl">📄</div>}
-                        {/* @ts-ignore */}
-                        <button onClick={() => setPendingFile(null)} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600 shadow-md">×</button>
+                        {pendingFile.type.startsWith('image/') ? (
+                          /* eslint-disable-next-line @next/next/no-img-element -- blob preview URL from createObjectURL */
+                          <img src={URL.createObjectURL(pendingFile)} alt="Превью" className="h-14 w-14 md:h-16 md:w-16 object-cover rounded-lg border shadow-sm" />
+                        ) : (
+                          <div className="h-14 w-14 md:h-16 md:w-16 bg-white border rounded-lg shadow-sm flex items-center justify-center text-2xl">📄</div>
+                        )}
+                        <button type="button" onClick={() => setPendingFile(null)} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600 shadow-md">×</button>
                       </div>
                       <div className="flex flex-col justify-center h-14 md:h-16">
-                         {/* @ts-ignore */}
                          <span className="text-xs md:text-sm font-medium text-gray-700 truncate max-w-[150px] md:max-w-[200px]">{pendingFile.name || 'Изображение'}</span>
                          <span className="text-[10px] md:text-xs text-gray-400">Готово к отправке</span>
                       </div>
@@ -848,8 +986,7 @@ const toggleReaction = async (messageId: number, emoji: string) => {
                     <button type="button" onClick={() => fileInputRef.current?.click()} className="text-gray-400 hover:text-blue-500 p-2 md:p-2.5 rounded-full hover:bg-gray-100 transition-colors mb-1 md:mb-1 active:scale-95 shrink-0" disabled={isSending}>
                       <span className="text-xl md:text-xl">📎</span>
                     </button>
-                    {/* @ts-ignore */}
-                    <input type="file" className="hidden" ref={fileInputRef} onChange={handleFileUpload} accept="image/*, .pdf, .doc, .docx" />
+                    <input type="file" className="hidden" ref={fileInputRef} onChange={handleFileUpload} accept="image/*,.pdf,.doc,.docx" />
                     
                     {/* 🪄 МАГИЧЕСКАЯ ПАЛОЧКА */}
                     <div className="relative flex items-end">

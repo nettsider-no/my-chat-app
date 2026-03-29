@@ -50,7 +50,7 @@ export async function POST(req: Request) {
     // Возвращаем результат обратно в наш React
     return NextResponse.json({ result });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Ошибка OpenAI API:', error);
     return NextResponse.json({ error: 'Ошибка при обработке ИИ' }, { status: 500 });
   }
