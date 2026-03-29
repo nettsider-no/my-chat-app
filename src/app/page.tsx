@@ -613,7 +613,7 @@ export default function App() {
             </div>
             <div className="flex gap-2 md:gap-3 mt-1">
               <button type="button" className="mac-neu-raised flex-1 py-3 md:py-3.5 rounded-[10px] font-semibold text-sm md:text-base text-white bg-[var(--mac-imessage-sent)] border-[var(--mac-accent)]/30 hover:brightness-110 transition-all active:scale-[0.98]" onClick={handleLogin}>Войти</button>
-              <button type="button" className="mac-neu-raised flex-1 py-3 md:py-3.5 rounded-[10px] font-semibold text-sm md:text-base text-[var(--mac-text-primary)] hover:bg-[var(--mac-elevated)] transition-all active:scale-[0.98]" onClick={handleSignUp}>Рег-ция</button>
+              <button type="button" className="mac-neu-raised flex-1 py-3 md:py-3.5 rounded-[10px] font-semibold text-sm md:text-base text-[var(--mac-text-primary)] hover:brightness-95 active:brightness-90 transition-all active:scale-[0.98]" onClick={handleSignUp}>Рег-ция</button>
             </div>
             </div>
           </div>
@@ -1104,7 +1104,7 @@ export default function App() {
                         <div className="absolute bottom-full left-0 mb-3 mac-glass-strong p-2 rounded-[14px] mac-window-shadow border border-[var(--mac-border)] flex flex-col gap-1 w-48 animate-in zoom-in-95 origin-bottom-left" style={{ zIndex: 9999 }}>
                           <span className="text-xs text-[var(--mac-text-secondary)] font-bold px-2 py-1 uppercase tracking-wider">Изменить стиль</span>
                           {['Деловой и вежливый', 'Дружеский и веселый', 'Строгий и короткий', 'Дерзкий (Сленг)'].map(style => (
-                            <button key={style} type="button" onClick={() => handleAiAction('style', style)} className="text-sm text-left px-3 py-2 text-[var(--mac-text-primary)] hover:bg-[var(--mac-elevated)] rounded-[10px] transition-colors">
+                            <button key={style} type="button" onClick={() => handleAiAction('style', style)} className="text-sm text-left px-3 py-2 text-[var(--mac-text-primary)] hover:bg-[var(--mac-hover-surface)] rounded-[10px] transition-colors">
                               {style}
                             </button>
                           ))}
@@ -1121,7 +1121,7 @@ export default function App() {
                         <div className="absolute bottom-full left-0 mb-3 mac-glass-strong p-2 rounded-[14px] mac-window-shadow border border-[var(--mac-border)] flex flex-col gap-1 w-52 animate-in zoom-in-95 origin-bottom-left" style={{ zIndex: 9999 }}>
                           <span className="text-xs text-[var(--mac-text-secondary)] font-bold px-2 py-1 uppercase tracking-wider">Перевести текст</span>
                           {['Английский', 'Норвежский', 'Русский'].map(lang => (
-                            <button key={lang} type="button" onClick={() => handleAiAction('translate', lang)} className="text-sm text-left px-3 py-2 text-[var(--mac-text-primary)] hover:bg-[var(--mac-elevated)] rounded-[10px] transition-colors">
+                            <button key={lang} type="button" onClick={() => handleAiAction('translate', lang)} className="text-sm text-left px-3 py-2 text-[var(--mac-text-primary)] hover:bg-[var(--mac-hover-surface)] rounded-[10px] transition-colors">
                               {lang}
                             </button>
                           ))}
