@@ -819,21 +819,19 @@ export default function App() {
               )}
 
               {!isCollapsed && <h3 className="text-[var(--mac-text-secondary)] font-semibold mb-2 text-xs uppercase tracking-wider md:text-center mt-6">Мои друзья</h3>}
-              <ul className="w-full flex flex-col gap-1.5">
+              <ul className="w-full flex flex-col gap-1">
   {contacts.map(u => {
     const isSelected = selectedUser?.id === u.id;
     return (
       <li 
         key={u.id} 
         className={`cursor-pointer transition-all duration-300 w-full group flex items-center ${
-          isCollapsed 
-            ? 'justify-center p-1' 
-            : `p-2 md:p-2 rounded-[12px] justify-between border ${
-                isSelected 
-                  ? 'mac-glass-strong border-[var(--mac-accent)]/35 ring-1 ring-[var(--mac-accent)]/20' 
-                  : 'border-[var(--mac-border-subtle)] mac-neu-raised hover:brightness-110 text-[var(--mac-text-primary)]'
-              }`
-        }`} 
+          isCollapsed
+            ? 'justify-center p-1'
+            : isSelected
+              ? 'p-1 md:p-1 rounded-[9px] justify-between border mac-glass-strong border-[var(--mac-accent)]/35 ring-1 ring-[var(--mac-accent)]/20'
+              : 'p-1 md:p-1 rounded-[9px] justify-between border border-[var(--mac-border-subtle)] mac-neu-raised hover:brightness-110 text-[var(--mac-text-primary)]'
+        }`}
         onClick={() => setSelectedUser(u)}
       >
         {isCollapsed ? (
@@ -852,9 +850,9 @@ export default function App() {
           </div>
         ) : (
           <>
-            <div className="flex items-center truncate p-2">
+            <div className="flex items-center truncate p-1">
               {/* Аватарка (развернутый вид) */}
-               <div className={`w-10 h-10 md:w-9 md:h-9 rounded-full flex items-center justify-center mr-3 uppercase font-bold shrink-0 text-lg md:text-base transition-all duration-300 ${
+               <div className={`w-8 h-8 md:w-7 md:h-7 rounded-full flex items-center justify-center mr-1.5 uppercase font-bold shrink-0 text-sm md:text-sm transition-all duration-300 ${
                  isSelected
                    ? 'bg-[var(--mac-imessage-sent)] text-white border border-white/15'
                    : 'mac-neu-raised text-[var(--mac-accent)] border border-[var(--mac-border)]'
@@ -862,7 +860,7 @@ export default function App() {
                  {u.email[0]}
                </div>
                {/* Имя / Почта */}
-               <span className={`truncate text-base md:text-sm transition-colors ${
+               <span className={`truncate text-sm md:text-sm transition-colors ${
                  isSelected ? 'font-bold text-[var(--mac-text-primary)]' : 'font-medium text-[var(--mac-text-secondary)] group-hover:text-[var(--mac-text-primary)]'
                }`}>
                  {u.email}
@@ -872,14 +870,14 @@ export default function App() {
             <div className="flex items-center gap-1 shrink-0">
               {/* Бейдж непрочитанных (развернутый вид) */}
               {unreadCounts[u.id] > 0 && (
-                <span className="bg-[var(--mac-imessage-sent)] text-white text-[11px] font-bold px-2 py-0.5 rounded-full border border-white/10">
+                <span className="bg-[var(--mac-imessage-sent)] text-white text-[9px] font-bold px-1 py-0.5 rounded-full border border-white/10">
                   {unreadCounts[u.id]}
                 </span>
               )}
               {/* Крестик удаления из друзей */}
               <button 
                 type="button"
-                className="cursor-pointer text-[var(--mac-text-secondary)] hover:text-[var(--mac-danger)] mac-neu-raised w-8 h-8 flex items-center justify-center rounded-full text-xl transition-all duration-300 active:scale-90 shrink-0" 
+                className="cursor-pointer text-[var(--mac-text-secondary)] hover:text-[var(--mac-danger)] mac-neu-raised w-6 h-6 flex items-center justify-center rounded-full text-base transition-all duration-300 active:scale-90 shrink-0" 
                 onClick={(e) => removeContact(e, u.id)}
                 title="Удалить из друзей"
               >
