@@ -35,6 +35,8 @@ export default function App() {
   const [isFindCollapsed, setIsFindCollapsed] = useState(false)
   const prevContactsEmptyRef = useRef(true)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+  const [isProfileOpen, setIsProfileOpen] = useState(false)
+  const [profilePeer, setProfilePeer] = useState<Profile | null>(null)
 
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [text, setText] = useState('')
@@ -672,6 +674,17 @@ export default function App() {
   const themeBtnBase =
     'flex items-center justify-center rounded-[10px] mac-neu-raised border border-[var(--mac-border)] transition-all active:scale-95 hover:brightness-105 shrink-0 text-[var(--mac-text-primary)]'
 
+  const openProfile = (peer: Profile) => {
+    setProfilePeer(peer)
+    setIsProfileOpen(true)
+    setIsSettingsOpen(false)
+  }
+
+  const closeProfile = () => {
+    setIsProfileOpen(false)
+    setProfilePeer(null)
+  }
+
   // ==========================================
   // ВЕРСТКА (macOS / Messages)
   // ==========================================
@@ -714,6 +727,48 @@ export default function App() {
                       <span className="font-semibold text-[var(--mac-text-primary)]">Раздел настроек</span>
                       <span className="text-xs md:text-sm text-[var(--mac-text-secondary)]">
                         Скоро тут появятся настройки, привязанные к вашему аккаунту.
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {isProfileOpen && (
+        <>
+          <div className="fixed inset-0 z-[60] bg-black/30 backdrop-blur-sm" onClick={closeProfile} />
+          <div className="fixed inset-0 z-[70] flex items-center justify-center p-3 md:p-6">
+            <div className="w-full max-w-lg mac-window-shadow border border-[var(--mac-border)] bg-[var(--mac-window-bg)] rounded-[16px] overflow-hidden max-md:rounded-[14px]">
+              <div className="mac-titlebar flex h-9 md:h-10 shrink-0 items-center relative px-3 md:px-4">
+                <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-[11px] md:text-xs font-semibold text-[var(--mac-text-secondary)] tracking-wide">
+                  Профиль
+                </span>
+                <div className="flex-1" />
+                <button
+                  type="button"
+                  onClick={closeProfile}
+                  className="mac-neu-raised w-9 h-9 md:w-10 md:h-10 rounded-[10px] flex items-center justify-center text-[var(--mac-text-secondary)] hover:text-[var(--mac-danger)] transition-all active:scale-95 border border-[var(--mac-border)]"
+                  aria-label="Закрыть профиль"
+                  title="Закрыть"
+                >
+                  ×
+                </button>
+              </div>
+              <div className="mac-glass p-5 md:p-6 border-0 border-t border-[var(--mac-border-subtle)]">
+                <div className="mac-neu-inset rounded-[14px] p-4 md:p-5 border border-[var(--mac-border-subtle)]">
+                  <div className="flex items-center gap-3">
+                    <div className="w-11 h-11 rounded-[14px] mac-neu-raised flex items-center justify-center text-xl border border-[var(--mac-border)]">
+                      👤
+                    </div>
+                    <div className="flex flex-col min-w-0">
+                      <span className="font-semibold text-[var(--mac-text-primary)] truncate">
+                        {profilePeer?.email ?? ''}
+                      </span>
+                      <span className="text-xs md:text-sm text-[var(--mac-text-secondary)]">
+                        Заглушка профиля. Позже добавим функционал (настройки, фото, статус и т.д.).
                       </span>
                     </div>
                   </div>
@@ -828,14 +883,24 @@ export default function App() {
               
               {!isCollapsed && (
                 <div className="flex-1 md:ml-2 pb-2 flex justify-between items-center overflow-hidden gap-2 min-w-0">
-                  <div className="flex flex-col ml-3 overflow-hidden leading-tight min-w-0">
-  <span className="text-[10px] uppercase tracking-[0.15em] text-[var(--mac-text-secondary)] font-bold">
-    Профиль
-  </span>
-  <span className="text-sm font-semibold text-[var(--mac-text-primary)] truncate">
-    {session.user.email}
-  </span>
-</div>
+                <button
+                  type="button"
+                  onClick={() =>
+                    openProfile({
+                      id: session.user.id,
+                      email: session.user.email ?? '',
+                    })
+                  }
+                  className="flex flex-col ml-3 overflow-hidden leading-tight min-w-0 text-left cursor-pointer focus:outline-none hover:brightness-105 active:scale-[0.99] transition-all"
+                  aria-label="Открыть профиль"
+                >
+                  <span className="text-[10px] uppercase tracking-[0.15em] text-[var(--mac-text-secondary)] font-bold">
+                    Профиль
+                  </span>
+                  <span className="text-sm font-semibold text-[var(--mac-text-primary)] truncate">
+                    {session.user.email}
+                  </span>
+                </button>
                   <div className="flex items-center gap-2 shrink-0">
                   <button
                     type="button"
@@ -1131,13 +1196,24 @@ export default function App() {
                   >
                     <span aria-hidden>{theme === 'light' ? '🌙' : '☀️'}</span>
                   </button>
-                  <div className="flex flex-1 min-w-0 items-center">
-                  <div className="w-10 h-10 rounded-full mac-neu-raised flex items-center justify-center mr-3 uppercase text-lg shrink-0 font-semibold text-[var(--mac-imessage-sent)] border border-[var(--mac-border)]">{selectedUser.email[0]}</div>
-                  <div className="flex flex-col overflow-hidden min-w-0">
-                    <span className="text-base md:text-lg truncate font-semibold text-[var(--mac-text-primary)]">{selectedUser.email}</span>
-                    <span className="text-[10px] md:text-xs text-[var(--mac-success)] font-medium">В сети</span>
-                  </div>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => openProfile(selectedUser)}
+                    className="flex flex-1 min-w-0 items-center text-left cursor-pointer focus:outline-none hover:brightness-105 active:scale-[0.99] transition-all"
+                    aria-label="Открыть профиль пользователя"
+                  >
+                    <div className="w-10 h-10 rounded-full mac-neu-raised flex items-center justify-center mr-3 uppercase text-lg shrink-0 font-semibold text-[var(--mac-imessage-sent)] border border-[var(--mac-border)]">
+                      {selectedUser.email[0]}
+                    </div>
+                    <div className="flex flex-col overflow-hidden min-w-0">
+                      <span className="text-base md:text-lg truncate font-semibold text-[var(--mac-text-primary)]">
+                        {selectedUser.email}
+                      </span>
+                      <span className="text-[10px] md:text-xs text-[var(--mac-success)] font-medium">
+                        В сети
+                      </span>
+                    </div>
+                  </button>
                 </div>
                 
                 {/* ОБЛАСТЬ СООБЩЕНИЙ */}
