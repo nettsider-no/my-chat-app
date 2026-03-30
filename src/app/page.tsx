@@ -32,6 +32,7 @@ export default function App() {
 
   const [toastMsg, setToastMsg] = useState<string | null>(null)
   const [isCollapsed, setIsCollapsed] = useState(false)
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
 
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [text, setText] = useState('')
@@ -657,6 +658,46 @@ export default function App() {
         </div>
       )}
 
+      {isSettingsOpen && (
+        <>
+          <div className="fixed inset-0 z-[60] bg-black/30 backdrop-blur-sm" onClick={() => setIsSettingsOpen(false)} />
+          <div className="fixed inset-0 z-[70] flex items-center justify-center p-3 md:p-6">
+            <div className="w-full max-w-lg mac-window-shadow border border-[var(--mac-border)] bg-[var(--mac-window-bg)] rounded-[16px] overflow-hidden max-md:rounded-[14px]">
+              <div className="mac-titlebar flex h-9 md:h-10 shrink-0 items-center relative px-3 md:px-4">
+                <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-[11px] md:text-xs font-semibold text-[var(--mac-text-secondary)] tracking-wide">
+                  Настройки
+                </span>
+                <div className="flex-1" />
+                <button
+                  type="button"
+                  onClick={() => setIsSettingsOpen(false)}
+                  className="mac-neu-raised w-9 h-9 md:w-10 md:h-10 rounded-[10px] flex items-center justify-center text-[var(--mac-text-secondary)] hover:text-[var(--mac-danger)] transition-all active:scale-95 border border-[var(--mac-border)]"
+                  aria-label="Закрыть настройки"
+                  title="Закрыть"
+                >
+                  ×
+                </button>
+              </div>
+              <div className="mac-glass p-5 md:p-6 border-0 border-t border-[var(--mac-border-subtle)]">
+                <div className="mac-neu-inset rounded-[14px] p-4 md:p-5 border border-[var(--mac-border-subtle)]">
+                  <div className="flex items-center gap-3">
+                    <div className="w-11 h-11 rounded-[14px] mac-neu-raised flex items-center justify-center text-xl border border-[var(--mac-border)]">
+                      ⚙️
+                    </div>
+                    <div className="flex flex-col min-w-0">
+                      <span className="font-semibold text-[var(--mac-text-primary)]">Раздел настроек</span>
+                      <span className="text-xs md:text-sm text-[var(--mac-text-secondary)]">
+                        Скоро тут появятся настройки, привязанные к вашему аккаунту.
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
       {!session ? (
         <div className="flex-1 flex items-center justify-center w-full h-full p-4">
           <div className="max-w-sm w-full mac-window-shadow flex flex-col gap-0 relative overflow-hidden shrink-0 rounded-[14px] md:rounded-[16px] border border-[var(--mac-border)] bg-[var(--mac-window-bg)]">
@@ -737,15 +778,26 @@ export default function App() {
 </button>
 
               {isCollapsed && (
-                <button
-                  type="button"
-                  onClick={toggleTheme}
-                  className={`hidden md:flex ${themeBtnBase} w-10 h-10 text-lg`}
-                  title={theme === 'light' ? 'Тёмная тема' : 'Светлая тема'}
-                  aria-label={theme === 'light' ? 'Включить тёмную тему' : 'Включить светлую тему'}
-                >
-                  <span aria-hidden>{theme === 'light' ? '🌙' : '☀️'}</span>
-                </button>
+                <div className="hidden md:flex flex-col gap-2">
+                  <button
+                    type="button"
+                    onClick={toggleTheme}
+                    className={`${themeBtnBase} w-10 h-10 text-lg`}
+                    title={theme === 'light' ? 'Тёмная тема' : 'Светлая тема'}
+                    aria-label={theme === 'light' ? 'Включить тёмную тему' : 'Включить светлую тему'}
+                  >
+                    <span aria-hidden>{theme === 'light' ? '🌙' : '☀️'}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsSettingsOpen(true)}
+                    className={`${themeBtnBase} w-10 h-10 text-lg`}
+                    title="Настройки"
+                    aria-label="Открыть настройки"
+                  >
+                    <span aria-hidden>⚙️</span>
+                  </button>
+                </div>
               )}
               
               {!isCollapsed && (
@@ -767,6 +819,15 @@ export default function App() {
                     aria-label={theme === 'light' ? 'Включить тёмную тему' : 'Включить светлую тему'}
                   >
                     <span aria-hidden>{theme === 'light' ? '🌙' : '☀️'}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsSettingsOpen(true)}
+                    className={`${themeBtnBase} w-9 h-9 md:w-10 md:h-10 text-base md:text-lg`}
+                    title="Настройки"
+                    aria-label="Открыть настройки"
+                  >
+                    <span aria-hidden>⚙️</span>
                   </button>
                   <button 
   type="button"
