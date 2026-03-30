@@ -72,12 +72,14 @@ export default function App() {
   const [showStyleMenu, setShowStyleMenu] = useState(false);
   const [showTranslateMenu, setShowTranslateMenu] = useState(false);
   const [aiProcessingLabel, setAiProcessingLabel] = useState<string | null>(null)
+  const [aiProcessingFromInput, setAiProcessingFromInput] = useState(false)
   const [customLang, setCustomLang] = useState('');
   const [translations, setTranslations] = useState<Record<number, string>>({}); // Храним переводы чужих сообщений
 
   // === ФУНКЦИЯ ОБРАЩЕНИЯ К ИИ ===
   const handleAiAction = async (action: 'style' | 'translate', modifier: string, msgId?: number, msgContent?: string) => {
     // Определяем, с каким текстом работаем (из поля ввода или из чужого сообщения)
+    const isFromInput = !msgId
     const targetText = msgId ? msgContent : text;
     
     if (!targetText?.trim()) {
@@ -85,6 +87,7 @@ export default function App() {
     }
 
     setIsAiLoading(true);
+    setAiProcessingFromInput(isFromInput)
     setShowStyleMenu(false);
     setShowTranslateMenu(false);
     setAiProcessingLabel(
@@ -125,6 +128,7 @@ export default function App() {
     } finally {
       setIsAiLoading(false);
       setAiProcessingLabel(null)
+      setAiProcessingFromInput(false)
     }
   };
 
@@ -1314,11 +1318,11 @@ export default function App() {
                     </div>
 
                     {/* ПОЛЕ ВВОДА ТЕКСТА + ВИЗУАЛЬНАЯ ОБРАТНАЯ СВЯЗЬ ИИ */}
-                    <div className="relative w-full md:w-auto md:flex-1">
+                    <div className="relative w-full md:flex-1 min-w-0">
                       <input
-                        className={`mac-neu-inset w-full md:w-auto md:flex-1 p-3 md:p-4 rounded-full outline-none focus:ring-2 focus:ring-[var(--mac-accent)]/35 transition-all text-[14px] md:text-[15px] min-w-0 text-[var(--mac-text-primary)] placeholder:text-[var(--mac-text-secondary)] ${
+                        className={`mac-neu-inset w-full p-3 md:p-4 rounded-full outline-none focus:ring-2 focus:ring-[var(--mac-accent)]/35 transition-all text-[14px] md:text-[15px] min-w-0 text-[var(--mac-text-primary)] placeholder:text-[var(--mac-text-secondary)] ${
                           isAiLoading ? 'ring-2 ring-[var(--mac-accent)]/30 animate-pulse' : ''
-                        }`}
+                        } ${aiProcessingFromInput && isAiLoading ? 'text-transparent caret-transparent' : ''}`}
                         value={text}
                         onChange={(e) => setText(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
@@ -1326,10 +1330,10 @@ export default function App() {
                         placeholder={isAiLoading ? "Сообщение..." : "Сообщение..."}
                         disabled={isSending || isAiLoading}
                       />
-                      {isAiLoading && aiProcessingLabel && (
-                        <div className="absolute right-3 top-1/2 -translate-y-1 pointer-events-none">
-                          <div className="mac-glass-strong px-3 py-1 rounded-full border border-[var(--mac-border-subtle)] flex items-center gap-2 animate-in zoom-in duration-200">
-                            <span className="text-[11px] font-semibold text-[var(--mac-text-secondary)] whitespace-nowrap">
+                      {aiProcessingFromInput && isAiLoading && aiProcessingLabel && (
+                        <div className="absolute inset-y-0 left-0 right-0 flex items-center justify-center pointer-events-none px-6">
+                          <div className="mac-glass-strong px-3 py-1 rounded-full border border-[var(--mac-border-subtle)] flex items-center gap-2 animate-in zoom-in duration-200 max-w-[90%]">
+                            <span className="text-[11px] font-semibold text-[var(--mac-text-secondary)] truncate">
                               {aiProcessingLabel}
                             </span>
                             <span className="ai-ellipsis text-[var(--mac-accent)]" aria-hidden="true">
