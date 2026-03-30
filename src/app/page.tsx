@@ -763,7 +763,7 @@ export default function App() {
           {/* ЛЕВАЯ КОЛОНКА */}
           <div className={`flex flex-col min-h-0 min-w-0 overflow-hidden transition-all duration-300 ease-in-out z-20 border-r border-[var(--mac-border-subtle)] bg-[var(--mac-sidebar-bg)]/95 backdrop-blur-xl md:backdrop-blur-2xl
             ${selectedUser ? 'hidden md:flex' : 'flex w-full flex-1'} 
-            ${isCollapsed ? 'md:w-20 p-2 items-center' : 'md:w-1/3 p-4'}`}>
+            ${isCollapsed ? 'md:w-20 p-2 items-start' : 'md:w-1/3 p-4'}`}>
             
             <div
               className={`flex mb-4 pb-2 border-none w-full shrink-0 ${
@@ -880,13 +880,13 @@ export default function App() {
       Новые запросы
     </h3>
   )}
-  <ul className="w-full flex flex-col items-center gap-2">
+  <ul className={`w-full flex flex-col ${isCollapsed ? 'items-start' : 'items-center'} gap-2`}>
     {incomingRequests.map(u => (
       <li 
         key={u.id} 
         className={`w-full transition-all duration-300 ${
           isCollapsed 
-            ? 'flex justify-center' 
+            ? 'flex justify-start' 
             : 'p-3.5 rounded-[14px] mac-glass flex flex-col gap-3'
         }`}
       >
@@ -982,7 +982,7 @@ export default function App() {
         key={u.id} 
         className={`cursor-pointer transition-all duration-300 w-full group flex items-center ${
           isCollapsed
-            ? 'justify-center p-1'
+            ? 'justify-start p-1'
             : isSelected
               ? 'p-1 md:p-1 rounded-[9px] justify-between border mac-glass-strong border-[var(--mac-accent)]/35 ring-1 ring-[var(--mac-accent)]/20'
               : 'p-1 md:p-1 rounded-[9px] justify-between border border-[var(--mac-border-subtle)] mac-neu-raised hover:brightness-110 text-[var(--mac-text-primary)]'
