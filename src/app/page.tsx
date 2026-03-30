@@ -582,11 +582,6 @@ export default function App() {
         <div className="flex-1 flex items-center justify-center w-full h-full p-4">
           <div className="max-w-sm w-full mac-window-shadow flex flex-col gap-0 relative overflow-hidden shrink-0 rounded-[14px] md:rounded-[16px] border border-[var(--mac-border)] bg-[var(--mac-window-bg)]">
             <div className="mac-titlebar flex h-9 md:h-10 shrink-0 items-center relative px-3 md:px-4">
-              <div className="flex items-center gap-1.5 md:gap-2" aria-hidden="true">
-                <span className="mac-traffic mac-traffic-close" />
-                <span className="mac-traffic mac-traffic-minimize" />
-                <span className="mac-traffic mac-traffic-zoom" />
-              </div>
               <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-[11px] md:text-xs font-semibold text-[var(--mac-text-secondary)] tracking-wide">
                 Вход
               </span>
@@ -612,7 +607,7 @@ export default function App() {
               <input className="mac-neu-inset p-3.5 w-full rounded-[10px] text-sm text-[var(--mac-text-primary)] placeholder:text-[var(--mac-text-secondary)] outline-none focus:ring-2 focus:ring-[var(--mac-accent)]/40 transition-all" type="password" placeholder="Ваш Пароль" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleLogin()}/>
             </div>
             <div className="flex gap-2 md:gap-3 mt-1">
-              <button type="button" className="mac-neu-raised flex-1 py-3 md:py-3.5 rounded-[10px] font-semibold text-sm md:text-base text-white bg-[var(--mac-imessage-sent)] border-[var(--mac-accent)]/30 hover:brightness-110 transition-all active:scale-[0.98]" onClick={handleLogin}>Войти</button>
+              <button type="button" className="flex-1 py-3 md:py-3.5 rounded-[10px] font-semibold text-sm md:text-base text-white bg-[var(--mac-imessage-sent)] border-[var(--mac-accent)]/30 hover:brightness-110 transition-all active:scale-[0.98]" onClick={handleLogin}>Войти</button>
               <button type="button" className="mac-neu-raised flex-1 py-3 md:py-3.5 rounded-[10px] font-semibold text-sm md:text-base text-[var(--mac-text-primary)] hover:brightness-95 active:brightness-90 transition-all active:scale-[0.98]" onClick={handleSignUp}>Рег-ция</button>
             </div>
             </div>
@@ -624,11 +619,6 @@ export default function App() {
             <header
               className={`mac-titlebar flex h-8 md:h-9 shrink-0 items-center relative px-3 md:px-4 z-30 ${selectedUser ? 'max-md:hidden' : ''}`}
             >
-              <div className="flex items-center gap-1.5 md:gap-2" aria-hidden="true">
-                <span className="mac-traffic mac-traffic-close" />
-                <span className="mac-traffic mac-traffic-minimize" />
-                <span className="mac-traffic mac-traffic-zoom" />
-              </div>
               <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-[11px] md:text-xs font-semibold text-[var(--mac-text-secondary)] tracking-wide truncate max-w-[45%]">
                 Messenger
               </span>
@@ -718,7 +708,7 @@ export default function App() {
                   <input className="mac-neu-inset pl-3.5 flex-1 rounded-[10px] text-sm text-[var(--mac-text-primary)] placeholder:text-[var(--mac-text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--mac-accent)]/30 transition-all w-full" placeholder="Email для заявки" value={newContactEmail} onChange={e => setNewContactEmail(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && sendRequest(newContactEmail)} />
                   <button 
   type="button"
-  className="cursor-pointer w-10 h-10 md:w-11 md:h-11 flex items-center justify-center mac-neu-raised text-white bg-[var(--mac-imessage-sent)] rounded-[10px] hover:brightness-110 active:scale-95 transition-all duration-300 shrink-0 ml-2 border border-[var(--mac-accent)]/25"
+                    className="cursor-pointer w-10 h-10 md:w-11 md:h-11 flex items-center justify-center text-white bg-[var(--mac-imessage-sent)] rounded-[10px] hover:brightness-110 active:scale-95 transition-all duration-300 shrink-0 ml-2 border border-[var(--mac-accent)]/25"
   onClick={() => sendRequest(newContactEmail)}
 >
   <span className="text-2xl leading-none font-light mb-0.5">+</span>
@@ -1150,7 +1140,7 @@ export default function App() {
                     {/* КНОПКА ОТПРАВКИ */}
                     <button 
                       type="button"
-                      className={`w-12 h-12 md:w-14 md:h-14 flex items-center justify-center rounded-full font-bold transition-all duration-300 mb-0.5 md:mb-1 shrink-0 mac-neu-raised
+                      className={`w-12 h-12 md:w-14 md:h-14 flex items-center justify-center rounded-full font-bold transition-all duration-300 mb-0.5 md:mb-1 shrink-0
                       ${isSending || isAiLoading || (text.trim() === '' && pendingFile === null) 
                         ? 'opacity-40 cursor-not-allowed text-[var(--mac-text-secondary)]' 
                         : 'bg-[var(--mac-imessage-sent)] text-white hover:brightness-110 active:scale-95 border-[var(--mac-accent)]/30'}`} 
