@@ -762,7 +762,7 @@ export default function App() {
             <div className="flex flex-1 min-h-0 min-w-0 overflow-hidden">
           {/* ЛЕВАЯ КОЛОНКА */}
           <div className={`flex flex-col min-h-0 min-w-0 overflow-hidden transition-all duration-300 ease-in-out z-20 border-r border-[var(--mac-border-subtle)] bg-[var(--mac-sidebar-bg)]/95 backdrop-blur-xl md:backdrop-blur-2xl
-            ${selectedUser ? 'hidden md:flex' : 'flex w-full flex-1'} 
+            ${selectedUser ? 'hidden md:flex md:flex-none' : 'flex w-full flex-1 md:flex-none'} 
             ${isCollapsed ? 'md:w-20 p-2 items-start' : 'md:w-1/3 p-4'}`}>
             
             <div
