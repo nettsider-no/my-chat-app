@@ -122,6 +122,7 @@ export default function App() {
 
   const reactionMenuRef = useRef<HTMLDivElement | null>(null)
   const [reactionMenuStyle, setReactionMenuStyle] = useState<{ top: number; left: number } | null>(null)
+  const messagesViewportRef = useRef<HTMLDivElement | null>(null)
 
   // Таймер для мобильного долгого нажатия
   const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -153,6 +154,8 @@ export default function App() {
       return
     }
 
+    const viewportEl = messagesViewportRef.current
+
     const recalc = () => {
       const menuEl = reactionMenuRef.current
       if (!menuEl) return
@@ -164,8 +167,17 @@ export default function App() {
       const menuRect = menuEl.getBoundingClientRect()
 
       const padding = 10
-      const spaceAbove = msgRect.top - padding
-      const spaceBelow = window.innerHeight - msgRect.bottom - padding
+      const viewportRect = viewportEl?.getBoundingClientRect() ?? {
+        top: 0,
+        left: 0,
+        right: window.innerWidth,
+        bottom: window.innerHeight,
+        width: window.innerWidth,
+        height: window.innerHeight,
+      }
+
+      const spaceAbove = msgRect.top - viewportRect.top - padding
+      const spaceBelow = viewportRect.bottom - msgRect.bottom - padding
 
       const placement = spaceAbove >= menuRect.height
         ? 'top'
@@ -180,13 +192,17 @@ export default function App() {
           ? msgRect.top - menuRect.height - 8
           : msgRect.bottom + 8
 
-      const top = Math.max(padding, Math.min(rawTop, window.innerHeight - menuRect.height - padding))
+      const minTop = viewportRect.top + padding
+      const maxTop = viewportRect.bottom - menuRect.height - padding
+      const top = Math.max(minTop, Math.min(rawTop, maxTop))
 
       const rawLeft = activeReactionIsMe
         ? msgRect.right - menuRect.width - 8
         : msgRect.left + 8
 
-      const left = Math.max(padding, Math.min(rawLeft, window.innerWidth - menuRect.width - padding))
+      const minLeft = viewportRect.left + padding
+      const maxLeft = viewportRect.right - menuRect.width - padding
+      const left = Math.max(minLeft, Math.min(rawLeft, maxLeft))
 
       setReactionMenuStyle({ top, left })
     }
@@ -194,11 +210,11 @@ export default function App() {
     const schedule = () => requestAnimationFrame(recalc)
     schedule()
 
-    document.addEventListener('scroll', schedule, true)
+    viewportEl?.addEventListener('scroll', schedule, { passive: true })
     window.addEventListener('resize', schedule)
 
     return () => {
-      document.removeEventListener('scroll', schedule, true)
+      viewportEl?.removeEventListener('scroll', schedule as EventListener)
       window.removeEventListener('resize', schedule)
     }
   }, [activeReactionMsgId, activeReactionIsMe])
@@ -999,7 +1015,10 @@ export default function App() {
                 </div>
                 
                 {/* ОБЛАСТЬ СООБЩЕНИЙ */}
-                <div className="bg-transparent flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-3 md:p-4 flex flex-col gap-3 pb-3 w-full no-scrollbar">
+                <div
+                  ref={messagesViewportRef}
+                  className="bg-transparent flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-3 md:p-4 flex flex-col gap-3 pb-3 w-full no-scrollbar"
+                >
                   {messages.map((m) => {
                     const isMe = m.sender_id === session.user.id;
                     const msgReactions = allReactions.filter((r) => r.message_id === m.id)
