@@ -118,12 +118,17 @@ export default function App() {
 
   // --- ЛОГИКА ДОЛГОГО НАЖАТИЯ ДЛЯ РЕАКЦИЙ ---
   const [activeReactionMsgId, setActiveReactionMsgId] = useState<number | null>(null);
+  const [activeReactionIsMe, setActiveReactionIsMe] = useState(false)
+
+  const reactionMenuRef = useRef<HTMLDivElement | null>(null)
+  const [reactionMenuStyle, setReactionMenuStyle] = useState<{ top: number; left: number } | null>(null)
 
   // Таймер для мобильного долгого нажатия
   const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const handlePressStart = (msgId: number) => {
+  const handlePressStart = (msgId: number, isMe: boolean) => {
     pressTimer.current = setTimeout(() => {
+      setActiveReactionIsMe(isMe)
       setActiveReactionMsgId(msgId);
     }, 400); // Если держим 400мс - открываем меню
   };
@@ -139,6 +144,64 @@ export default function App() {
     showNotification('📋 Текст скопирован!');
     setActiveReactionMsgId(null); // Закрываем меню после копирования
   };
+
+  // Переопределяем позицию меню реакций/копирования так,
+  // чтобы оно всегда попадало в область видимости (особенно если сообщение сверху).
+  useEffect(() => {
+    if (activeReactionMsgId === null) {
+      setReactionMenuStyle(null)
+      return
+    }
+
+    const recalc = () => {
+      const menuEl = reactionMenuRef.current
+      if (!menuEl) return
+
+      const msgEl = document.getElementById(`msg-${activeReactionMsgId}`)
+      if (!msgEl) return
+
+      const msgRect = msgEl.getBoundingClientRect()
+      const menuRect = menuEl.getBoundingClientRect()
+
+      const padding = 10
+      const spaceAbove = msgRect.top - padding
+      const spaceBelow = window.innerHeight - msgRect.bottom - padding
+
+      const placement = spaceAbove >= menuRect.height
+        ? 'top'
+        : spaceBelow >= menuRect.height
+          ? 'bottom'
+          : spaceAbove >= spaceBelow
+            ? 'top'
+            : 'bottom'
+
+      const rawTop =
+        placement === 'top'
+          ? msgRect.top - menuRect.height - 8
+          : msgRect.bottom + 8
+
+      const top = Math.max(padding, Math.min(rawTop, window.innerHeight - menuRect.height - padding))
+
+      const rawLeft = activeReactionIsMe
+        ? msgRect.right - menuRect.width - 8
+        : msgRect.left + 8
+
+      const left = Math.max(padding, Math.min(rawLeft, window.innerWidth - menuRect.width - padding))
+
+      setReactionMenuStyle({ top, left })
+    }
+
+    const schedule = () => requestAnimationFrame(recalc)
+    schedule()
+
+    document.addEventListener('scroll', schedule, true)
+    window.addEventListener('resize', schedule)
+
+    return () => {
+      document.removeEventListener('scroll', schedule, true)
+      window.removeEventListener('resize', schedule)
+    }
+  }, [activeReactionMsgId, activeReactionIsMe])
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session: s } }) => {
@@ -943,13 +1006,23 @@ export default function App() {
                     const isMenuOpen = activeReactionMsgId === m.id;
                     
                     return (
-                      <div key={m.id} className={`relative flex flex-col mb-4 ${isMe ? 'items-end' : 'items-start'}`}>
+                      <div
+                        key={m.id}
+                        id={`msg-${m.id}`}
+                        className={`relative flex flex-col mb-4 ${isMe ? 'items-end' : 'items-start'}`}
+                      >
                         
                         {/* КОНТЕКСТНОЕ МЕНЮ (Эмодзи + Копировать + Перевести) */}
                         {isMenuOpen && (
                           <>
                             <div className="fixed inset-0 z-20" onClick={() => setActiveReactionMsgId(null)} />
-                            <div className={`absolute bottom-full mb-1 z-30 flex flex-col gap-1.5 mac-glass-strong p-2 rounded-[14px] mac-window-shadow border border-[var(--mac-border)] animate-in zoom-in duration-200 ${isMe ? 'right-2 items-end' : 'left-2 items-start'}`}>
+                            <div
+                              ref={reactionMenuRef}
+                              className={`fixed z-30 flex flex-col gap-1.5 mac-glass-strong p-2 rounded-[14px] mac-window-shadow border border-[var(--mac-border)] animate-in zoom-in duration-200 max-h-[70vh] overflow-auto transition-opacity ${
+                                reactionMenuStyle ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+                              } ${isMe ? 'items-end' : 'items-start'}`}
+                              style={reactionMenuStyle ? { top: reactionMenuStyle.top, left: reactionMenuStyle.left } : undefined}
+                            >
                               <div className="flex gap-1">
                                 {['❤️', '👍', '🔥', '😂', '😢', '😁', '👑', '🐥'].map((emoji) => (
                                   <button
@@ -991,8 +1064,8 @@ export default function App() {
 
                         {/* ПУЗЫРЕК СООБЩЕНИЯ */}
                         <div 
-                          onContextMenu={(e) => { e.preventDefault(); setActiveReactionMsgId(m.id); }}
-                          onTouchStart={() => handlePressStart(m.id)}
+                          onContextMenu={(e) => { e.preventDefault(); setActiveReactionIsMe(isMe); setActiveReactionMsgId(m.id); }}
+                          onTouchStart={() => handlePressStart(m.id, isMe)}
                           onTouchEnd={handlePressEnd}
                           onTouchMove={handlePressEnd}
                           style={{ WebkitTouchCallout: 'none', WebkitTapHighlightColor: 'transparent' }}
