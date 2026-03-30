@@ -32,6 +32,8 @@ export default function App() {
 
   const [toastMsg, setToastMsg] = useState<string | null>(null)
   const [isCollapsed, setIsCollapsed] = useState(false)
+  const [isFindCollapsed, setIsFindCollapsed] = useState(false)
+  const prevContactsEmptyRef = useRef(true)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
 
   const [messages, setMessages] = useState<ChatMessage[]>([])
@@ -53,6 +55,15 @@ export default function App() {
       applyTheme(stored)
     }
   }, [])
+
+  useEffect(() => {
+    const contactsEmpty = contacts.length === 0
+    // По умолчанию: пока контактов нет — показываем поиск как есть.
+    // Как только появились контакты (переход 0 -> >0) — сворачиваем поиск.
+    if (contactsEmpty) setIsFindCollapsed(false)
+    else if (prevContactsEmptyRef.current && !contactsEmpty) setIsFindCollapsed(true)
+    prevContactsEmptyRef.current = contactsEmpty
+  }, [contacts.length])
 
   const toggleTheme = useCallback(() => {
     setTheme((prev) => {
@@ -858,16 +869,55 @@ export default function App() {
             
             {!isCollapsed && (
               <div className="mb-4 pb-4 w-full shrink-0">
-                <h3 className="text-[var(--mac-text-secondary)] font-semibold mb-2 text-xs uppercase tracking-wider">Найти пользователя</h3>
-                <div className="flex gap-2">
-                  <input className="mac-neu-inset pl-3.5 flex-1 rounded-[10px] text-sm text-[var(--mac-text-primary)] placeholder:text-[var(--mac-text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--mac-accent)]/30 transition-all w-full" placeholder="Email для заявки" value={newContactEmail} onChange={e => setNewContactEmail(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && sendRequest(newContactEmail)} />
-                  <button 
-  type="button"
-                    className="cursor-pointer w-10 h-10 md:w-11 md:h-11 flex items-center justify-center text-white bg-[var(--mac-imessage-sent)] rounded-[10px] hover:brightness-110 active:scale-95 transition-all duration-300 shrink-0 ml-2 border border-[var(--mac-accent)]/25"
-  onClick={() => sendRequest(newContactEmail)}
->
-  <span className="text-2xl leading-none font-light mb-0.5">+</span>
-</button>
+                {contacts.length === 0 ? (
+                  <h3 className="text-[var(--mac-text-secondary)] font-semibold mb-2 text-xs uppercase tracking-wider">Найти пользователя</h3>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setIsFindCollapsed((v) => !v)}
+                    aria-expanded={!isFindCollapsed}
+                    className="w-full flex items-center justify-between text-[var(--mac-text-secondary)] font-semibold mb-2 text-xs uppercase tracking-wider"
+                  >
+                    <span>Найти пользователя</span>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className={`w-4 h-4 transition-transform duration-300 ${isFindCollapsed ? '-rotate-90' : 'rotate-0'}`}
+                      aria-hidden="true"
+                    >
+                      <path d="M15 18l-6-6 6-6" />
+                    </svg>
+                  </button>
+                )}
+
+                <div
+                  className={`transition-all duration-300 ease-in-out overflow-hidden ${
+                    contacts.length > 0 && isFindCollapsed
+                      ? 'max-h-0 opacity-0 pointer-events-none'
+                      : 'max-h-[92px] opacity-100'
+                  }`}
+                >
+                  <div className="flex gap-2">
+                    <input
+                      className="mac-neu-inset pl-3.5 flex-1 rounded-[10px] text-sm text-[var(--mac-text-primary)] placeholder:text-[var(--mac-text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--mac-accent)]/30 transition-all w-full"
+                      placeholder="Email для заявки"
+                      value={newContactEmail}
+                      onChange={(e) => setNewContactEmail(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && sendRequest(newContactEmail)}
+                    />
+                    <button
+                      type="button"
+                      className="cursor-pointer w-10 h-10 md:w-11 md:h-11 flex items-center justify-center text-white bg-[var(--mac-imessage-sent)] rounded-[10px] hover:brightness-110 active:scale-95 transition-all duration-300 shrink-0 ml-2 border border-[var(--mac-accent)]/25"
+                      onClick={() => sendRequest(newContactEmail)}
+                    >
+                      <span className="text-2xl leading-none font-light mb-0.5">+</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
