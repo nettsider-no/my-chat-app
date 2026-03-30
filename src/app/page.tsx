@@ -71,6 +71,7 @@ export default function App() {
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [showStyleMenu, setShowStyleMenu] = useState(false);
   const [showTranslateMenu, setShowTranslateMenu] = useState(false);
+  const [aiProcessingLabel, setAiProcessingLabel] = useState<string | null>(null)
   const [customLang, setCustomLang] = useState('');
   const [translations, setTranslations] = useState<Record<number, string>>({}); // Храним переводы чужих сообщений
 
@@ -86,6 +87,15 @@ export default function App() {
     setIsAiLoading(true);
     setShowStyleMenu(false);
     setShowTranslateMenu(false);
+    setAiProcessingLabel(
+      msgId
+        ? action === 'translate'
+          ? 'Перевод сообщения'
+          : 'Обработка...'
+        : action === 'translate'
+          ? `Перевод: ${modifier}`
+          : `Стиль: ${modifier}`
+    )
 
     try {
       // Берем 3 последних сообщения для контекста
@@ -114,6 +124,7 @@ export default function App() {
       showNotification('❌ Ошибка ИИ: ' + message)
     } finally {
       setIsAiLoading(false);
+      setAiProcessingLabel(null)
     }
   };
 
@@ -1108,7 +1119,10 @@ export default function App() {
                                   <button
                                     key={emoji}
                                     onClick={(e) => { e.stopPropagation(); toggleReaction(m.id, emoji); setActiveReactionMsgId(null); }}
-                                    className="hover:scale-130 transition-transform px-1.5 py-0.5 text-base md:text-lg active:scale-90 cursor-pointer"
+                                    disabled={isAiLoading}
+                                    className={`hover:scale-130 transition-transform px-1.5 py-0.5 text-base md:text-lg active:scale-90 cursor-pointer ${
+                                      isAiLoading ? 'opacity-50 cursor-not-allowed' : ''
+                                    }`}
                                   >
                                     {emoji}
                                   </button>
@@ -1121,6 +1135,7 @@ export default function App() {
                                     e.stopPropagation()
                                     if (m.content) copyToClipboard(m.content)
                                   }}
+                                  disabled={isAiLoading}
                                   className="text-[12px] font-semibold text-[var(--mac-text-primary)] mac-neu-inset hover:brightness-110 px-3 py-1.5 rounded-[10px] w-full text-center transition-colors active:scale-95"
                                 >
                                   Копировать текст
@@ -1132,7 +1147,9 @@ export default function App() {
                                   onClick={(e) => {
                                     e.stopPropagation()
                                     if (m.content) void handleAiAction('translate', 'Русский', m.id, m.content)
+                                      setActiveReactionMsgId(null)
                                   }}
+                                  disabled={isAiLoading}
                                   className="text-[12px] font-semibold text-[var(--mac-accent)] mac-neu-raised border border-[var(--mac-accent)]/25 px-3 py-1.5 rounded-[10px] w-full text-center transition-colors active:scale-95 mt-0.5 flex items-center justify-center gap-1 hover:brightness-110"
                                 >
                                   <span>🤖</span> Перевести
@@ -1241,11 +1258,17 @@ export default function App() {
                     
                     {/* 🪄 МАГИЧЕСКАЯ ПАЛОЧКА */}
                     <div className="relative flex items-end">
-                      {showStyleMenu && (
+                          {showStyleMenu && (
                         <div className="absolute bottom-full left-0 mb-3 mac-glass-strong p-2 rounded-[14px] mac-window-shadow border border-[var(--mac-border)] flex flex-col gap-1 w-48 animate-in zoom-in-95 origin-bottom-left" style={{ zIndex: 9999 }}>
                           <span className="text-xs text-[var(--mac-text-secondary)] font-bold px-2 py-1 uppercase tracking-wider">Изменить стиль</span>
                           {['Деловой и вежливый', 'Дружеский и веселый', 'Строгий и короткий', 'Дерзкий (Сленг)'].map(style => (
-                            <button key={style} type="button" onClick={() => handleAiAction('style', style)} className="text-sm text-left px-3 py-2 text-[var(--mac-text-primary)] hover:bg-[var(--mac-hover-surface)] rounded-[10px] transition-colors">
+                            <button
+                              key={style}
+                              type="button"
+                              onClick={() => handleAiAction('style', style)}
+                              disabled={isAiLoading}
+                              className="text-sm text-left px-3 py-2 text-[var(--mac-text-primary)] hover:bg-[var(--mac-hover-surface)] rounded-[10px] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
                               {style}
                             </button>
                           ))}
@@ -1258,17 +1281,30 @@ export default function App() {
 
                     {/* 🌐 ПЕРЕВОД */}
                     <div className="relative flex items-end">
-                      {showTranslateMenu && (
+                          {showTranslateMenu && (
                         <div className="absolute bottom-full left-0 mb-3 mac-glass-strong p-2 rounded-[14px] mac-window-shadow border border-[var(--mac-border)] flex flex-col gap-1 w-52 animate-in zoom-in-95 origin-bottom-left" style={{ zIndex: 9999 }}>
                           <span className="text-xs text-[var(--mac-text-secondary)] font-bold px-2 py-1 uppercase tracking-wider">Перевести текст</span>
                           {['Английский', 'Норвежский', 'Русский'].map(lang => (
-                            <button key={lang} type="button" onClick={() => handleAiAction('translate', lang)} className="text-sm text-left px-3 py-2 text-[var(--mac-text-primary)] hover:bg-[var(--mac-hover-surface)] rounded-[10px] transition-colors">
+                            <button
+                              key={lang}
+                              type="button"
+                              onClick={() => handleAiAction('translate', lang)}
+                              disabled={isAiLoading}
+                              className="text-sm text-left px-3 py-2 text-[var(--mac-text-primary)] hover:bg-[var(--mac-hover-surface)] rounded-[10px] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
                               {lang}
                             </button>
                           ))}
                           <div className="flex gap-1 mt-1 border-t border-[var(--mac-border-subtle)] pt-1.5 px-1">
                             <input value={customLang} onChange={e => setCustomLang(e.target.value)} placeholder="Свой язык..." className="text-xs p-1.5 mac-neu-inset rounded-[8px] flex-1 outline-none focus:ring-1 focus:ring-[var(--mac-accent)]/40 text-[var(--mac-text-primary)] placeholder:text-[var(--mac-text-secondary)]" />
-                            <button type="button" onClick={() => handleAiAction('translate', customLang)} className="mac-neu-raised text-white text-xs px-2 py-1.5 rounded-[8px] bg-[var(--mac-imessage-sent)] hover:brightness-110">Go</button>
+                            <button
+                              type="button"
+                              onClick={() => handleAiAction('translate', customLang)}
+                              disabled={isAiLoading}
+                              className="mac-neu-raised text-white text-xs px-2 py-1.5 rounded-[8px] bg-[var(--mac-imessage-sent)] hover:brightness-110 disabled:opacity-60 disabled:cursor-not-allowed"
+                            >
+                              {isAiLoading ? '...' : 'Go'}
+                            </button>
                           </div>
                         </div>
                       )}
@@ -1277,16 +1313,34 @@ export default function App() {
                       </button>
                     </div>
 
-                    {/* ПОЛЕ ВВОДА ТЕКСТА */}
-                    <input
-                      className="mac-neu-inset w-full md:w-auto md:flex-1 p-3 md:p-4 rounded-full outline-none focus:ring-2 focus:ring-[var(--mac-accent)]/35 transition-all text-[14px] md:text-[15px] min-w-0 text-[var(--mac-text-primary)] placeholder:text-[var(--mac-text-secondary)]"
-                      value={text}
-                      onChange={(e) => setText(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
-                      onPaste={handlePaste}
-                      placeholder={isAiLoading ? "✨ ИИ думает..." : "Сообщение..."}
-                      disabled={isSending || isAiLoading}
-                    />
+                    {/* ПОЛЕ ВВОДА ТЕКСТА + ВИЗУАЛЬНАЯ ОБРАТНАЯ СВЯЗЬ ИИ */}
+                    <div className="relative w-full md:w-auto md:flex-1">
+                      <input
+                        className={`mac-neu-inset w-full md:w-auto md:flex-1 p-3 md:p-4 rounded-full outline-none focus:ring-2 focus:ring-[var(--mac-accent)]/35 transition-all text-[14px] md:text-[15px] min-w-0 text-[var(--mac-text-primary)] placeholder:text-[var(--mac-text-secondary)] ${
+                          isAiLoading ? 'ring-2 ring-[var(--mac-accent)]/30 animate-pulse' : ''
+                        }`}
+                        value={text}
+                        onChange={(e) => setText(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
+                        onPaste={handlePaste}
+                        placeholder={isAiLoading ? "Сообщение..." : "Сообщение..."}
+                        disabled={isSending || isAiLoading}
+                      />
+                      {isAiLoading && aiProcessingLabel && (
+                        <div className="absolute right-3 top-1/2 -translate-y-1 pointer-events-none">
+                          <div className="mac-glass-strong px-3 py-1 rounded-full border border-[var(--mac-border-subtle)] flex items-center gap-2 animate-in zoom-in duration-200">
+                            <span className="text-[11px] font-semibold text-[var(--mac-text-secondary)] whitespace-nowrap">
+                              {aiProcessingLabel}
+                            </span>
+                            <span className="ai-ellipsis text-[var(--mac-accent)]" aria-hidden="true">
+                              <span />
+                              <span />
+                              <span />
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                     
                     {/* КНОПКА ОТПРАВКИ */}
                     <button 
