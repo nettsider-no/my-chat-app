@@ -42,6 +42,8 @@ export default function App() {
   const [text, setText] = useState('')
   const [isSending, setIsSending] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const composerInputRef = useRef<HTMLInputElement>(null)
+  const [editingMessageId, setEditingMessageId] = useState<number | null>(null)
 
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [pendingFile, setPendingFile] = useState<File | null>(null)
@@ -560,6 +562,11 @@ export default function App() {
     }
   }, [session, selectedUser, fetchSidebarData])
 
+  useEffect(() => {
+    // При смене диалога выходим из режима редактирования
+    setEditingMessageId(null)
+  }, [selectedUser?.id])
+
   const scrollToBottom = useCallback((behavior: ScrollBehavior = 'smooth') => {
     messagesEndRef.current?.scrollIntoView({ behavior })
   }, [])
@@ -594,7 +601,35 @@ export default function App() {
 
   async function sendMessage() {
     if (!session) return
-    if ((!text.trim() && !pendingFile) || !selectedUser || isSending) return
+    if (!selectedUser || isSending) return
+
+    if (editingMessageId !== null) {
+      if (!text.trim()) return
+      if (pendingFile) {
+        showNotification('⚠️ Нельзя редактировать сообщение с вложением. Уберите файл и попробуйте снова.')
+        return
+      }
+      setIsSending(true)
+      const nextContent = text.trim()
+      const { error } = await supabase
+        .from('messages')
+        .update({ content: nextContent })
+        .eq('id', editingMessageId)
+        .eq('sender_id', session.user.id)
+
+      if (error) {
+        showNotification('❌ Не удалось сохранить: ' + error.message)
+      } else {
+        setMessages((prev) => prev.map((m) => (m.id === editingMessageId ? { ...m, content: nextContent } : m)))
+        showNotification('✅ Сообщение обновлено')
+        setEditingMessageId(null)
+        setText('')
+      }
+      setIsSending(false)
+      return
+    }
+
+    if ((!text.trim() && !pendingFile) || isSending) return
     setIsSending(true)
     let uploadedUrl: string | null = null
 
@@ -1271,6 +1306,22 @@ export default function App() {
                                   Копировать текст
                                 </button>
                               )}
+                              {isMe && m.content && (
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    setEditingMessageId(m.id)
+                                    setText(m.content ?? '')
+                                    setActiveReactionMsgId(null)
+                                    requestAnimationFrame(() => composerInputRef.current?.focus())
+                                  }}
+                                  disabled={isAiLoading || isSending}
+                                  className="text-[12px] font-semibold text-[var(--mac-text-primary)] mac-neu-inset hover:brightness-110 px-3 py-1.5 rounded-[10px] w-full text-center transition-colors active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                  ✏️ Редактировать
+                                </button>
+                              )}
                               {m.content && (
                                 <button
                                   type="button"
@@ -1446,6 +1497,7 @@ export default function App() {
                     {/* ПОЛЕ ВВОДА ТЕКСТА + ВИЗУАЛЬНАЯ ОБРАТНАЯ СВЯЗЬ ИИ */}
                     <div className="relative w-full md:flex-1 min-w-0">
                       <input
+                        ref={composerInputRef}
                         className={`mac-neu-inset w-full p-3 md:p-4 rounded-full outline-none focus:ring-2 focus:ring-[var(--mac-accent)]/35 transition-all text-[14px] md:text-[15px] min-w-0 text-[var(--mac-text-primary)] placeholder:text-[var(--mac-text-secondary)] ${
                           isAiLoading ? 'ring-2 ring-[var(--mac-accent)]/30 animate-pulse' : ''
                         } ${aiProcessingFromInput && isAiLoading ? 'text-transparent caret-transparent' : ''}`}
@@ -1456,6 +1508,26 @@ export default function App() {
                         placeholder={isAiLoading ? "Сообщение..." : "Сообщение..."}
                         disabled={isSending || isAiLoading}
                       />
+                      {editingMessageId !== null && !isAiLoading && (
+                        <div className="absolute -top-8 left-0 right-0 flex items-center justify-between gap-2 px-1">
+                          <div className="mac-glass-strong px-3 py-1 rounded-full border border-[var(--mac-border-subtle)] flex items-center gap-2">
+                            <span className="text-[11px] font-semibold text-[var(--mac-text-secondary)] whitespace-nowrap">
+                              ✏️ Редактирование
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditingMessageId(null)
+                              setText('')
+                              requestAnimationFrame(() => composerInputRef.current?.focus())
+                            }}
+                            className="mac-neu-raised px-3 py-1 rounded-full text-[11px] font-semibold text-[var(--mac-text-secondary)] hover:text-[var(--mac-danger)] transition-all active:scale-95 border border-[var(--mac-border)]"
+                          >
+                            Отмена
+                          </button>
+                        </div>
+                      )}
                       {aiProcessingFromInput && isAiLoading && aiProcessingLabel && (
                         <div className="absolute inset-y-0 left-0 right-0 flex items-center justify-center pointer-events-none px-6">
                           <div className="mac-glass-strong px-3 py-1 rounded-full border border-[var(--mac-border-subtle)] flex items-center gap-2 animate-in zoom-in duration-200 max-w-[90%]">
@@ -1485,7 +1557,7 @@ export default function App() {
                       {isSending ? (
                         <span className="animate-pulse text-white/70">...</span>
                       ) : (
-                        <span className="text-lg md:text-xl transform translate-x-0.5">➤</span>
+                        <span className="text-lg md:text-xl transform translate-x-0.5">{editingMessageId !== null ? '✓' : '➤'}</span>
                       )}
                     </button>
                     
