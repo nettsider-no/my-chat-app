@@ -17,6 +17,444 @@ import type {
   ContactsPayloadNew,
 } from '@/src/types/chat'
 
+type UiLanguage = 'en' | 'no' | 'fr' | 'ar' | 'zh' | 'ru' | 'uk' | 'es'
+const UI_LANG_OPTIONS: Array<{ code: UiLanguage; label: string }> = [
+  { code: 'en', label: 'English' },
+  { code: 'no', label: 'Norsk' },
+  { code: 'fr', label: 'Français' },
+  { code: 'ar', label: 'العربية' },
+  { code: 'zh', label: '中文' },
+  { code: 'ru', label: 'Русский' },
+  { code: 'uk', label: 'Українська' },
+  { code: 'es', label: 'Español' },
+]
+
+type I18nKey =
+  | 'appTitle'
+  | 'loginTitle'
+  | 'loginSubtitle'
+  | 'emailPlaceholder'
+  | 'passwordPlaceholder'
+  | 'signIn'
+  | 'signUp'
+  | 'logout'
+  | 'profile'
+  | 'settings'
+  | 'close'
+  | 'language'
+  | 'languageHint'
+  | 'saving'
+  | 'findUser'
+  | 'requestEmailPlaceholder'
+  | 'newRequests'
+  | 'myRequests'
+  | 'myFriends'
+  | 'back'
+  | 'online'
+  | 'chooseFriendTitle'
+  | 'chooseFriendSubtitle'
+  | 'messagePlaceholder'
+  | 'editing'
+  | 'cancel'
+  | 'copyText'
+  | 'translate'
+  | 'edit'
+  | 'aiThinking'
+  | 'aiTranslateLabel'
+  | 'aiStyleLabel'
+  | 'styleMenuTitle'
+  | 'translateMenuTitle'
+  | 'magicWandTitle'
+  | 'translateTitle'
+  | 'customLangPlaceholder'
+  | 'go'
+  | 'styleBusiness'
+  | 'styleFriendly'
+  | 'styleStrict'
+  | 'styleSlang'
+  | 'langEnglish'
+  | 'langNorwegian'
+  | 'langRussian'
+
+const I18N: Record<UiLanguage, Record<I18nKey, string>> = {
+  ru: {
+    appTitle: 'Messenger',
+    loginTitle: 'Вход',
+    loginSubtitle: 'Войдите в аккаунт или создайте новый',
+    emailPlaceholder: 'Ваш Email',
+    passwordPlaceholder: 'Ваш Пароль',
+    signIn: 'Войти',
+    signUp: 'Рег-ция',
+    logout: 'Выйти',
+    profile: 'Профиль',
+    settings: 'Настройки',
+    close: 'Закрыть',
+    language: 'Язык',
+    languageHint: 'Сохраняется для вашего аккаунта.',
+    saving: 'Сохранение…',
+    findUser: 'Найти пользователя',
+    requestEmailPlaceholder: 'Email для заявки',
+    newRequests: 'Новые запросы',
+    myRequests: 'Мои заявки',
+    myFriends: 'Мои друзья',
+    back: 'Назад',
+    online: 'В сети',
+    chooseFriendTitle: 'Выберите друга слева, чтобы начать общение',
+    chooseFriendSubtitle: 'Как в Messages на Mac',
+    messagePlaceholder: 'Сообщение...',
+    editing: '✏️ Редактирование',
+    cancel: 'Отмена',
+    copyText: 'Копировать текст',
+    translate: 'Перевести',
+    edit: '✏️ Редактировать',
+    aiThinking: '✨ ИИ думает…',
+    aiTranslateLabel: 'Перевод: {x}',
+    aiStyleLabel: 'Стиль: {x}',
+    styleMenuTitle: 'Изменить стиль',
+    translateMenuTitle: 'Перевести текст',
+    magicWandTitle: 'Магическая палочка',
+    translateTitle: 'Перевод',
+    customLangPlaceholder: 'Свой язык...',
+    go: 'Go',
+    styleBusiness: 'Деловой и вежливый',
+    styleFriendly: 'Дружеский и веселый',
+    styleStrict: 'Строгий и короткий',
+    styleSlang: 'Дерзкий (Сленг)',
+    langEnglish: 'Английский',
+    langNorwegian: 'Норвежский',
+    langRussian: 'Русский',
+  },
+  en: {
+    appTitle: 'Messenger',
+    loginTitle: 'Sign in',
+    loginSubtitle: 'Sign in or create a new account',
+    emailPlaceholder: 'Email',
+    passwordPlaceholder: 'Password',
+    signIn: 'Sign in',
+    signUp: 'Sign up',
+    logout: 'Log out',
+    profile: 'Profile',
+    settings: 'Settings',
+    close: 'Close',
+    language: 'Language',
+    languageHint: 'Saved to your account.',
+    saving: 'Saving…',
+    findUser: 'Find user',
+    requestEmailPlaceholder: 'Email to request',
+    newRequests: 'New requests',
+    myRequests: 'My requests',
+    myFriends: 'My friends',
+    back: 'Back',
+    online: 'Online',
+    chooseFriendTitle: 'Choose a friend on the left to start chatting',
+    chooseFriendSubtitle: 'Like Messages on Mac',
+    messagePlaceholder: 'Message…',
+    editing: '✏️ Editing',
+    cancel: 'Cancel',
+    copyText: 'Copy text',
+    translate: 'Translate',
+    edit: '✏️ Edit',
+    aiThinking: '✨ AI is thinking…',
+    aiTranslateLabel: 'Translate: {x}',
+    aiStyleLabel: 'Style: {x}',
+    styleMenuTitle: 'Change style',
+    translateMenuTitle: 'Translate text',
+    magicWandTitle: 'Magic wand',
+    translateTitle: 'Translate',
+    customLangPlaceholder: 'Custom language…',
+    go: 'Go',
+    styleBusiness: 'Business & polite',
+    styleFriendly: 'Friendly & fun',
+    styleStrict: 'Strict & concise',
+    styleSlang: 'Bold (slang)',
+    langEnglish: 'English',
+    langNorwegian: 'Norwegian',
+    langRussian: 'Russian',
+  },
+  no: {
+    appTitle: 'Messenger',
+    loginTitle: 'Logg inn',
+    loginSubtitle: 'Logg inn eller opprett en ny konto',
+    emailPlaceholder: 'E-post',
+    passwordPlaceholder: 'Passord',
+    signIn: 'Logg inn',
+    signUp: 'Registrer',
+    logout: 'Logg ut',
+    profile: 'Profil',
+    settings: 'Innstillinger',
+    close: 'Lukk',
+    language: 'Språk',
+    languageHint: 'Lagres på kontoen din.',
+    saving: 'Lagrer…',
+    findUser: 'Finn bruker',
+    requestEmailPlaceholder: 'E-post for forespørsel',
+    newRequests: 'Nye forespørsler',
+    myRequests: 'Mine forespørsler',
+    myFriends: 'Mine venner',
+    back: 'Tilbake',
+    online: 'På nett',
+    chooseFriendTitle: 'Velg en venn til venstre for å starte en chat',
+    chooseFriendSubtitle: 'Som Messages på Mac',
+    messagePlaceholder: 'Melding…',
+    editing: '✏️ Redigering',
+    cancel: 'Avbryt',
+    copyText: 'Kopier tekst',
+    translate: 'Oversett',
+    edit: '✏️ Rediger',
+    aiThinking: '✨ AI tenker…',
+    aiTranslateLabel: 'Oversett: {x}',
+    aiStyleLabel: 'Stil: {x}',
+    styleMenuTitle: 'Endre stil',
+    translateMenuTitle: 'Oversett tekst',
+    magicWandTitle: 'Tryllestav',
+    translateTitle: 'Oversett',
+    customLangPlaceholder: 'Eget språk…',
+    go: 'Go',
+    styleBusiness: 'Formell og høflig',
+    styleFriendly: 'Vennlig og morsom',
+    styleStrict: 'Strengt og kort',
+    styleSlang: 'Frekk (slang)',
+    langEnglish: 'Engelsk',
+    langNorwegian: 'Norsk',
+    langRussian: 'Russisk',
+  },
+  fr: {
+    appTitle: 'Messenger',
+    loginTitle: 'Connexion',
+    loginSubtitle: 'Connectez-vous ou créez un compte',
+    emailPlaceholder: 'E-mail',
+    passwordPlaceholder: 'Mot de passe',
+    signIn: 'Se connecter',
+    signUp: 'S’inscrire',
+    logout: 'Déconnexion',
+    profile: 'Profil',
+    settings: 'Paramètres',
+    close: 'Fermer',
+    language: 'Langue',
+    languageHint: 'Enregistré sur votre compte.',
+    saving: 'Enregistrement…',
+    findUser: 'Trouver un utilisateur',
+    requestEmailPlaceholder: 'E-mail de demande',
+    newRequests: 'Nouvelles demandes',
+    myRequests: 'Mes demandes',
+    myFriends: 'Mes amis',
+    back: 'Retour',
+    online: 'En ligne',
+    chooseFriendTitle: 'Choisissez un ami à gauche pour commencer',
+    chooseFriendSubtitle: 'Comme Messages sur Mac',
+    messagePlaceholder: 'Message…',
+    editing: '✏️ Modification',
+    cancel: 'Annuler',
+    copyText: 'Copier le texte',
+    translate: 'Traduire',
+    edit: '✏️ Modifier',
+    aiThinking: '✨ L’IA réfléchit…',
+    aiTranslateLabel: 'Traduire : {x}',
+    aiStyleLabel: 'Style : {x}',
+    styleMenuTitle: 'Changer le style',
+    translateMenuTitle: 'Traduire le texte',
+    magicWandTitle: 'Baguette magique',
+    translateTitle: 'Traduire',
+    customLangPlaceholder: 'Langue personnalisée…',
+    go: 'Go',
+    styleBusiness: 'Professionnel et poli',
+    styleFriendly: 'Amical et fun',
+    styleStrict: 'Strict et concis',
+    styleSlang: 'Audacieux (argot)',
+    langEnglish: 'Anglais',
+    langNorwegian: 'Norvégien',
+    langRussian: 'Russe',
+  },
+  ar: {
+    appTitle: 'Messenger',
+    loginTitle: 'تسجيل الدخول',
+    loginSubtitle: 'سجّل الدخول أو أنشئ حسابًا جديدًا',
+    emailPlaceholder: 'البريد الإلكتروني',
+    passwordPlaceholder: 'كلمة المرور',
+    signIn: 'دخول',
+    signUp: 'تسجيل',
+    logout: 'خروج',
+    profile: 'الملف الشخصي',
+    settings: 'الإعدادات',
+    close: 'إغلاق',
+    language: 'اللغة',
+    languageHint: 'يتم حفظها في حسابك.',
+    saving: 'جارٍ الحفظ…',
+    findUser: 'ابحث عن مستخدم',
+    requestEmailPlaceholder: 'بريد الطلب',
+    newRequests: 'طلبات جديدة',
+    myRequests: 'طلباتي',
+    myFriends: 'أصدقائي',
+    back: 'رجوع',
+    online: 'متصل',
+    chooseFriendTitle: 'اختر صديقًا من اليسار لبدء المحادثة',
+    chooseFriendSubtitle: 'مثل Messages على Mac',
+    messagePlaceholder: 'رسالة…',
+    editing: '✏️ تعديل',
+    cancel: 'إلغاء',
+    copyText: 'نسخ النص',
+    translate: 'ترجمة',
+    edit: '✏️ تعديل',
+    aiThinking: '✨ الذكاء الاصطناعي يفكر…',
+    aiTranslateLabel: 'ترجمة: {x}',
+    aiStyleLabel: 'النمط: {x}',
+    styleMenuTitle: 'تغيير الأسلوب',
+    translateMenuTitle: 'ترجمة النص',
+    magicWandTitle: 'عصا سحرية',
+    translateTitle: 'ترجمة',
+    customLangPlaceholder: 'لغة مخصصة…',
+    go: 'Go',
+    styleBusiness: 'رسمي ومهذب',
+    styleFriendly: 'ودود ومرح',
+    styleStrict: 'صارم ومختصر',
+    styleSlang: 'جريء (عامية)',
+    langEnglish: 'الإنجليزية',
+    langNorwegian: 'النرويجية',
+    langRussian: 'الروسية',
+  },
+  zh: {
+    appTitle: 'Messenger',
+    loginTitle: '登录',
+    loginSubtitle: '登录或创建新账号',
+    emailPlaceholder: '邮箱',
+    passwordPlaceholder: '密码',
+    signIn: '登录',
+    signUp: '注册',
+    logout: '退出登录',
+    profile: '个人资料',
+    settings: '设置',
+    close: '关闭',
+    language: '语言',
+    languageHint: '保存到你的账号。',
+    saving: '保存中…',
+    findUser: '查找用户',
+    requestEmailPlaceholder: '请求邮箱',
+    newRequests: '新请求',
+    myRequests: '我的请求',
+    myFriends: '我的好友',
+    back: '返回',
+    online: '在线',
+    chooseFriendTitle: '在左侧选择好友开始聊天',
+    chooseFriendSubtitle: '类似 Mac 上的 Messages',
+    messagePlaceholder: '消息…',
+    editing: '✏️ 编辑中',
+    cancel: '取消',
+    copyText: '复制文本',
+    translate: '翻译',
+    edit: '✏️ 编辑',
+    aiThinking: '✨ AI 思考中…',
+    aiTranslateLabel: '翻译：{x}',
+    aiStyleLabel: '风格：{x}',
+    styleMenuTitle: '更改风格',
+    translateMenuTitle: '翻译文本',
+    magicWandTitle: '魔法棒',
+    translateTitle: '翻译',
+    customLangPlaceholder: '自定义语言…',
+    go: 'Go',
+    styleBusiness: '商务且礼貌',
+    styleFriendly: '友好且有趣',
+    styleStrict: '严格且简洁',
+    styleSlang: '大胆（俚语）',
+    langEnglish: '英语',
+    langNorwegian: '挪威语',
+    langRussian: '俄语',
+  },
+  uk: {
+    appTitle: 'Messenger',
+    loginTitle: 'Вхід',
+    loginSubtitle: 'Увійдіть або створіть новий акаунт',
+    emailPlaceholder: 'Ваш Email',
+    passwordPlaceholder: 'Ваш Пароль',
+    signIn: 'Увійти',
+    signUp: 'Реєстрація',
+    logout: 'Вийти',
+    profile: 'Профіль',
+    settings: 'Налаштування',
+    close: 'Закрити',
+    language: 'Мова',
+    languageHint: 'Зберігається для вашого акаунта.',
+    saving: 'Збереження…',
+    findUser: 'Знайти користувача',
+    requestEmailPlaceholder: 'Email для заявки',
+    newRequests: 'Нові запити',
+    myRequests: 'Мої заявки',
+    myFriends: 'Мої друзі',
+    back: 'Назад',
+    online: 'В мережі',
+    chooseFriendTitle: 'Оберіть друга зліва, щоб почати спілкування',
+    chooseFriendSubtitle: 'Як у Messages на Mac',
+    messagePlaceholder: 'Повідомлення…',
+    editing: '✏️ Редагування',
+    cancel: 'Скасувати',
+    copyText: 'Копіювати текст',
+    translate: 'Перекласти',
+    edit: '✏️ Редагувати',
+    aiThinking: '✨ ШІ думає…',
+    aiTranslateLabel: 'Переклад: {x}',
+    aiStyleLabel: 'Стиль: {x}',
+    styleMenuTitle: 'Змінити стиль',
+    translateMenuTitle: 'Перекласти текст',
+    magicWandTitle: 'Чарівна паличка',
+    translateTitle: 'Переклад',
+    customLangPlaceholder: 'Своя мова…',
+    go: 'Go',
+    styleBusiness: 'Діловий і ввічливий',
+    styleFriendly: 'Дружній і веселий',
+    styleStrict: 'Строгий і короткий',
+    styleSlang: 'Зухвалий (сленг)',
+    langEnglish: 'Англійська',
+    langNorwegian: 'Норвезька',
+    langRussian: 'Російська',
+  },
+  es: {
+    appTitle: 'Messenger',
+    loginTitle: 'Iniciar sesión',
+    loginSubtitle: 'Inicia sesión o crea una cuenta nueva',
+    emailPlaceholder: 'Correo',
+    passwordPlaceholder: 'Contraseña',
+    signIn: 'Entrar',
+    signUp: 'Registrarse',
+    logout: 'Salir',
+    profile: 'Perfil',
+    settings: 'Ajustes',
+    close: 'Cerrar',
+    language: 'Idioma',
+    languageHint: 'Se guarda en tu cuenta.',
+    saving: 'Guardando…',
+    findUser: 'Buscar usuario',
+    requestEmailPlaceholder: 'Correo para solicitud',
+    newRequests: 'Nuevas solicitudes',
+    myRequests: 'Mis solicitudes',
+    myFriends: 'Mis amigos',
+    back: 'Atrás',
+    online: 'En línea',
+    chooseFriendTitle: 'Elige un amigo a la izquierda para empezar a chatear',
+    chooseFriendSubtitle: 'Como Messages en Mac',
+    messagePlaceholder: 'Mensaje…',
+    editing: '✏️ Editando',
+    cancel: 'Cancelar',
+    copyText: 'Copiar texto',
+    translate: 'Traducir',
+    edit: '✏️ Editar',
+    aiThinking: '✨ La IA está pensando…',
+    aiTranslateLabel: 'Traducir: {x}',
+    aiStyleLabel: 'Estilo: {x}',
+    styleMenuTitle: 'Cambiar estilo',
+    translateMenuTitle: 'Traducir texto',
+    magicWandTitle: 'Varita mágica',
+    translateTitle: 'Traducir',
+    customLangPlaceholder: 'Idioma personalizado…',
+    go: 'Go',
+    styleBusiness: 'Profesional y educado',
+    styleFriendly: 'Amigable y divertido',
+    styleStrict: 'Estricto y conciso',
+    styleSlang: 'Atrevido (jerga)',
+    langEnglish: 'Inglés',
+    langNorwegian: 'Noruego',
+    langRussian: 'Ruso',
+  },
+}
+
 export default function App() {
   const [session, setSession] = useState<Session | null>(null)
   const [email, setEmail] = useState('')
@@ -35,6 +473,8 @@ export default function App() {
   const [isFindCollapsed, setIsFindCollapsed] = useState(false)
   const prevContactsEmptyRef = useRef(true)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+  const [uiLanguage, setUiLanguage] = useState<UiLanguage>('ru')
+  const [isSavingLanguage, setIsSavingLanguage] = useState(false)
   const [isProfileOpen, setIsProfileOpen] = useState(false)
   const [profilePeer, setProfilePeer] = useState<Profile | null>(null)
 
@@ -52,6 +492,15 @@ export default function App() {
 
   const [theme, setTheme] = useState<ThemeMode>('light')
 
+  const t = useCallback(
+    (key: I18nKey, vars?: Record<string, string>) => {
+      const base = I18N[uiLanguage]?.[key] ?? I18N.ru[key] ?? key
+      if (!vars) return base
+      return Object.keys(vars).reduce((acc, k) => acc.replaceAll(`{${k}}`, vars[k] ?? ''), base)
+    },
+    [uiLanguage]
+  )
+
   useEffect(() => {
     const stored = readStoredTheme()
     if (stored) {
@@ -59,6 +508,11 @@ export default function App() {
       applyTheme(stored)
     }
   }, [])
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return
+    document.documentElement.dir = uiLanguage === 'ar' ? 'rtl' : 'ltr'
+  }, [uiLanguage])
 
   useEffect(() => {
     const contactsEmpty = contacts.length === 0
@@ -81,6 +535,38 @@ export default function App() {
     setToastMsg(msg)
     setTimeout(() => setToastMsg(null), 4000)
   }, [])
+
+  const loadUserSettings = useCallback(
+    async (userId: string) => {
+      const { data, error } = await supabase
+        .from('user_settings')
+        .select('language')
+        .eq('user_id', userId)
+        .maybeSingle()
+
+      if (error) {
+        console.warn('Failed to load user_settings:', error.message)
+        return
+      }
+      const lang = data?.language
+      if (lang && UI_LANG_OPTIONS.some((o) => o.code === lang)) {
+        setUiLanguage(lang as UiLanguage)
+      }
+    },
+    []
+  )
+
+  const saveUserLanguage = useCallback(
+    async (userId: string, lang: UiLanguage) => {
+      setIsSavingLanguage(true)
+      const { error } = await supabase
+        .from('user_settings')
+        .upsert({ user_id: userId, language: lang }, { onConflict: 'user_id' })
+      if (error) showNotification('❌ Не удалось сохранить язык: ' + error.message)
+      setIsSavingLanguage(false)
+    },
+    [showNotification]
+  )
 
   // === ИИ ФИШКИ (Состояния) ===
   const [isAiLoading, setIsAiLoading] = useState(false);
@@ -108,11 +594,11 @@ export default function App() {
     setAiProcessingLabel(
       msgId
         ? action === 'translate'
-          ? 'Перевод сообщения'
-          : 'Обработка...'
+          ? t('aiThinking')
+          : t('aiThinking')
         : action === 'translate'
-          ? `Перевод: ${modifier}`
-          : `Стиль: ${modifier}`
+          ? t('aiTranslateLabel', { x: modifier })
+          : t('aiStyleLabel', { x: modifier })
     )
 
     try {
@@ -253,6 +739,7 @@ export default function App() {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session: s } }) => {
       setSession(s)
+      if (s?.user.id) void loadUserSettings(s.user.id)
       if (s?.user.id) {
         window.OneSignalDeferred = window.OneSignalDeferred ?? []
         window.OneSignalDeferred.push(async (OneSignal) => {
@@ -265,6 +752,8 @@ export default function App() {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, s) => {
       setSession(s)
+      if (s?.user.id) void loadUserSettings(s.user.id)
+      else setUiLanguage('ru')
       window.OneSignalDeferred = window.OneSignalDeferred ?? []
       if (s?.user.id) {
         window.OneSignalDeferred.push(async (OneSignal) => {
@@ -277,7 +766,7 @@ export default function App() {
       }
     })
     return () => subscription.unsubscribe()
-  }, [])
+  }, [loadUserSettings])
 
   async function handleSignUp() {
     if (!email.trim() || !password.trim()) return showNotification('⚠️ Пожалуйста, введите Email и пароль')
@@ -739,30 +1228,53 @@ export default function App() {
             <div className="w-full max-w-lg mac-window-shadow border border-[var(--mac-border)] bg-[var(--mac-window-bg)] rounded-[16px] overflow-hidden max-md:rounded-[14px]">
               <div className="mac-titlebar flex h-9 md:h-10 shrink-0 items-center relative px-3 md:px-4">
                 <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-[11px] md:text-xs font-semibold text-[var(--mac-text-secondary)] tracking-wide">
-                  Настройки
+                  {t('settings')}
                 </span>
                 <div className="flex-1" />
                 <button
                   type="button"
                   onClick={() => setIsSettingsOpen(false)}
                   className="mac-neu-raised w-9 h-9 md:w-10 md:h-10 rounded-[10px] flex items-center justify-center text-[var(--mac-text-secondary)] hover:text-[var(--mac-danger)] transition-all active:scale-95 border border-[var(--mac-border)]"
-                  aria-label="Закрыть настройки"
-                  title="Закрыть"
+                  aria-label={t('close')}
+                  title={t('close')}
                 >
                   ×
                 </button>
               </div>
               <div className="mac-glass p-5 md:p-6 border-0 border-t border-[var(--mac-border-subtle)]">
                 <div className="mac-neu-inset rounded-[14px] p-4 md:p-5 border border-[var(--mac-border-subtle)]">
-                  <div className="flex items-center gap-3">
-                    <div className="w-11 h-11 rounded-[14px] mac-neu-raised flex items-center justify-center text-xl border border-[var(--mac-border)]">
-                      ⚙️
+                  <div className="flex items-start gap-3">
+                    <div className="w-11 h-11 rounded-[14px] mac-neu-raised flex items-center justify-center text-xl border border-[var(--mac-border)] shrink-0">
+                      🌐
                     </div>
-                    <div className="flex flex-col min-w-0">
-                      <span className="font-semibold text-[var(--mac-text-primary)]">Раздел настроек</span>
-                      <span className="text-xs md:text-sm text-[var(--mac-text-secondary)]">
-                        Скоро тут появятся настройки, привязанные к вашему аккаунту.
-                      </span>
+                    <div className="flex flex-col min-w-0 flex-1 gap-2">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex flex-col min-w-0">
+                          <span className="font-semibold text-[var(--mac-text-primary)]">{t('language')}</span>
+                          <span className="text-xs md:text-sm text-[var(--mac-text-secondary)]">
+                            {t('languageHint')}
+                          </span>
+                        </div>
+                        <div className="text-[11px] font-semibold text-[var(--mac-text-secondary)]">
+                          {isSavingLanguage ? t('saving') : ' '}
+                        </div>
+                      </div>
+                      <select
+                        value={uiLanguage}
+                        onChange={(e) => {
+                          const next = e.target.value as UiLanguage
+                          setUiLanguage(next)
+                          if (session?.user.id) void saveUserLanguage(session.user.id, next)
+                        }}
+                        disabled={!session?.user.id || isSavingLanguage}
+                        className="mac-neu-raised w-full rounded-[12px] px-3 py-2.5 text-sm border border-[var(--mac-border)] bg-[var(--mac-elevated)] text-[var(--mac-text-primary)] outline-none focus:ring-2 focus:ring-[var(--mac-accent)]/30 disabled:opacity-60 disabled:cursor-not-allowed"
+                      >
+                        {UI_LANG_OPTIONS.map((o) => (
+                          <option key={o.code} value={o.code}>
+                            {o.label}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                   </div>
                 </div>
@@ -779,15 +1291,15 @@ export default function App() {
             <div className="w-full max-w-lg mac-window-shadow border border-[var(--mac-border)] bg-[var(--mac-window-bg)] rounded-[16px] overflow-hidden max-md:rounded-[14px]">
               <div className="mac-titlebar flex h-9 md:h-10 shrink-0 items-center relative px-3 md:px-4">
                 <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-[11px] md:text-xs font-semibold text-[var(--mac-text-secondary)] tracking-wide">
-                  Профиль
+                  {t('profile')}
                 </span>
                 <div className="flex-1" />
                 <button
                   type="button"
                   onClick={closeProfile}
                   className="mac-neu-raised w-9 h-9 md:w-10 md:h-10 rounded-[10px] flex items-center justify-center text-[var(--mac-text-secondary)] hover:text-[var(--mac-danger)] transition-all active:scale-95 border border-[var(--mac-border)]"
-                  aria-label="Закрыть профиль"
-                  title="Закрыть"
+                  aria-label={t('close')}
+                  title={t('close')}
                 >
                   ×
                 </button>
@@ -803,6 +1315,7 @@ export default function App() {
                         {profilePeer?.email ?? ''}
                       </span>
                       <span className="text-xs md:text-sm text-[var(--mac-text-secondary)]">
+                        {/* i18n stub text intentionally left in RU for now */}
                         Заглушка профиля. Позже добавим функционал (настройки, фото, статус и т.д.).
                       </span>
                     </div>
@@ -819,7 +1332,7 @@ export default function App() {
           <div className="max-w-sm w-full mac-window-shadow flex flex-col gap-0 relative overflow-hidden shrink-0 rounded-[14px] md:rounded-[16px] border border-[var(--mac-border)] bg-[var(--mac-window-bg)]">
             <div className="mac-titlebar flex h-9 md:h-10 shrink-0 items-center relative px-3 md:px-4">
               <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-[11px] md:text-xs font-semibold text-[var(--mac-text-secondary)] tracking-wide">
-                Вход
+                {t('loginTitle')}
               </span>
               <div className="flex-1 min-w-[52px]" />
             </div>
@@ -839,12 +1352,12 @@ export default function App() {
               <p className="text-[var(--mac-text-secondary)] text-xs md:text-sm mt-2">Войдите в аккаунт или создайте новый</p>
             </div>
             <div className="flex flex-col gap-3">
-              <input className="mac-neu-inset p-3.5 w-full rounded-[10px] text-sm text-[var(--mac-text-primary)] placeholder:text-[var(--mac-text-secondary)] outline-none focus:ring-2 focus:ring-[var(--mac-accent)]/40 transition-all" placeholder="Ваш Email" value={email} onChange={e => setEmail(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleLogin()}/>
-              <input className="mac-neu-inset p-3.5 w-full rounded-[10px] text-sm text-[var(--mac-text-primary)] placeholder:text-[var(--mac-text-secondary)] outline-none focus:ring-2 focus:ring-[var(--mac-accent)]/40 transition-all" type="password" placeholder="Ваш Пароль" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleLogin()}/>
+              <input className="mac-neu-inset p-3.5 w-full rounded-[10px] text-sm text-[var(--mac-text-primary)] placeholder:text-[var(--mac-text-secondary)] outline-none focus:ring-2 focus:ring-[var(--mac-accent)]/40 transition-all" placeholder={t('emailPlaceholder')} value={email} onChange={e => setEmail(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleLogin()}/>
+              <input className="mac-neu-inset p-3.5 w-full rounded-[10px] text-sm text-[var(--mac-text-primary)] placeholder:text-[var(--mac-text-secondary)] outline-none focus:ring-2 focus:ring-[var(--mac-accent)]/40 transition-all" type="password" placeholder={t('passwordPlaceholder')} value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleLogin()}/>
             </div>
             <div className="flex gap-2 md:gap-3 mt-1">
-              <button type="button" className="flex-1 py-3 md:py-3.5 rounded-[10px] font-semibold text-sm md:text-base text-white bg-[var(--mac-imessage-sent)] border-[var(--mac-accent)]/30 hover:brightness-110 transition-all active:scale-[0.98]" onClick={handleLogin}>Войти</button>
-              <button type="button" className="mac-neu-raised flex-1 py-3 md:py-3.5 rounded-[10px] font-semibold text-sm md:text-base text-[var(--mac-text-primary)] hover:brightness-95 active:brightness-90 transition-all active:scale-[0.98]" onClick={handleSignUp}>Рег-ция</button>
+              <button type="button" className="flex-1 py-3 md:py-3.5 rounded-[10px] font-semibold text-sm md:text-base text-white bg-[var(--mac-imessage-sent)] border-[var(--mac-accent)]/30 hover:brightness-110 transition-all active:scale-[0.98]" onClick={handleLogin}>{t('signIn')}</button>
+              <button type="button" className="mac-neu-raised flex-1 py-3 md:py-3.5 rounded-[10px] font-semibold text-sm md:text-base text-[var(--mac-text-primary)] hover:brightness-95 active:brightness-90 transition-all active:scale-[0.98]" onClick={handleSignUp}>{t('signUp')}</button>
             </div>
             </div>
           </div>
@@ -960,7 +1473,7 @@ export default function App() {
   className="cursor-pointer px-4 py-1.5 rounded-full text-xs md:text-sm font-medium transition-all duration-300 active:scale-95 shrink-0 mac-neu-raised text-[var(--mac-danger)] hover:brightness-110 border border-[var(--mac-border)]" 
   onClick={() => supabase.auth.signOut()}
 >
-  Выйти
+  {t('logout')}
 </button>
                   </div>
                 </div>
@@ -970,7 +1483,7 @@ export default function App() {
             {!isCollapsed && (
               <div className="mb-4 pb-4 w-full shrink-0">
                 {contacts.length === 0 ? (
-                  <h3 className="text-[var(--mac-text-secondary)] font-semibold mb-2 text-xs uppercase tracking-wider">Найти пользователя</h3>
+                  <h3 className="text-[var(--mac-text-secondary)] font-semibold mb-2 text-xs uppercase tracking-wider">{t('findUser')}</h3>
                 ) : (
                   <button
                     type="button"
@@ -978,7 +1491,7 @@ export default function App() {
                     aria-expanded={!isFindCollapsed}
                     className="w-full flex items-center justify-between text-[var(--mac-text-secondary)] font-semibold mb-2 text-xs uppercase tracking-wider"
                   >
-                    <span>Найти пользователя</span>
+                    <span>{t('findUser')}</span>
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
                       viewBox="0 0 24 24"
@@ -1005,7 +1518,7 @@ export default function App() {
                   <div className="flex gap-2">
                     <input
                       className="mac-neu-inset pl-3.5 flex-1 rounded-[10px] text-sm text-[var(--mac-text-primary)] placeholder:text-[var(--mac-text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--mac-accent)]/30 transition-all w-full"
-                      placeholder="Email для заявки"
+                      placeholder={t('requestEmailPlaceholder')}
                       value={newContactEmail}
                       onChange={(e) => setNewContactEmail(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && sendRequest(newContactEmail)}
@@ -1027,7 +1540,7 @@ export default function App() {
 <div className="mb-4 w-full shrink-0">
   {!isCollapsed && (
     <h3 className="text-[var(--mac-text-secondary)] font-medium mb-3 text-xs uppercase tracking-widest px-2">
-      Новые запросы
+      {t('newRequests')}
     </h3>
   )}
   <ul className={`w-full flex flex-col ${isCollapsed ? 'items-start' : 'items-center'} gap-2`}>
@@ -1083,7 +1596,7 @@ export default function App() {
               {!isCollapsed && outgoingRequests.length > 0 && (
                 <div className="mb-4 w-full shrink-0">
   <h3 className="text-[var(--mac-text-secondary)] font-medium mb-3 text-xs uppercase tracking-widest px-2">
-    Мои заявки
+    {t('myRequests')}
   </h3>
   <ul className="w-full flex flex-col gap-2">
     {outgoingRequests.map(u => (
@@ -1123,7 +1636,7 @@ export default function App() {
 </div>
               )}
 
-              {!isCollapsed && <h3 className="text-[var(--mac-text-secondary)] font-semibold mb-2 text-xs uppercase tracking-wider md:text-center mt-6">Мои друзья</h3>}
+              {!isCollapsed && <h3 className="text-[var(--mac-text-secondary)] font-semibold mb-2 text-xs uppercase tracking-wider md:text-center mt-6">{t('myFriends')}</h3>}
               <ul className="w-full flex flex-col gap-1">
   {contacts.map(u => {
     const isSelected = selectedUser?.id === u.id;
@@ -1205,8 +1718,8 @@ export default function App() {
             {!selectedUser ? (
               <div className="flex-1 flex flex-col items-center justify-center text-[var(--mac-text-secondary)] p-6 text-center">
                 <div className="w-20 h-20 md:w-24 md:h-24 mac-neu-raised rounded-[20px] flex items-center justify-center text-4xl md:text-5xl mb-5 opacity-90">💬</div>
-                <p className="text-base md:text-lg font-medium text-[var(--mac-text-primary)]">Выберите друга слева, чтобы начать общение</p>
-                <p className="text-xs md:text-sm mt-2 text-[var(--mac-text-secondary)]">Как в Messages на Mac</p>
+                <p className="text-base md:text-lg font-medium text-[var(--mac-text-primary)]">{t('chooseFriendTitle')}</p>
+                <p className="text-xs md:text-sm mt-2 text-[var(--mac-text-secondary)]">{t('chooseFriendSubtitle')}</p>
               </div>
             ) : (
               <>
@@ -1220,7 +1733,7 @@ export default function App() {
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-7 h-7 shrink-0" aria-hidden="true">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
                     </svg>
-                    <span>Назад</span>
+                    <span>{t('back')}</span>
                   </button>
                   <button
                     type="button"
@@ -1245,7 +1758,7 @@ export default function App() {
                         {selectedUser.email}
                       </span>
                       <span className="text-[10px] md:text-xs text-[var(--mac-success)] font-medium">
-                        В сети
+                        {t('online')}
                       </span>
                     </div>
                   </button>
@@ -1303,7 +1816,7 @@ export default function App() {
                                   disabled={isAiLoading}
                                   className="text-[12px] font-semibold text-[var(--mac-text-primary)] mac-neu-inset hover:brightness-110 px-3 py-1.5 rounded-[10px] w-full text-center transition-colors active:scale-95"
                                 >
-                                  Копировать текст
+                                  {t('copyText')}
                                 </button>
                               )}
                               {isMe && m.content && (
@@ -1319,7 +1832,7 @@ export default function App() {
                                   disabled={isAiLoading || isSending}
                                   className="text-[12px] font-semibold text-[var(--mac-text-primary)] mac-neu-inset hover:brightness-110 px-3 py-1.5 rounded-[10px] w-full text-center transition-colors active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
-                                  ✏️ Редактировать
+                                  {t('edit')}
                                 </button>
                               )}
                               {m.content && (
@@ -1333,7 +1846,7 @@ export default function App() {
                                   disabled={isAiLoading}
                                   className="text-[12px] font-semibold text-[var(--mac-accent)] mac-neu-raised border border-[var(--mac-accent)]/25 px-3 py-1.5 rounded-[10px] w-full text-center transition-colors active:scale-95 mt-0.5 flex items-center justify-center gap-1 hover:brightness-110"
                                 >
-                                  <span>🤖</span> Перевести
+                                  <span>🤖</span> {t('translate')}
                                 </button>
                               )}
                             </div>
@@ -1441,21 +1954,28 @@ export default function App() {
                     <div className="relative flex items-end">
                           {showStyleMenu && (
                         <div className="absolute bottom-full left-0 mb-3 mac-glass-strong p-2 rounded-[14px] mac-window-shadow border border-[var(--mac-border)] flex flex-col gap-1 w-48 animate-in zoom-in-95 origin-bottom-left" style={{ zIndex: 9999 }}>
-                          <span className="text-xs text-[var(--mac-text-secondary)] font-bold px-2 py-1 uppercase tracking-wider">Изменить стиль</span>
-                          {['Деловой и вежливый', 'Дружеский и веселый', 'Строгий и короткий', 'Дерзкий (Сленг)'].map(style => (
+                          <span className="text-xs text-[var(--mac-text-secondary)] font-bold px-2 py-1 uppercase tracking-wider">{t('styleMenuTitle')}</span>
+                          {(
+                            [
+                              { label: t('styleBusiness'), prompt: 'Business and polite' },
+                              { label: t('styleFriendly'), prompt: 'Friendly and fun' },
+                              { label: t('styleStrict'), prompt: 'Strict and concise' },
+                              { label: t('styleSlang'), prompt: 'Bold slang' },
+                            ] as const
+                          ).map((style) => (
                             <button
-                              key={style}
+                              key={style.prompt}
                               type="button"
-                              onClick={() => handleAiAction('style', style)}
+                              onClick={() => handleAiAction('style', style.prompt)}
                               disabled={isAiLoading}
                               className="text-sm text-left px-3 py-2 text-[var(--mac-text-primary)] hover:bg-[var(--mac-hover-surface)] rounded-[10px] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                              {style}
+                              {style.label}
                             </button>
                           ))}
                         </div>
                       )}
-                      <button type="button" onClick={() => { setShowStyleMenu(!showStyleMenu); setShowTranslateMenu(false); }} className={`p-2 md:p-2.5 rounded-full mb-1 active:scale-95 shrink-0 transition-colors mac-neu-raised ${showStyleMenu ? 'text-[var(--mac-accent)] ring-1 ring-[var(--mac-accent)]/35' : 'text-[var(--mac-text-secondary)] hover:text-[var(--mac-accent)]'}`} disabled={isSending || isAiLoading} title="Магическая палочка">
+                      <button type="button" onClick={() => { setShowStyleMenu(!showStyleMenu); setShowTranslateMenu(false); }} className={`p-2 md:p-2.5 rounded-full mb-1 active:scale-95 shrink-0 transition-colors mac-neu-raised ${showStyleMenu ? 'text-[var(--mac-accent)] ring-1 ring-[var(--mac-accent)]/35' : 'text-[var(--mac-text-secondary)] hover:text-[var(--mac-accent)]'}`} disabled={isSending || isAiLoading} title={t('magicWandTitle')}>
                         <span className="text-xl">🪄</span>
                       </button>
                     </div>
@@ -1464,32 +1984,38 @@ export default function App() {
                     <div className="relative flex items-end">
                           {showTranslateMenu && (
                         <div className="absolute bottom-full left-0 mb-3 mac-glass-strong p-2 rounded-[14px] mac-window-shadow border border-[var(--mac-border)] flex flex-col gap-1 w-52 animate-in zoom-in-95 origin-bottom-left" style={{ zIndex: 9999 }}>
-                          <span className="text-xs text-[var(--mac-text-secondary)] font-bold px-2 py-1 uppercase tracking-wider">Перевести текст</span>
-                          {['Английский', 'Норвежский', 'Русский'].map(lang => (
+                          <span className="text-xs text-[var(--mac-text-secondary)] font-bold px-2 py-1 uppercase tracking-wider">{t('translateMenuTitle')}</span>
+                          {(
+                            [
+                              { label: t('langEnglish'), prompt: 'English' },
+                              { label: t('langNorwegian'), prompt: 'Norwegian' },
+                              { label: t('langRussian'), prompt: 'Russian' },
+                            ] as const
+                          ).map((lang) => (
                             <button
-                              key={lang}
+                              key={lang.prompt}
                               type="button"
-                              onClick={() => handleAiAction('translate', lang)}
+                              onClick={() => handleAiAction('translate', lang.prompt)}
                               disabled={isAiLoading}
                               className="text-sm text-left px-3 py-2 text-[var(--mac-text-primary)] hover:bg-[var(--mac-hover-surface)] rounded-[10px] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                              {lang}
+                              {lang.label}
                             </button>
                           ))}
                           <div className="flex gap-1 mt-1 border-t border-[var(--mac-border-subtle)] pt-1.5 px-1">
-                            <input value={customLang} onChange={e => setCustomLang(e.target.value)} placeholder="Свой язык..." className="text-xs p-1.5 mac-neu-inset rounded-[8px] flex-1 outline-none focus:ring-1 focus:ring-[var(--mac-accent)]/40 text-[var(--mac-text-primary)] placeholder:text-[var(--mac-text-secondary)]" />
+                            <input value={customLang} onChange={e => setCustomLang(e.target.value)} placeholder={t('customLangPlaceholder')} className="text-xs p-1.5 mac-neu-inset rounded-[8px] flex-1 outline-none focus:ring-1 focus:ring-[var(--mac-accent)]/40 text-[var(--mac-text-primary)] placeholder:text-[var(--mac-text-secondary)]" />
                             <button
                               type="button"
                               onClick={() => handleAiAction('translate', customLang)}
                               disabled={isAiLoading}
                               className="mac-neu-raised text-white text-xs px-2 py-1.5 rounded-[8px] bg-[var(--mac-imessage-sent)] hover:brightness-110 disabled:opacity-60 disabled:cursor-not-allowed"
                             >
-                              {isAiLoading ? '...' : 'Go'}
+                              {isAiLoading ? '...' : t('go')}
                             </button>
                           </div>
                         </div>
                       )}
-                      <button type="button" onClick={() => { setShowTranslateMenu(!showTranslateMenu); setShowStyleMenu(false); }} className={`p-2 md:p-2.5 rounded-full mb-1 active:scale-95 shrink-0 transition-colors mac-neu-raised ${showTranslateMenu ? 'text-[var(--mac-accent)] ring-1 ring-[var(--mac-accent)]/35' : 'text-[var(--mac-text-secondary)] hover:text-[var(--mac-accent)]'}`} disabled={isSending || isAiLoading} title="Перевод">
+                      <button type="button" onClick={() => { setShowTranslateMenu(!showTranslateMenu); setShowStyleMenu(false); }} className={`p-2 md:p-2.5 rounded-full mb-1 active:scale-95 shrink-0 transition-colors mac-neu-raised ${showTranslateMenu ? 'text-[var(--mac-accent)] ring-1 ring-[var(--mac-accent)]/35' : 'text-[var(--mac-text-secondary)] hover:text-[var(--mac-accent)]'}`} disabled={isSending || isAiLoading} title={t('translateTitle')}>
                         <span className="text-xl">🌐</span>
                       </button>
                     </div>
@@ -1505,14 +2031,14 @@ export default function App() {
                         onChange={(e) => setText(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
                         onPaste={handlePaste}
-                        placeholder={isAiLoading ? "Сообщение..." : "Сообщение..."}
+                        placeholder={t('messagePlaceholder')}
                         disabled={isSending || isAiLoading}
                       />
                       {editingMessageId !== null && !isAiLoading && (
                         <div className="absolute -top-8 left-0 right-0 flex items-center justify-between gap-2 px-1">
                           <div className="mac-glass-strong px-3 py-1 rounded-full border border-[var(--mac-border-subtle)] flex items-center gap-2">
                             <span className="text-[11px] font-semibold text-[var(--mac-text-secondary)] whitespace-nowrap">
-                              ✏️ Редактирование
+                              {t('editing')}
                             </span>
                           </div>
                           <button
@@ -1524,7 +2050,7 @@ export default function App() {
                             }}
                             className="mac-neu-raised px-3 py-1 rounded-full text-[11px] font-semibold text-[var(--mac-text-secondary)] hover:text-[var(--mac-danger)] transition-all active:scale-95 border border-[var(--mac-border)]"
                           >
-                            Отмена
+                            {t('cancel')}
                           </button>
                         </div>
                       )}
