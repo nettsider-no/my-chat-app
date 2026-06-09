@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import type { ChangeEvent, ClipboardEvent, MouseEvent } from 'react'
+import type { ChangeEvent, ClipboardEvent } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
 import { applyTheme, readStoredTheme, type ThemeMode } from '@/lib/theme'
@@ -486,7 +486,7 @@ export default function App() {
 
   const [toastMsg, setToastMsg] = useState<string | null>(null)
   const [isCollapsed, setIsCollapsed] = useState(false)
-  const [isEditMode, setIsEditMode] = useState(false)
+  const [showAddUser, setShowAddUser] = useState(false)
   const [composerPanel, setComposerPanel] = useState<'closed' | 'plus' | 'style' | 'translate'>('closed')
   const [conversationPreviews, setConversationPreviews] = useState<
     Record<string, { content: string | null; file_url: string | null; created_at: string; sender_id: string }>
@@ -981,6 +981,7 @@ export default function App() {
       .insert([{ owner_id: session.user.id, contact_id: p.id, status: 'pending' }])
     if (!error) {
       setNewContactEmail('')
+      setShowAddUser(false)
       showNotification('📨 Заявка отправлена!')
       void fetchSidebarData()
     }
@@ -1010,15 +1011,6 @@ export default function App() {
     await supabase.from('contacts').delete().match({ owner_id: session.user.id, contact_id: contactId })
     void fetchSidebarData()
   }
-  async function removeContact(e: MouseEvent<HTMLButtonElement>, contactId: string) {
-    e.stopPropagation()
-    if (!session) return
-    if (!window.confirm('Удалить из контактов?')) return
-    await supabase.from('contacts').delete().match({ owner_id: session.user.id, contact_id: contactId })
-    await supabase.from('contacts').delete().match({ owner_id: contactId, contact_id: session.user.id })
-    if (selectedUser?.id === contactId) setSelectedUser(null)
-  }
-
   // === ЛОГИКА АКТИВНОГО ЧАТА + РЕАКЦИИ ===
   useEffect(() => {
     if (!session || !selectedUser) return
@@ -1243,13 +1235,7 @@ export default function App() {
     return new Date(tb).getTime() - new Date(ta).getTime()
   })
 
-  const filteredContacts = sortedContacts.filter((u) => {
-    const q = messageSearchQuery.trim().toLowerCase()
-    if (!q) return true
-    const name = displayName(u.email).toLowerCase()
-    const preview = previewText(u.id).toLowerCase()
-    return name.includes(q) || u.email.toLowerCase().includes(q) || preview.includes(q)
-  })
+  const inboxContacts = sortedContacts
 
   const toggleReaction = async (messageId: number, emoji: string) => {
     if (!session) return
@@ -1474,38 +1460,49 @@ export default function App() {
             {!isCollapsed ? (
               <>
                 <div className="shrink-0 px-4 pt-1 pb-0 flex items-center justify-between">
-                  <button type="button" className="imessage-edit-pill" onClick={() => setIsEditMode((v) => !v)}>
-                    {isEditMode ? 'Done' : 'Edit'}
+                  <button
+                    type="button"
+                    className="imessage-header-btn"
+                    onClick={() => setShowAddUser((v) => !v)}
+                    aria-label={t('findUser')}
+                    aria-expanded={showAddUser}
+                  >
+                    <IconPlus className={`transition-transform duration-200 ${showAddUser ? 'rotate-45' : ''}`} />
                   </button>
-                  <button type="button" className="imessage-filter-btn" onClick={() => setIsSettingsOpen(true)} aria-label={t('settings')}>
+                  <button type="button" className="imessage-header-btn imessage-header-btn-muted" onClick={() => setIsSettingsOpen(true)} aria-label={t('settings')}>
                     <IconFilter />
                   </button>
                 </div>
                 <h1 className="imessage-inbox-title px-4 text-[var(--ios-text-primary)]">{t('appTitle')}</h1>
 
-                <div className="px-4 pb-3 pt-1">
-                  <label className="imessage-inbox-find">
-                    <IconSearch />
-                    <input
-                      type="email"
-                      placeholder={t('findUser')}
-                      value={newContactEmail}
-                      onChange={(e) => setNewContactEmail(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && sendRequest(newContactEmail)}
-                    />
-                    {newContactEmail.trim() && (
-                      <button
-                        type="button"
-                        className="imessage-inbox-find-go"
-                        onClick={() => void sendRequest(newContactEmail)}
-                      >
-                        {t('go')}
-                      </button>
-                    )}
-                  </label>
-                </div>
+                {showAddUser && (
+                  <div className="px-4 pb-3 pt-1">
+                    <label className="imessage-inbox-find">
+                      <IconSearch />
+                      <input
+                        type="email"
+                        autoFocus
+                        placeholder={t('findUser')}
+                        value={newContactEmail}
+                        onChange={(e) => setNewContactEmail(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') void sendRequest(newContactEmail)
+                        }}
+                      />
+                      {newContactEmail.trim() && (
+                        <button
+                          type="button"
+                          className="imessage-inbox-find-go"
+                          onClick={() => void sendRequest(newContactEmail)}
+                        >
+                          {t('go')}
+                        </button>
+                      )}
+                    </label>
+                  </div>
+                )}
 
-                <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden no-scrollbar pb-24">
+                <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden no-scrollbar pb-20">
                   {outgoingRequests.map((u) => (
                     <div key={u.id} className="imessage-row opacity-80">
                       <span className="imessage-unread-spacer" />
@@ -1542,7 +1539,7 @@ export default function App() {
                     </div>
                   ))}
 
-                  {filteredContacts.map((u) => {
+                  {inboxContacts.map((u) => {
                     const unread = unreadCounts[u.id] > 0
                     const preview = conversationPreviews[u.id]
                     return (
@@ -1563,29 +1560,20 @@ export default function App() {
                           </p>
                         </div>
                         <IconChevronRight className="imessage-row-chevron" />
-                        {isEditMode && (
-                          <button
-                            type="button"
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--ios-danger)] text-xl z-10"
-                            onClick={(e) => removeContact(e, u.id)}
-                          >
-                            ×
-                          </button>
-                        )}
                       </div>
                     )
                   })}
                 </div>
 
-                <div className="imessage-floating-bar absolute bottom-0 left-0 right-0">
-                  <label className="imessage-search-pill w-full">
+                <div className="imessage-bottom-search">
+                  <label className="imessage-inbox-find">
                     <IconSearch />
                     <input
                       placeholder="Search"
                       value={messageSearchQuery}
                       onChange={(e) => setMessageSearchQuery(e.target.value)}
+                      readOnly
                     />
-                    <IconMic className="opacity-70" />
                   </label>
                 </div>
               </>
@@ -1824,58 +1812,61 @@ export default function App() {
                     </div>
                   )}
 
-                  {composerPanel !== 'closed' && (
-                    <button
-                      type="button"
-                      className="imessage-composer-backdrop"
-                      aria-label={t('cancel')}
-                      onClick={() => setComposerPanel('closed')}
-                    />
-                  )}
+                  <div className="imessage-composer relative z-30">
+                    {composerPanel !== 'closed' && (
+                      <button
+                        type="button"
+                        className="imessage-composer-backdrop"
+                        aria-label={t('cancel')}
+                        onClick={() => setComposerPanel('closed')}
+                      />
+                    )}
 
-                  {composerPanel !== 'closed' && (
-                    <div className="imessage-composer-panel" role="menu">
-                      {composerPanel === 'plus' && (
-                        <>
-                          <button type="button" className="imessage-composer-panel-item" onClick={() => { fileInputRef.current?.click(); setComposerPanel('closed') }}>📎 Attachment</button>
-                          <button type="button" className="imessage-composer-panel-item" onClick={() => setComposerPanel('style')}>{t('magicWandTitle')}</button>
-                          <button type="button" className="imessage-composer-panel-item" onClick={() => setComposerPanel('translate')}>{t('translateTitle')}</button>
-                        </>
-                      )}
-                      {composerPanel === 'style' && (
-                        <>
-                          <button type="button" className="imessage-composer-panel-back" onClick={() => setComposerPanel('plus')}>‹ {t('magicWandTitle')}</button>
-                          {([{ label: t('styleBusiness'), prompt: 'Business and polite' }, { label: t('styleFriendly'), prompt: 'Friendly and fun' }, { label: t('styleStrict'), prompt: 'Strict and concise' }, { label: t('styleSlang'), prompt: 'Bold slang' }] as const).map((style) => (
-                            <button key={style.prompt} type="button" className="imessage-composer-panel-item" onClick={() => { handleAiAction('style', style.prompt) }}>{style.label}</button>
-                          ))}
-                        </>
-                      )}
-                      {composerPanel === 'translate' && (
-                        <>
-                          <button type="button" className="imessage-composer-panel-back" onClick={() => setComposerPanel('plus')}>‹ {t('translateTitle')}</button>
-                          {([{ label: t('langEnglish'), prompt: 'English' }, { label: t('langNorwegian'), prompt: 'Norwegian' }, { label: t('langRussian'), prompt: 'Russian' }] as const).map((lang) => (
-                            <button key={lang.prompt} type="button" className="imessage-composer-panel-item" onClick={() => { handleAiAction('translate', lang.prompt) }}>{lang.label}</button>
-                          ))}
-                          <div className="flex gap-2 mt-1 pt-2 border-t border-[var(--ios-separator)] px-1">
-                            <input value={customLang} onChange={(e) => setCustomLang(e.target.value)} placeholder={t('customLangPlaceholder')} className="flex-1 px-2 py-1.5 rounded-[8px] bg-[var(--ios-search-bg)] text-[13px] outline-none" />
-                            <button type="button" onClick={() => { handleAiAction('translate', customLang) }} className="px-2.5 py-1.5 rounded-[8px] bg-[var(--ios-accent)] text-white text-[13px] font-semibold">{t('go')}</button>
-                          </div>
-                        </>
+                    <div className="relative shrink-0 self-end">
+                      <button
+                        type="button"
+                        className={`imessage-plus-btn ${composerPanel !== 'closed' ? 'imessage-plus-btn-active' : ''}`}
+                        disabled={isSending}
+                        aria-label="More"
+                        aria-expanded={composerPanel !== 'closed'}
+                        onClick={() => setComposerPanel((p) => (p === 'closed' ? 'plus' : 'closed'))}
+                      >
+                        <IconPlus className={`transition-transform duration-200 ${composerPanel !== 'closed' ? 'rotate-45' : ''}`} />
+                      </button>
+
+                      {composerPanel !== 'closed' && (
+                        <div className="imessage-composer-panel" role="menu">
+                          {composerPanel === 'plus' && (
+                            <>
+                              <button type="button" className="imessage-composer-panel-item" onClick={() => { fileInputRef.current?.click(); setComposerPanel('closed') }}>📎 Attachment</button>
+                              <button type="button" className="imessage-composer-panel-item" onClick={() => setComposerPanel('style')}>{t('magicWandTitle')}</button>
+                              <button type="button" className="imessage-composer-panel-item" onClick={() => setComposerPanel('translate')}>{t('translateTitle')}</button>
+                            </>
+                          )}
+                          {composerPanel === 'style' && (
+                            <>
+                              <button type="button" className="imessage-composer-panel-back" onClick={() => setComposerPanel('plus')}>‹ {t('magicWandTitle')}</button>
+                              {([{ label: t('styleBusiness'), prompt: 'Business and polite' }, { label: t('styleFriendly'), prompt: 'Friendly and fun' }, { label: t('styleStrict'), prompt: 'Strict and concise' }, { label: t('styleSlang'), prompt: 'Bold slang' }] as const).map((style) => (
+                                <button key={style.prompt} type="button" className="imessage-composer-panel-item" onClick={() => { handleAiAction('style', style.prompt) }}>{style.label}</button>
+                              ))}
+                            </>
+                          )}
+                          {composerPanel === 'translate' && (
+                            <>
+                              <button type="button" className="imessage-composer-panel-back" onClick={() => setComposerPanel('plus')}>‹ {t('translateTitle')}</button>
+                              {([{ label: t('langEnglish'), prompt: 'English' }, { label: t('langNorwegian'), prompt: 'Norwegian' }, { label: t('langRussian'), prompt: 'Russian' }] as const).map((lang) => (
+                                <button key={lang.prompt} type="button" className="imessage-composer-panel-item" onClick={() => { handleAiAction('translate', lang.prompt) }}>{lang.label}</button>
+                              ))}
+                              <div className="flex gap-2 mt-1 pt-2 border-t border-[var(--ios-separator)] px-1">
+                                <input value={customLang} onChange={(e) => setCustomLang(e.target.value)} placeholder={t('customLangPlaceholder')} className="flex-1 px-2 py-1.5 rounded-[8px] bg-[var(--ios-search-bg)] text-[13px] outline-none" />
+                                <button type="button" onClick={() => { handleAiAction('translate', customLang) }} className="px-2.5 py-1.5 rounded-[8px] bg-[var(--ios-accent)] text-white text-[13px] font-semibold">{t('go')}</button>
+                              </div>
+                            </>
+                          )}
+                        </div>
                       )}
                     </div>
-                  )}
 
-                  <div className="imessage-composer relative z-20">
-                    <button
-                      type="button"
-                      className={`imessage-plus-btn ${composerPanel !== 'closed' ? 'imessage-plus-btn-active' : ''}`}
-                      disabled={isSending}
-                      aria-label="More"
-                      aria-expanded={composerPanel !== 'closed'}
-                      onClick={() => setComposerPanel((p) => (p === 'closed' ? 'plus' : 'closed'))}
-                    >
-                      <IconPlus className={`w-5 h-5 transition-transform duration-200 ${composerPanel !== 'closed' ? 'rotate-45' : ''}`} />
-                    </button>
                     <input type="file" className="hidden" ref={fileInputRef} onChange={handleFileUpload} accept="image/*,.pdf,.doc,.docx" />
 
                     <div className="relative flex-1 min-w-0">

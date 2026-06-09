@@ -29,9 +29,9 @@ export function IconSearch({ className }: IconProps) {
   )
 }
 
-export function IconPlus({ className = 'w-5 h-5' }: IconProps) {
+export function IconPlus({ className }: IconProps) {
   return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden>
+    <svg className={iconCls('w-5 h-5 shrink-0', className)} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden>
       <path d="M12 5v14M5 12h14" />
     </svg>
   )
@@ -46,17 +46,17 @@ export function IconCompose({ className = 'w-5 h-5' }: IconProps) {
   )
 }
 
-export function IconFilter({ className = 'w-5 h-5' }: IconProps) {
+export function IconFilter({ className }: IconProps) {
   return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
+    <svg className={iconCls('w-5 h-5 shrink-0', className)} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
       <path d="M4 6h16M7 12h10M10 18h4" />
     </svg>
   )
 }
 
-export function IconMic({ className = 'w-5 h-5' }: IconProps) {
+export function IconMic({ className }: IconProps) {
   return (
-    <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+    <svg className={iconCls('w-5 h-5 shrink-0', className)} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
       <rect x="4" y="10" width="2.5" height="8" rx="1.2" />
       <rect x="8.5" y="7" width="2.5" height="11" rx="1.2" />
       <rect x="13" y="9" width="2.5" height="9" rx="1.2" />

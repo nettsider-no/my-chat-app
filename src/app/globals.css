@@ -462,24 +462,23 @@ button:disabled,
   font-weight: 600;
 }
 
-.imessage-edit-pill {
-  padding: 6px 14px;
-  border-radius: 999px;
-  background: rgba(118, 118, 128, 0.12);
-  color: var(--ios-accent);
-  font-size: 15px;
-  font-weight: 500;
-  line-height: 1.2;
-}
-
-.imessage-filter-btn {
+.imessage-header-btn {
   width: 36px;
   height: 36px;
   border-radius: 999px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: rgba(118, 118, 128, 0.12);
+  color: var(--ios-accent);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.imessage-header-btn:active {
+  opacity: 0.65;
+  transform: scale(0.94);
+}
+
+.imessage-header-btn-muted {
   color: var(--ios-text-primary);
 }
 
@@ -586,60 +585,11 @@ button:disabled,
   opacity: 0.35;
 }
 
-.imessage-floating-bar {
-  padding: 10px 16px max(10px, env(safe-area-inset-bottom));
-  background: linear-gradient(to top, var(--ios-sidebar-bg) 70%, transparent);
-  pointer-events: none;
-}
-
-.imessage-floating-bar > * {
-  pointer-events: auto;
-}
-
-.imessage-search-pill {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 42px;
-  padding: 0 14px;
-  border-radius: 999px;
-  background: var(--ios-glass-bg);
-  backdrop-filter: blur(40px) saturate(180%);
-  -webkit-backdrop-filter: blur(40px) saturate(180%);
-  border: 0.5px solid var(--ios-glass-border);
-  box-shadow: 0 4px 24px var(--ios-composer-shadow);
-  color: var(--ios-preview-text);
-}
-
-.imessage-search-pill input {
-  flex: 1;
-  min-width: 0;
-  border: none;
-  outline: none;
-  background: transparent;
-  color: var(--ios-text-primary);
-  font-size: 17px;
-}
-
-.imessage-search-pill input::placeholder {
-  color: var(--ios-preview-text);
-}
-
-.imessage-compose-btn {
-  width: 42px;
-  height: 42px;
-  border-radius: 999px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+.imessage-bottom-search {
   flex-shrink: 0;
-  background: var(--ios-glass-bg);
-  backdrop-filter: blur(40px) saturate(180%);
-  -webkit-backdrop-filter: blur(40px) saturate(180%);
-  border: 0.5px solid var(--ios-glass-border);
-  box-shadow: 0 4px 24px var(--ios-composer-shadow);
-  color: var(--ios-text-primary);
+  padding: 8px 16px max(8px, env(safe-area-inset-bottom));
+  background: var(--ios-sidebar-bg);
+  border-top: 0.5px solid var(--ios-inbox-separator);
 }
 
 .imessage-thread-header {
@@ -733,10 +683,10 @@ button:disabled,
 
 .imessage-composer-panel {
   position: absolute;
-  bottom: calc(100% + 6px);
-  left: 10px;
-  right: 10px;
-  z-index: 30;
+  bottom: calc(100% + 10px);
+  left: 0;
+  z-index: 40;
+  width: min(280px, calc(100vw - 32px));
   padding: 6px;
   border-radius: 14px;
   background: var(--ios-glass-bg);
