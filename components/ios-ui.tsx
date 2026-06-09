@@ -8,6 +8,14 @@ export function IconChevronLeft({ className = 'w-5 h-5' }: IconProps) {
   )
 }
 
+export function IconChevronRight({ className = 'w-4 h-4' }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M9 18l6-6-6-6" />
+    </svg>
+  )
+}
+
 export function IconSearch({ className = 'w-4 h-4' }: IconProps) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden>
@@ -25,10 +33,30 @@ export function IconPlus({ className = 'w-5 h-5' }: IconProps) {
   )
 }
 
-export function IconPaperclip({ className = 'w-5 h-5' }: IconProps) {
+export function IconCompose({ className = 'w-5 h-5' }: IconProps) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48" />
+      <path d="M12 20h9" />
+      <path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4L16.5 3.5z" />
+    </svg>
+  )
+}
+
+export function IconFilter({ className = 'w-5 h-5' }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
+      <path d="M4 6h16M7 12h10M10 18h4" />
+    </svg>
+  )
+}
+
+export function IconMic({ className = 'w-5 h-5' }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <rect x="4" y="10" width="2.5" height="8" rx="1.2" />
+      <rect x="8.5" y="7" width="2.5" height="11" rx="1.2" />
+      <rect x="13" y="9" width="2.5" height="9" rx="1.2" />
+      <rect x="17.5" y="6" width="2.5" height="12" rx="1.2" />
     </svg>
   )
 }
@@ -84,6 +112,14 @@ export function IconGlobe({ className = 'w-5 h-5' }: IconProps) {
   )
 }
 
+export function IconPerson({ className = 'w-6 h-6' }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M12 12a4.5 4.5 0 100-9 4.5 4.5 0 000 9zM4 20.5c0-3.6 3.1-6.5 8-6.5s8 2.9 8 6.5V21H4v-.5z" />
+    </svg>
+  )
+}
+
 export function MessagesAppIcon({ className = 'w-16 h-16' }: IconProps) {
   return (
     <div className={`${className} ios-messages-icon rounded-[22%] flex items-center justify-center shadow-lg`}>
@@ -114,18 +150,28 @@ export function IosAvatar({
   seed,
   label,
   size = 'md',
+  variant = 'color',
   className = '',
 }: {
   seed: string
   label: string
-  size?: 'sm' | 'md' | 'lg' | 'xl'
+  size?: 'sm' | 'md' | 'lg' | 'xl' | 'thread'
+  variant?: 'color' | 'person'
   className?: string
 }) {
   const sizes = {
     sm: 'w-9 h-9 text-sm',
-    md: 'w-11 h-11 text-base',
+    md: 'w-12 h-12 text-base',
     lg: 'w-[52px] h-[52px] text-lg',
     xl: 'w-20 h-20 text-3xl',
+    thread: 'w-14 h-14',
+  }
+  if (variant === 'person') {
+    return (
+      <div className={`${sizes[size]} rounded-full flex items-center justify-center shrink-0 imessage-person-avatar ${className}`}>
+        <IconPerson className="w-[55%] h-[55%]" />
+      </div>
+    )
   }
   return (
     <div

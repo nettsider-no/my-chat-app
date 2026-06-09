@@ -7,13 +7,16 @@ import { supabase } from '@/lib/supabase'
 import { applyTheme, readStoredTheme, type ThemeMode } from '@/lib/theme'
 import {
   IconChevronLeft,
+  IconChevronRight,
+  IconCompose,
+  IconFilter,
   IconGear,
   IconGlobe,
+  IconMic,
   IconMoon,
   IconPlus,
   IconSearch,
   IconSend,
-  IconSparkles,
   IconSun,
   IosAvatar,
   MessagesAppIcon,
@@ -483,8 +486,11 @@ export default function App() {
 
   const [toastMsg, setToastMsg] = useState<string | null>(null)
   const [isCollapsed, setIsCollapsed] = useState(false)
-  const [isFindCollapsed, setIsFindCollapsed] = useState(false)
-  const prevContactsEmptyRef = useRef(true)
+  const [isEditMode, setIsEditMode] = useState(false)
+  const [showPlusMenu, setShowPlusMenu] = useState(false)
+  const [conversationPreviews, setConversationPreviews] = useState<
+    Record<string, { content: string | null; file_url: string | null; created_at: string; sender_id: string }>
+  >({})
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [uiLanguage, setUiLanguage] = useState<UiLanguage>('ru')
   const [isSavingLanguage, setIsSavingLanguage] = useState(false)
@@ -527,14 +533,6 @@ export default function App() {
     document.documentElement.dir = uiLanguage === 'ar' ? 'rtl' : 'ltr'
   }, [uiLanguage])
 
-  useEffect(() => {
-    const contactsEmpty = contacts.length === 0
-    // По умолчанию: пока контактов нет — показываем поиск как есть.
-    // Как только появились контакты (переход 0 -> >0) — сворачиваем поиск.
-    if (contactsEmpty) setIsFindCollapsed(false)
-    else if (prevContactsEmptyRef.current && !contactsEmpty) setIsFindCollapsed(true)
-    prevContactsEmptyRef.current = contactsEmpty
-  }, [contacts.length])
 
   const toggleTheme = useCallback(() => {
     setTheme((prev) => {
@@ -884,6 +882,35 @@ export default function App() {
       if (!msg.is_read) counts[msg.sender_id] = (counts[msg.sender_id] || 0) + 1
     })
     setUnreadCounts(counts)
+
+    const contactIds = acceptedRows.flatMap((c) => {
+      if (!c.profiles) return []
+      const profiles = Array.isArray(c.profiles) ? c.profiles : [c.profiles]
+      return profiles.map((p) => p.id)
+    })
+    if (contactIds.length > 0) {
+      const { data: recentMsgs } = await supabase
+        .from('messages')
+        .select('sender_id, receiver_id, content, file_url, created_at')
+        .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
+        .order('created_at', { ascending: false })
+        .limit(300)
+      const previews: Record<string, { content: string | null; file_url: string | null; created_at: string; sender_id: string }> = {}
+      for (const msg of recentMsgs ?? []) {
+        const peerId = msg.sender_id === userId ? msg.receiver_id : msg.sender_id
+        if (contactIds.includes(peerId) && !previews[peerId]) {
+          previews[peerId] = {
+            content: msg.content,
+            file_url: msg.file_url,
+            created_at: msg.created_at,
+            sender_id: msg.sender_id,
+          }
+        }
+      }
+      setConversationPreviews(previews)
+    } else {
+      setConversationPreviews({})
+    }
   }, [session])
 
   // === ИСПРАВЛЕННЫЙ ГЛОБАЛЬНЫЙ REALTIME ===
@@ -1166,7 +1193,48 @@ export default function App() {
     setIsSending(false)
   }
 
-  function formatTime(isoString: string) { return new Date(isoString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }
+  function formatTime(isoString: string) {
+    return new Date(isoString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  }
+
+  function formatListTime(isoString: string) {
+    const d = new Date(isoString)
+    const now = new Date()
+    if (d.toDateString() === now.toDateString()) return formatTime(isoString)
+    const yesterday = new Date(now)
+    yesterday.setDate(yesterday.getDate() - 1)
+    if (d.toDateString() === yesterday.toDateString()) return 'Yesterday'
+    return d.toLocaleDateString([], { weekday: 'long' })
+  }
+
+  function formatDateSeparator(isoString: string) {
+    const d = new Date(isoString)
+    const now = new Date()
+    const time = formatTime(isoString)
+    if (d.toDateString() === now.toDateString()) return `Today ${time}`
+    const yesterday = new Date(now)
+    yesterday.setDate(yesterday.getDate() - 1)
+    if (d.toDateString() === yesterday.toDateString()) return `Yesterday ${time}`
+    return `${d.toLocaleDateString([], { weekday: 'long' })} ${time}`
+  }
+
+  function displayName(email: string) {
+    return email.split('@')[0]
+  }
+
+  function previewText(contactId: string) {
+    const p = conversationPreviews[contactId]
+    if (!p) return t('online')
+    if (p.file_url) return p.content ? p.content : '📎 Attachment'
+    if (p.content) {
+      const prefix = p.sender_id === session?.user.id ? 'You: ' : ''
+      return `${prefix}${p.content}`
+    }
+    return t('online')
+  }
+
+  const totalUnread = Object.values(unreadCounts).reduce((a, b) => a + b, 0)
+  const canSend = text.trim() !== '' || pendingFile !== null
 
   const toggleReaction = async (messageId: number, emoji: string) => {
     if (!session) return
@@ -1289,6 +1357,22 @@ export default function App() {
                     </div>
                   </div>
                 </div>
+                <div className="ios-grouped mt-3 overflow-hidden">
+                  <button type="button" onClick={toggleTheme} className="w-full px-4 py-3.5 flex items-center justify-between text-[17px] border-b border-[var(--ios-separator)]">
+                    <span>{theme === 'light' ? 'Dark Mode' : 'Light Mode'}</span>
+                    {themeIcon}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsSettingsOpen(false)
+                      void supabase.auth.signOut()
+                    }}
+                    className="w-full px-4 py-3.5 text-left text-[17px] text-[var(--ios-danger)]"
+                  >
+                    {t('logout')}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -1367,201 +1451,124 @@ export default function App() {
       ) : (
         <div className="flex flex-1 flex-col min-h-0 w-full max-md:min-h-0 pt-safe">
           <div className="flex flex-1 flex-row min-h-0 w-full overflow-hidden md:max-w-6xl md:mx-auto md:my-3 md:rounded-[14px] md:border md:border-[var(--ios-border-subtle)] md:ios-elevated md:bg-[var(--ios-surface)]">
-          {/* ЛЕВАЯ КОЛОНКА — Messages sidebar */}
-          <div className={`flex flex-col min-h-0 min-w-0 overflow-hidden z-20 bg-[var(--ios-sidebar-bg)] border-r border-[var(--ios-separator)]
+          {/* iMessage inbox list */}
+          <div className={`imessage-inbox relative flex flex-col min-h-0 min-w-0 z-20 border-r border-[var(--ios-separator)]
             ${selectedUser ? 'hidden md:flex md:flex-none' : 'flex w-full flex-1 md:flex-none'} 
-            ${isCollapsed ? 'md:w-[72px]' : 'md:w-[340px] lg:w-[380px]'}`}>
+            ${isCollapsed ? 'md:w-[72px]' : 'md:w-[340px] lg:w-[390px]'}`}>
 
             {!isCollapsed ? (
-              <div className="shrink-0 px-4 pt-2 pb-3">
-                <div className="flex items-end justify-between gap-3 mb-3">
-                  <h1 className="ios-large-title text-[var(--ios-text-primary)]">{t('appTitle')}</h1>
-                  <div className="flex items-center gap-1 pb-1">
-                    <button type="button" onClick={toggleTheme} className="ios-icon-btn" aria-label={theme === 'light' ? 'Dark mode' : 'Light mode'}>
-                      {themeIcon}
-                    </button>
-                    <button type="button" onClick={() => setIsSettingsOpen(true)} className="ios-icon-btn" aria-label={t('settings')}>
-                      <IconGear className="w-[19px] h-[19px]" />
-                    </button>
+              <>
+                <div className="shrink-0 px-4 pt-1 pb-0 flex items-center justify-between">
+                  <button type="button" className="imessage-edit-pill" onClick={() => setIsEditMode((v) => !v)}>
+                    {isEditMode ? 'Done' : 'Edit'}
+                  </button>
+                  <button type="button" className="imessage-filter-btn" onClick={() => setIsSettingsOpen(true)} aria-label={t('settings')}>
+                    <IconFilter />
+                  </button>
+                </div>
+                <h1 className="ios-large-title px-4 pt-1 pb-3 text-[var(--ios-text-primary)]">{t('appTitle')}</h1>
+
+                <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden no-scrollbar pb-28">
+                  {outgoingRequests.map((u) => (
+                    <div key={u.id} className="imessage-row opacity-80">
+                      <span className="imessage-unread-spacer" />
+                      <IosAvatar seed={u.email} label={u.email} size="md" />
+                      <div className="flex-1 min-w-0 pr-2">
+                        <div className="flex items-baseline justify-between gap-2">
+                          <p className="truncate text-[17px] font-medium text-[var(--ios-text-primary)]">{displayName(u.email)}</p>
+                          <button type="button" className="text-[var(--ios-danger)] text-[13px]" onClick={() => cancelOutgoingRequest(u.id)}>×</button>
+                        </div>
+                        <p className="imessage-row-preview mt-0.5">
+                          {u.requestStatus === 'pending' ? '⏳ Pending' : '🚫 Declined'}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+
+                  {incomingRequests.map((u) => (
+                    <div key={u.id} className="imessage-row">
+                      <span className="imessage-unread-dot" />
+                      <IosAvatar seed={u.email} label={u.email} size="md" />
+                      <div className="flex-1 min-w-0 pr-2">
+                        <div className="flex items-baseline justify-between gap-2">
+                          <p className="truncate text-[17px] font-semibold text-[var(--ios-text-primary)]">{displayName(u.email)}</p>
+                          <span className="imessage-row-time">{t('newRequests')}</span>
+                        </div>
+                        <p className="imessage-row-preview mt-0.5">{u.email}</p>
+                        <div className="flex gap-2 mt-2">
+                          <button type="button" className="flex-1 py-1.5 rounded-full bg-[var(--ios-accent)] text-white text-[14px] font-medium" onClick={() => acceptRequest(u.id)}>Принять</button>
+                          <button type="button" className="flex-1 py-1.5 rounded-full bg-[var(--ios-search-bg)] text-[var(--ios-danger)] text-[14px] font-medium" onClick={() => rejectRequest(u.id)}>Отклонить</button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+
+                  {contacts.map((u) => {
+                    const unread = unreadCounts[u.id] > 0
+                    const preview = conversationPreviews[u.id]
+                    return (
+                      <div key={u.id} className="imessage-row cursor-pointer" onClick={() => setSelectedUser(u)}>
+                        {unread ? <span className="imessage-unread-dot" /> : <span className="imessage-unread-spacer" />}
+                        <IosAvatar seed={u.email} label={u.email} size="md" />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-baseline justify-between gap-2">
+                            <p className={`truncate text-[17px] ${unread ? 'font-bold' : 'font-semibold'} text-[var(--ios-text-primary)]`}>
+                              {displayName(u.email)}
+                            </p>
+                            {preview && <span className="imessage-row-time">{formatListTime(preview.created_at)}</span>}
+                          </div>
+                          <p className={`imessage-row-preview mt-0.5 ${unread ? 'text-[var(--ios-text-primary)]' : ''}`}>
+                            {previewText(u.id)}
+                          </p>
+                        </div>
+                        <IconChevronRight className="text-[var(--ios-preview-text)] shrink-0" />
+                        {isEditMode && (
+                          <button
+                            type="button"
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--ios-danger)] text-xl z-10"
+                            onClick={(e) => removeContact(e, u.id)}
+                          >
+                            ×
+                          </button>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+
+                <div className="imessage-floating-bar absolute bottom-0 left-0 right-0">
+                  <div className="flex items-center gap-3">
+                    <label className="imessage-search-pill">
+                      <IconSearch />
+                      <input
+                        placeholder="Search"
+                        value={newContactEmail}
+                        onChange={(e) => setNewContactEmail(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && sendRequest(newContactEmail)}
+                      />
+                      <IconMic className="opacity-70" />
+                    </label>
                     <button
                       type="button"
-                      onClick={() => openProfile({ id: session.user.id, email: session.user.email ?? '' })}
-                      className="ios-icon-btn"
-                      aria-label={t('profile')}
+                      className="imessage-compose-btn"
+                      aria-label={t('findUser')}
+                      onClick={() => {
+                        if (newContactEmail.trim()) void sendRequest(newContactEmail)
+                      }}
                     >
-                      <IosAvatar seed={session.user.email ?? 'me'} label={session.user.email ?? 'M'} size="sm" className="!w-8 !h-8 !text-xs" />
+                      <IconCompose />
                     </button>
                   </div>
                 </div>
-
-                <div
-                  className={`transition-all duration-300 overflow-hidden ${
-                    contacts.length > 0 && isFindCollapsed ? 'max-h-0 opacity-0' : 'max-h-24 opacity-100 mb-3'
-                  }`}
-                >
-                  <label className="ios-search">
-                    <IconSearch />
-                    <input
-                      placeholder={t('requestEmailPlaceholder')}
-                      value={newContactEmail}
-                      onChange={(e) => setNewContactEmail(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && sendRequest(newContactEmail)}
-                    />
-                    <button type="button" onClick={() => sendRequest(newContactEmail)} className="ios-icon-btn !w-8 !h-8" aria-label={t('findUser')}>
-                      <IconPlus className="w-[18px] h-[18px]" />
-                    </button>
-                  </label>
-                </div>
-
-                {contacts.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => setIsFindCollapsed((v) => !v)}
-                    className="text-[var(--ios-accent)] text-[13px] font-medium mb-2"
-                  >
-                    {isFindCollapsed ? t('findUser') : t('cancel')}
-                  </button>
-                )}
-
-                <div className="flex items-center justify-between">
-                  <button
-                    type="button"
-                    onClick={() => supabase.auth.signOut()}
-                    className="text-[var(--ios-danger)] text-[13px] font-medium"
-                  >
-                    {t('logout')}
-                  </button>
-                  <button type="button" onClick={() => setIsCollapsed(true)} className="hidden md:inline-flex ios-icon-btn text-[var(--ios-text-secondary)]" title="Collapse">
-                    <IconChevronLeft className="w-5 h-5 rotate-180" />
-                  </button>
-                </div>
-              </div>
+              </>
             ) : (
               <div className="hidden md:flex flex-col items-center gap-3 p-2 pt-4">
                 <button type="button" onClick={() => setIsCollapsed(false)} className="ios-icon-btn text-[var(--ios-text-secondary)]">
                   <IconChevronLeft className="w-5 h-5" />
                 </button>
-                <button type="button" onClick={toggleTheme} className="ios-icon-btn">{themeIcon}</button>
                 <button type="button" onClick={() => setIsSettingsOpen(true)} className="ios-icon-btn"><IconGear /></button>
               </div>
             )}
-
-            <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden w-full no-scrollbar px-3 md:px-4 max-md:pb-[max(1.5rem,env(safe-area-inset-bottom,0px))]">
-              {incomingRequests.length > 0 && !isCollapsed && (
-<div className="mb-3 w-full shrink-0">
-  <p className="text-[var(--ios-text-secondary)] text-[13px] font-medium uppercase tracking-wide px-1 mb-2">{t('newRequests')}</p>
-  <ul className="ios-grouped">
-    {incomingRequests.map(u => (
-      <li key={u.id} className="ios-grouped-row p-3 flex flex-col gap-2.5">
-        <div className="flex items-center gap-3">
-          <IosAvatar seed={u.email} label={u.email} size="md" />
-          <span className="truncate text-[17px] font-medium text-[var(--ios-text-primary)]">{u.email}</span>
-        </div>
-        <div className="flex gap-2">
-          <button type="button" className="flex-1 py-2 rounded-[10px] bg-[var(--ios-success)] text-white text-[15px] font-semibold active:opacity-80" onClick={() => acceptRequest(u.id)}>Принять</button>
-          <button type="button" className="flex-1 py-2 rounded-[10px] bg-[var(--ios-search-bg)] text-[var(--ios-danger)] text-[15px] font-semibold active:opacity-80" onClick={() => rejectRequest(u.id)}>Отклонить</button>
-        </div>
-      </li>
-    ))}
-  </ul>
-</div>
-              )}
-
-              {!isCollapsed && outgoingRequests.length > 0 && (
-                <div className="mb-3 w-full shrink-0">
-  <p className="text-[var(--ios-text-secondary)] text-[13px] font-medium uppercase tracking-wide px-1 mb-2">{t('myRequests')}</p>
-  <ul className="ios-grouped">
-    {outgoingRequests.map(u => (
-      <li 
-        key={u.id} 
-        className="ios-grouped-row p-3 flex justify-between items-center group"
-      >
-        <div className="flex flex-col truncate pr-2 w-full">
-          <span className="font-medium text-[var(--ios-text-primary)] truncate">{u.email}</span>
-          
-          {/* Красивые бейджики статусов */}
-          <div className="mt-1.5">
-            {u.requestStatus === 'pending' ? (
-              <span className="text-amber-200 bg-amber-500/15 border border-amber-400/25 px-2 py-0.5 rounded-md text-[11px] font-medium flex items-center gap-1.5 w-fit">
-                <span className="animate-pulse">⏳</span> Ожидает
-              </span>
-            ) : (
-              <span className="text-[var(--ios-danger)] bg-red-500/12 border border-red-400/20 px-2 py-0.5 rounded-md text-[11px] font-medium flex items-center gap-1.5 w-fit">
-                🚫 Отклонено
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* Элегантная кнопка отмены */}
-        <button 
-          type="button"
-          className="text-[var(--ios-text-secondary)] hover:text-[var(--ios-danger)] ios-control w-8 h-8 flex items-center justify-center rounded-full text-xl md:opacity-0 md:group-hover:opacity-100 transition-all duration-300 active:scale-90 shrink-0" 
-          onClick={() => cancelOutgoingRequest(u.id)}
-          title="Отменить заявку"
-        >
-          ×
-        </button>
-      </li>
-    ))}
-  </ul>
-</div>
-              )}
-
-              {!isCollapsed && contacts.length > 0 && (
-                <p className="text-[var(--ios-text-secondary)] text-[13px] font-medium uppercase tracking-wide px-1 mb-2 mt-1">{t('myFriends')}</p>
-              )}
-              <ul className={`w-full ${isCollapsed ? 'flex flex-col items-center gap-2 px-1' : 'ios-grouped'}`}>
-  {contacts.map(u => {
-    const isSelected = selectedUser?.id === u.id;
-    return (
-      <li 
-        key={u.id} 
-        className={`cursor-pointer w-full group flex items-center ${
-          isCollapsed
-            ? 'justify-center p-1'
-            : `ios-grouped-row ios-list-row px-3 py-2 gap-3 ${isSelected ? 'ios-list-row-selected' : ''}`
-        }`}
-        onClick={() => setSelectedUser(u)}
-      >
-        {isCollapsed ? (
-          <div className="relative">
-            <IosAvatar seed={u.email} label={u.email} size="md" className={isSelected ? 'ring-2 ring-[var(--ios-accent)] ring-offset-2 ring-offset-[var(--ios-sidebar-bg)]' : ''} />
-            {unreadCounts[u.id] > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 bg-[var(--ios-danger)] text-white text-[10px] min-w-[18px] h-[18px] rounded-full flex items-center justify-center font-bold px-1">
-                {unreadCounts[u.id] > 9 ? '9+' : unreadCounts[u.id]}
-              </span>
-            )}
-          </div>
-        ) : (
-          <>
-            <IosAvatar seed={u.email} label={u.email} size="lg" />
-            <div className="flex-1 min-w-0">
-              <p className={`truncate text-[17px] leading-tight ${isSelected ? 'font-semibold' : 'font-medium'} text-[var(--ios-text-primary)]`}>{u.email}</p>
-              <p className="text-[15px] text-[var(--ios-text-secondary)] truncate">{t('online')}</p>
-            </div>
-            <div className="flex flex-col items-end gap-1 shrink-0">
-              {unreadCounts[u.id] > 0 && (
-                <span className="bg-[var(--ios-accent)] text-white text-[12px] font-semibold min-w-[22px] h-[22px] px-1.5 rounded-full flex items-center justify-center">
-                  {unreadCounts[u.id] > 99 ? '99+' : unreadCounts[u.id]}
-                </span>
-              )}
-              <button 
-                type="button"
-                className="text-[var(--ios-text-tertiary)] hover:text-[var(--ios-danger)] text-lg leading-none opacity-0 group-hover:opacity-100 transition-opacity" 
-                onClick={(e) => removeContact(e, u.id)}
-                title="Удалить из друзей"
-              >
-                ×
-              </button>
-            </div>
-          </>
-        )}
-      </li>
-    )
-  })}
-</ul>
-            </div>
           </div>
 
 {/* ПРАВАЯ КОЛОНКА — Messages thread */}
@@ -1576,46 +1583,52 @@ export default function App() {
               </div>
             ) : (
               <>
-                <div className="ios-navbar px-2 md:px-4 z-20 flex items-center shrink-0 w-full min-h-[44px]">
-                  <button 
+                <div className="imessage-thread-header">
+                  <button
                     type="button"
                     onClick={() => setSelectedUser(null)}
-                    className="md:hidden ios-icon-btn -ml-1"
+                    className="imessage-back-btn md:hidden"
                     aria-label={t('back')}
                   >
-                    <IconChevronLeft className="w-6 h-6 text-[var(--ios-accent)]" />
+                    <IconChevronLeft className="w-7 h-7" />
+                    {totalUnread > 0 && <span className="imessage-back-badge">{totalUnread > 9 ? '9+' : totalUnread}</span>}
                   </button>
+                  <div className="hidden md:block" />
                   <button
                     type="button"
                     onClick={() => openProfile(selectedUser)}
-                    className="flex flex-1 min-w-0 items-center justify-center md:justify-start gap-2.5 text-left"
+                    className="imessage-thread-contact"
                     aria-label="Открыть профиль пользователя"
                   >
-                    <IosAvatar seed={selectedUser.email} label={selectedUser.email} size="sm" className="md:hidden" />
-                    <div className="flex flex-col items-center md:items-start min-w-0">
-                      <span className="text-[17px] truncate font-semibold text-[var(--ios-text-primary)] leading-tight">
-                        {selectedUser.email.split('@')[0]}
-                      </span>
-                      <span className="text-[12px] text-[var(--ios-text-secondary)] hidden md:block">{t('online')}</span>
-                    </div>
+                    <IosAvatar seed={selectedUser.email} label={selectedUser.email} size="thread" variant="person" />
+                    <span className="imessage-thread-name truncate max-w-full">
+                      {displayName(selectedUser.email)}
+                      <IconChevronRight className="w-3.5 h-3.5 text-[var(--ios-preview-text)]" />
+                    </span>
                   </button>
-                  <button type="button" onClick={toggleTheme} className="md:hidden ios-icon-btn">{themeIcon}</button>
+                  <div className="hidden md:block" />
                 </div>
                 
                 {/* ОБЛАСТЬ СООБЩЕНИЙ */}
                 <div
                   ref={messagesViewportRef}
-                  className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-3 md:px-5 py-4 flex flex-col gap-1 pb-3 w-full no-scrollbar"
+                  className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-4 md:px-6 py-3 flex flex-col pb-3 w-full no-scrollbar bg-[var(--ios-chat-bg)]"
                 >
-                  {messages.map((m) => {
+                  {messages.map((m, idx) => {
                     const isMe = m.sender_id === session.user.id;
                     const msgReactions = allReactions.filter((r) => r.message_id === m.id)
                     const isMenuOpen = activeReactionMsgId === m.id;
+                    const prev = messages[idx - 1]
+                    const showDate =
+                      !prev ||
+                      new Date(prev.created_at).toDateString() !== new Date(m.created_at).toDateString()
                     
                     return (
+                      <div key={m.id} id={`msg-${m.id}`} className="contents">
+                        {showDate && (
+                          <div className="imessage-date-separator">{formatDateSeparator(m.created_at)}</div>
+                        )}
                       <div
-                        key={m.id}
-                        id={`msg-${m.id}`}
                         className={`relative flex flex-col mb-2 ${isMe ? 'items-end' : 'items-start'}`}
                       >
                         
@@ -1729,10 +1742,11 @@ export default function App() {
                             </div>
                           )}
 
-                          <div className={`flex items-center gap-1.5 self-end mt-1.5 px-0.5 ${isMe ? 'text-white/50' : 'text-[var(--ios-text-secondary)]'}`}>
-                            <span className="text-[10px] font-medium tracking-tighter uppercase">{formatTime(m.created_at)}</span>
-                            {isMe && <span className="text-[11px] font-bold leading-none">{m.is_read ? '✓✓' : '✓'}</span>}
-                          </div>
+                          {isMe && (
+                            <span className="text-[11px] text-[var(--ios-preview-text)] self-end mt-1 px-1">
+                              {m.is_read ? 'Delivered' : 'Sent'}
+                            </span>
+                          )}
 
                           {msgReactions.length > 0 && (
                             <div className={`absolute -bottom-3.5 flex flex-wrap gap-1 z-10 ${isMe ? 'right-2' : 'left-2'}`}>
@@ -1752,128 +1766,105 @@ export default function App() {
                           )}
                         </div>
                       </div>
+                      </div>
                     );
                   })}
                   <div ref={messagesEndRef} className="shrink-0" />
                 </div>
                 
                 {/* ПАНЕЛЬ ВВОДА — safe-area для home indicator + место над клавиатурой (iOS) */}
-                <div className="ios-composer-bar flex flex-col shrink-0 w-full pb-composer-safe">
-                  
-                  {/* ПРЕДПРОСМОТР ФАЙЛА */}
+                <div className="flex flex-col shrink-0 w-full bg-[var(--ios-chat-bg)]">
                   {pendingFile && (
-                    <div className="p-2 md:p-3 ios-field border-b border-[var(--ios-border-subtle)] flex items-start gap-3 transition-all shrink-0 mx-2 mt-2 rounded-[10px]">
-                      <div className="relative inline-block shrink-0">
-                        {pendingFile.type.startsWith('image/') ? (
-                          /* eslint-disable-next-line @next/next/no-img-element -- blob preview URL from createObjectURL */
-                          <img src={URL.createObjectURL(pendingFile)} alt="Превью" className="h-14 w-14 md:h-16 md:w-16 object-cover rounded-[8px] border border-[var(--ios-border)]" />
-                        ) : (
-                          <div className="h-14 w-14 md:h-16 md:w-16 ios-control rounded-[8px] flex items-center justify-center text-2xl border border-[var(--ios-border)]">📄</div>
-                        )}
-                        <button type="button" onClick={() => setPendingFile(null)} className="absolute -top-2 -right-2 w-5 h-5 rounded-full ios-control text-[var(--ios-danger)] text-xs flex items-center justify-center hover:brightness-110 border border-[var(--ios-border)]">×</button>
-                      </div>
-                      <div className="flex flex-col justify-center h-14 md:h-16 min-w-0">
-                         <span className="text-xs md:text-sm font-medium text-[var(--ios-text-primary)] truncate max-w-[150px] md:max-w-[200px]">{pendingFile.name || 'Изображение'}</span>
-                         <span className="text-[10px] md:text-xs text-[var(--ios-text-secondary)]">Готово к отправке</span>
+                    <div className="px-4 py-2 flex items-center gap-3 border-t border-[var(--ios-separator)]">
+                      {pendingFile.type.startsWith('image/') ? (
+                        /* eslint-disable-next-line @next/next/no-img-element */
+                        <img src={URL.createObjectURL(pendingFile)} alt="Preview" className="h-14 w-14 object-cover rounded-lg" />
+                      ) : (
+                        <div className="h-14 w-14 rounded-lg bg-[var(--ios-search-bg)] flex items-center justify-center">📄</div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[15px] font-medium truncate">{pendingFile.name || 'Attachment'}</p>
+                        <button type="button" className="text-[var(--ios-accent)] text-[13px]" onClick={() => setPendingFile(null)}>{t('cancel')}</button>
                       </div>
                     </div>
                   )}
 
-                  <div className="px-3 py-2 flex gap-2 items-end shrink-0 z-40 relative">
-                    <button type="button" onClick={() => fileInputRef.current?.click()} className="ios-icon-btn text-[var(--ios-accent)] mb-0.5" disabled={isSending} aria-label="Attach">
-                      <IconPlus className="w-[22px] h-[22px]" />
-                    </button>
-                    <input type="file" className="hidden" ref={fileInputRef} onChange={handleFileUpload} accept="image/*,.pdf,.doc,.docx" />
-
-                    <div className="relative flex items-end gap-1 mb-0.5">
-                      {showStyleMenu && (
-                        <div className="absolute bottom-full left-0 mb-2 ios-glass-prominent p-2 rounded-[14px] flex flex-col gap-0.5 w-52 z-[9999]">
-                          <span className="text-[11px] text-[var(--ios-text-secondary)] font-semibold px-2 py-1 uppercase">{t('styleMenuTitle')}</span>
-                          {([{ label: t('styleBusiness'), prompt: 'Business and polite' }, { label: t('styleFriendly'), prompt: 'Friendly and fun' }, { label: t('styleStrict'), prompt: 'Strict and concise' }, { label: t('styleSlang'), prompt: 'Bold slang' }] as const).map((style) => (
-                            <button key={style.prompt} type="button" onClick={() => handleAiAction('style', style.prompt)} disabled={isAiLoading} className="text-left px-3 py-2.5 text-[17px] rounded-[10px] hover:bg-[var(--ios-hover-surface)] disabled:opacity-50">{style.label}</button>
-                          ))}
-                        </div>
-                      )}
-                      {showTranslateMenu && (
-                        <div className="absolute bottom-full left-0 mb-2 ios-glass-prominent p-2 rounded-[14px] flex flex-col gap-0.5 w-56 z-[9999]">
-                          <span className="text-[11px] text-[var(--ios-text-secondary)] font-semibold px-2 py-1 uppercase">{t('translateMenuTitle')}</span>
-                          {([{ label: t('langEnglish'), prompt: 'English' }, { label: t('langNorwegian'), prompt: 'Norwegian' }, { label: t('langRussian'), prompt: 'Russian' }] as const).map((lang) => (
-                            <button key={lang.prompt} type="button" onClick={() => handleAiAction('translate', lang.prompt)} disabled={isAiLoading} className="text-left px-3 py-2.5 text-[17px] rounded-[10px] hover:bg-[var(--ios-hover-surface)] disabled:opacity-50">{lang.label}</button>
-                          ))}
-                          <div className="flex gap-1 mt-1 border-t border-[var(--ios-separator)] pt-2 px-1">
-                            <input value={customLang} onChange={e => setCustomLang(e.target.value)} placeholder={t('customLangPlaceholder')} className="flex-1 px-2 py-1.5 rounded-[8px] bg-[var(--ios-search-bg)] text-[13px] outline-none" />
-                            <button type="button" onClick={() => handleAiAction('translate', customLang)} disabled={isAiLoading} className="px-2.5 py-1.5 rounded-[8px] bg-[var(--ios-accent)] text-white text-[13px] font-semibold disabled:opacity-50">{isAiLoading ? '…' : t('go')}</button>
-                          </div>
-                        </div>
-                      )}
-                      <button type="button" onClick={() => { setShowStyleMenu(!showStyleMenu); setShowTranslateMenu(false) }} className={`ios-icon-btn !w-8 !h-8 ${showStyleMenu ? 'bg-[var(--ios-accent-tint)]' : ''}`} disabled={isSending || isAiLoading} title={t('magicWandTitle')}><IconSparkles className="w-4 h-4" /></button>
-                      <button type="button" onClick={() => { setShowTranslateMenu(!showTranslateMenu); setShowStyleMenu(false) }} className={`ios-icon-btn !w-8 !h-8 ${showTranslateMenu ? 'bg-[var(--ios-accent-tint)]' : ''}`} disabled={isSending || isAiLoading} title={t('translateTitle')}><IconGlobe className="w-4 h-4" /></button>
+                  {editingMessageId !== null && !isAiLoading && (
+                    <div className="px-4 py-1 flex items-center justify-between text-[13px] text-[var(--ios-preview-text)]">
+                      <span>{t('editing')}</span>
+                      <button type="button" className="text-[var(--ios-accent)]" onClick={() => { setEditingMessageId(null); setText('') }}>{t('cancel')}</button>
                     </div>
+                  )}
+
+                  <div className="imessage-composer relative">
+                    <div className="relative">
+                      <button
+                        type="button"
+                        className="imessage-plus-btn"
+                        disabled={isSending}
+                        aria-label="More"
+                        onClick={() => setShowPlusMenu((v) => !v)}
+                      >
+                        <IconPlus className="w-5 h-5" />
+                      </button>
+                      {showPlusMenu && (
+                        <div className="absolute bottom-full left-0 mb-2 ios-glass-prominent rounded-[14px] p-2 z-50 min-w-[180px]">
+                          <button type="button" className="w-full text-left px-3 py-2.5 text-[17px] rounded-[10px] hover:bg-[var(--ios-hover-surface)]" onClick={() => { fileInputRef.current?.click(); setShowPlusMenu(false) }}>📎 Attachment</button>
+                          <button type="button" className="w-full text-left px-3 py-2.5 text-[17px] rounded-[10px] hover:bg-[var(--ios-hover-surface)]" onClick={() => { setShowStyleMenu(true); setShowPlusMenu(false) }}>{t('magicWandTitle')}</button>
+                          <button type="button" className="w-full text-left px-3 py-2.5 text-[17px] rounded-[10px] hover:bg-[var(--ios-hover-surface)]" onClick={() => { setShowTranslateMenu(true); setShowPlusMenu(false) }}>{t('translateTitle')}</button>
+                        </div>
+                      )}
+                    </div>
+                    <input type="file" className="hidden" ref={fileInputRef} onChange={handleFileUpload} accept="image/*,.pdf,.doc,.docx" />
 
                     <div className="relative flex-1 min-w-0">
                       <input
                         ref={composerInputRef}
-                        className={`ios-composer-field w-full ${isAiLoading ? 'animate-pulse' : ''} ${aiProcessingFromInput && isAiLoading ? 'text-transparent caret-transparent' : ''}`}
+                        className={`imessage-input-pill ${aiProcessingFromInput && isAiLoading ? 'text-transparent caret-transparent' : ''}`}
                         value={text}
                         onChange={(e) => setText(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
                         onPaste={handlePaste}
-                        placeholder={t('messagePlaceholder')}
+                        placeholder={`${t('messagePlaceholder')} • SMS`}
                         disabled={isSending || isAiLoading}
                       />
-                      {editingMessageId !== null && !isAiLoading && (
-                        <div className="absolute -top-8 left-0 right-0 flex items-center justify-between gap-2 px-1">
-                          <div className="ios-glass-prominent px-3 py-1 rounded-full border border-[var(--ios-border-subtle)] flex items-center gap-2">
-                            <span className="text-[11px] font-semibold text-[var(--ios-text-secondary)] whitespace-nowrap">
-                              {t('editing')}
-                            </span>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setEditingMessageId(null)
-                              setText('')
-                              requestAnimationFrame(() => composerInputRef.current?.focus())
-                            }}
-                            className="ios-control px-3 py-1 rounded-full text-[11px] font-semibold text-[var(--ios-text-secondary)] hover:text-[var(--ios-danger)] transition-all active:scale-95 border border-[var(--ios-border)]"
-                          >
-                            {t('cancel')}
-                          </button>
+                      {!canSend && !isAiLoading && <IconMic className="imessage-input-mic w-5 h-5" />}
+                      {aiProcessingFromInput && isAiLoading && aiProcessingLabel && (
+                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none px-10">
+                          <span className="text-[13px] text-[var(--ios-preview-text)] truncate">{aiProcessingLabel}</span>
                         </div>
                       )}
-                      {aiProcessingFromInput && isAiLoading && aiProcessingLabel && (
-                        <div className="absolute inset-y-0 left-0 right-0 flex items-center justify-center pointer-events-none px-6">
-                          <div className="ios-glass-prominent px-3 py-1 rounded-full border border-[var(--ios-border-subtle)] flex items-center gap-2 animate-in zoom-in duration-200 max-w-[90%]">
-                            <span className="text-[11px] font-semibold text-[var(--ios-text-secondary)] truncate">
-                              {aiProcessingLabel}
-                            </span>
-                            <span className="ai-ellipsis text-[var(--ios-accent)]" aria-hidden="true">
-                              <span />
-                              <span />
-                              <span />
-                            </span>
+                    </div>
+
+                    {canSend && (
+                      <button type="button" className="ios-send-btn mb-0.5" onClick={sendMessage} disabled={isSending || isAiLoading} aria-label="Send">
+                        {isSending ? '…' : editingMessageId !== null ? '✓' : <IconSend className="w-4 h-4 translate-x-px" />}
+                      </button>
+                    )}
+                  </div>
+
+                  {(showStyleMenu || showTranslateMenu) && (
+                    <div className="px-3 pb-2">
+                      {showStyleMenu && (
+                        <div className="ios-glass-prominent rounded-[14px] p-2 mb-2">
+                          {([{ label: t('styleBusiness'), prompt: 'Business and polite' }, { label: t('styleFriendly'), prompt: 'Friendly and fun' }, { label: t('styleStrict'), prompt: 'Strict and concise' }, { label: t('styleSlang'), prompt: 'Bold slang' }] as const).map((style) => (
+                            <button key={style.prompt} type="button" onClick={() => { handleAiAction('style', style.prompt); setShowStyleMenu(false) }} className="block w-full text-left px-3 py-2 text-[17px] rounded-[10px] hover:bg-[var(--ios-hover-surface)]">{style.label}</button>
+                          ))}
+                        </div>
+                      )}
+                      {showTranslateMenu && (
+                        <div className="ios-glass-prominent rounded-[14px] p-2">
+                          {([{ label: t('langEnglish'), prompt: 'English' }, { label: t('langNorwegian'), prompt: 'Norwegian' }, { label: t('langRussian'), prompt: 'Russian' }] as const).map((lang) => (
+                            <button key={lang.prompt} type="button" onClick={() => { handleAiAction('translate', lang.prompt); setShowTranslateMenu(false) }} className="block w-full text-left px-3 py-2 text-[17px] rounded-[10px] hover:bg-[var(--ios-hover-surface)]">{lang.label}</button>
+                          ))}
+                          <div className="flex gap-2 mt-2 pt-2 border-t border-[var(--ios-separator)] px-1">
+                            <input value={customLang} onChange={(e) => setCustomLang(e.target.value)} placeholder={t('customLangPlaceholder')} className="flex-1 px-2 py-1.5 rounded-[8px] bg-[var(--ios-search-bg)] text-[13px] outline-none" />
+                            <button type="button" onClick={() => { handleAiAction('translate', customLang); setShowTranslateMenu(false) }} className="px-2.5 py-1.5 rounded-[8px] bg-[var(--ios-accent)] text-white text-[13px] font-semibold">{t('go')}</button>
                           </div>
                         </div>
                       )}
                     </div>
-                    
-                    <button 
-                      type="button"
-                      className="ios-send-btn mb-0.5"
-                      onClick={sendMessage} 
-                      disabled={isSending || isAiLoading || (text.trim() === '' && pendingFile === null)}
-                      aria-label="Send"
-                    >
-                      {isSending ? (
-                        <span className="animate-pulse text-white/80 text-sm">…</span>
-                      ) : editingMessageId !== null ? (
-                        <span className="text-white text-sm font-bold">✓</span>
-                      ) : (
-                        <IconSend className="w-4 h-4 translate-x-px" />
-                      )}
-                    </button>
-                    
-                  </div>
+                  )}
                 </div>
               </>
             )}
