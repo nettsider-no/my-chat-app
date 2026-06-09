@@ -5,6 +5,19 @@ import type { ChangeEvent, ClipboardEvent, MouseEvent } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
 import { applyTheme, readStoredTheme, type ThemeMode } from '@/lib/theme'
+import {
+  IconChevronLeft,
+  IconGear,
+  IconGlobe,
+  IconMoon,
+  IconPlus,
+  IconSearch,
+  IconSend,
+  IconSparkles,
+  IconSun,
+  IosAvatar,
+  MessagesAppIcon,
+} from '@/components/ios-ui'
 import type {
   Profile,
   OutgoingContact,
@@ -1195,11 +1208,7 @@ export default function App() {
     }
   }
 
-  const themeBtnBase =
-    'flex items-center justify-center rounded-full ios-control border border-[var(--ios-border-subtle)] transition-all active:scale-95 hover:bg-[var(--ios-hover-surface)] shrink-0 text-[var(--ios-text-primary)]'
-
-  const iconBtnBase =
-    'flex items-center justify-center rounded-full ios-glass border border-[var(--ios-border-subtle)] transition-all active:scale-95 hover:bg-[var(--ios-hover-surface)] shrink-0 text-[var(--ios-text-secondary)]'
+  const themeIcon = theme === 'light' ? <IconMoon className="w-[18px] h-[18px]" /> : <IconSun className="w-[18px] h-[18px]" />
 
   const openProfile = (peer: Profile) => {
     setProfilePeer(peer)
@@ -1216,7 +1225,7 @@ export default function App() {
   // ВЕРСТКА (iOS 27 / Liquid Glass)
   // ==========================================
   return (
-    <div className="flex flex-col h-[100dvh] min-h-0 w-full relative overflow-hidden text-[var(--ios-text-primary)] antialiased md:p-3 lg:p-5">
+    <div className="flex flex-col h-[100dvh] min-h-0 w-full relative overflow-hidden text-[var(--ios-text-primary)] antialiased ios-app-shell">
       
       {toastMsg && (
         <div className="absolute top-[max(1.25rem,env(safe-area-inset-top))] left-1/2 -translate-x-1/2 ios-glass-prominent z-50 flex items-center gap-3 px-5 py-2.5 rounded-full border border-[var(--ios-border-subtle)] shadow-lg animate-bounce">
@@ -1228,15 +1237,15 @@ export default function App() {
         <>
           <div className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-md" onClick={() => setIsSettingsOpen(false)} />
           <div className="fixed inset-0 z-[70] flex items-end md:items-center justify-center p-0 md:p-6">
-            <div className="w-full max-w-lg ios-glass-prominent border border-[var(--ios-border-subtle)] bg-[var(--ios-surface)] rounded-t-[20px] md:rounded-[20px] overflow-hidden max-md:pb-[env(safe-area-inset-bottom)]">
-              <div className="ios-navbar flex h-12 shrink-0 items-center justify-between px-4 border-b border-[var(--ios-separator)]">
-                <span className="text-[17px] font-semibold text-[var(--ios-text-primary)] tracking-tight">
+            <div className="w-full max-w-lg ios-sheet ios-glass-prominent overflow-hidden max-md:pb-[env(safe-area-inset-bottom)]">
+              <div className="ios-navbar flex h-12 shrink-0 items-center justify-between px-4">
+                <span className="text-[17px] font-semibold text-[var(--ios-text-primary)]">
                   {t('settings')}
                 </span>
                 <button
                   type="button"
                   onClick={() => setIsSettingsOpen(false)}
-                  className={`${iconBtnBase} w-8 h-8 text-lg leading-none`}
+                  className="ios-icon-btn"
                   aria-label={t('close')}
                   title={t('close')}
                 >
@@ -1246,8 +1255,8 @@ export default function App() {
               <div className="p-4 md:p-5 bg-[var(--ios-surface-secondary)]">
                 <div className="ios-grouped p-4 md:p-5">
                   <div className="flex items-start gap-3">
-                    <div className="w-11 h-11 rounded-full bg-[var(--ios-accent-tint)] flex items-center justify-center text-xl shrink-0">
-                      🌐
+                    <div className="w-11 h-11 rounded-full bg-[var(--ios-accent-tint)] flex items-center justify-center text-[var(--ios-accent)] shrink-0">
+                      <IconGlobe />
                     </div>
                     <div className="flex flex-col min-w-0 flex-1 gap-2">
                       <div className="flex items-center justify-between gap-3">
@@ -1290,15 +1299,15 @@ export default function App() {
         <>
           <div className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-md" onClick={closeProfile} />
           <div className="fixed inset-0 z-[70] flex items-end md:items-center justify-center p-0 md:p-6">
-            <div className="w-full max-w-lg ios-glass-prominent border border-[var(--ios-border-subtle)] bg-[var(--ios-surface)] rounded-t-[20px] md:rounded-[20px] overflow-hidden max-md:pb-[env(safe-area-inset-bottom)]">
-              <div className="ios-navbar flex h-12 shrink-0 items-center justify-between px-4 border-b border-[var(--ios-separator)]">
-                <span className="text-[17px] font-semibold text-[var(--ios-text-primary)] tracking-tight">
+            <div className="w-full max-w-lg ios-sheet ios-glass-prominent overflow-hidden max-md:pb-[env(safe-area-inset-bottom)]">
+              <div className="ios-navbar flex h-12 shrink-0 items-center justify-between px-4">
+                <span className="text-[17px] font-semibold text-[var(--ios-text-primary)]">
                   {t('profile')}
                 </span>
                 <button
                   type="button"
                   onClick={closeProfile}
-                  className={`${iconBtnBase} w-8 h-8 text-lg leading-none`}
+                  className="ios-icon-btn"
                   aria-label={t('close')}
                   title={t('close')}
                 >
@@ -1308,9 +1317,7 @@ export default function App() {
               <div className="p-4 md:p-5 bg-[var(--ios-surface-secondary)]">
                 <div className="ios-grouped p-4 md:p-5">
                   <div className="flex items-center gap-3">
-                    <div className="w-11 h-11 rounded-full bg-[var(--ios-accent-tint)] flex items-center justify-center text-xl">
-                      👤
-                    </div>
+                    {profilePeer && <IosAvatar seed={profilePeer.email} label={profilePeer.email} size="md" />}
                     <div className="flex flex-col min-w-0">
                       <span className="font-semibold text-[var(--ios-text-primary)] truncate">
                         {profilePeer?.email ?? ''}
@@ -1329,259 +1336,131 @@ export default function App() {
       )}
 
       {!session ? (
-        <div className="flex-1 flex items-center justify-center w-full h-full p-4 md:p-6">
-          <div className="max-w-sm w-full ios-glass-prominent flex flex-col gap-0 relative overflow-hidden shrink-0 rounded-[20px] border border-[var(--ios-border-subtle)] bg-[var(--ios-surface)] ios-elevated">
-            <div className="p-6 md:p-8 flex flex-col gap-5 relative">
+        <div className="flex-1 flex flex-col w-full h-full pt-safe px-5 pb-8 max-w-md mx-auto">
+          <div className="flex justify-end pt-3">
             <button
               type="button"
               onClick={toggleTheme}
-              className={`absolute top-4 right-4 z-10 ${iconBtnBase} w-9 h-9 text-base`}
+              className="ios-icon-btn"
               title={theme === 'light' ? 'Тёмная тема' : 'Светлая тема'}
               aria-label={theme === 'light' ? 'Включить тёмную тему' : 'Включить светлую тему'}
             >
-              <span aria-hidden>{theme === 'light' ? '🌙' : '☀️'}</span>
+              {themeIcon}
             </button>
-            <div className="text-center mt-2 mb-1">
-              <div className="w-16 h-16 md:w-[72px] md:h-[72px] text-3xl md:text-4xl rounded-[18px] flex items-center justify-center mx-auto mb-4 bg-[var(--ios-accent-tint)]">💬</div>
-              <h2 className="text-[22px] md:text-2xl font-bold text-[var(--ios-text-primary)] tracking-tight">{t('appTitle')}</h2>
-              <p className="text-[var(--ios-text-secondary)] text-[13px] md:text-sm mt-2">{t('loginSubtitle')}</p>
+          </div>
+          <div className="flex-1 flex flex-col justify-center gap-8 -mt-6">
+            <div className="text-center">
+              <MessagesAppIcon className="w-[88px] h-[88px] mx-auto mb-5" />
+              <h1 className="ios-large-title text-[var(--ios-text-primary)]">{t('appTitle')}</h1>
+              <p className="text-[var(--ios-text-secondary)] text-[15px] mt-2 leading-snug">{t('loginSubtitle')}</p>
             </div>
-            <div className="ios-grouped flex flex-col gap-0 overflow-hidden">
-              <input className="ios-field p-3.5 w-full rounded-none border-0 border-b border-[var(--ios-separator)] text-[15px] text-[var(--ios-text-primary)] placeholder:text-[var(--ios-text-secondary)] outline-none focus:bg-[var(--ios-hover-surface)] transition-all" placeholder={t('emailPlaceholder')} value={email} onChange={e => setEmail(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleLogin()}/>
-              <input className="ios-field p-3.5 w-full rounded-none border-0 text-[15px] text-[var(--ios-text-primary)] placeholder:text-[var(--ios-text-secondary)] outline-none focus:bg-[var(--ios-hover-surface)] transition-all" type="password" placeholder={t('passwordPlaceholder')} value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleLogin()}/>
+            <div className="ios-grouped">
+              <input className="w-full px-4 py-3.5 bg-transparent border-0 border-b border-[var(--ios-separator)] text-[17px] outline-none placeholder:text-[var(--ios-text-secondary)]" placeholder={t('emailPlaceholder')} value={email} onChange={e => setEmail(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleLogin()} />
+              <input className="w-full px-4 py-3.5 bg-transparent border-0 text-[17px] outline-none placeholder:text-[var(--ios-text-secondary)]" type="password" placeholder={t('passwordPlaceholder')} value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleLogin()} />
             </div>
-            <div className="flex flex-col gap-2.5 mt-1">
-              <button type="button" className="ios-btn-primary w-full py-3.5 rounded-[12px] font-semibold text-[17px] transition-all active:scale-[0.98]" onClick={handleLogin}>{t('signIn')}</button>
-              <button type="button" className="ios-btn-secondary w-full py-3.5 rounded-[12px] font-semibold text-[17px] transition-all active:scale-[0.98]" onClick={handleSignUp}>{t('signUp')}</button>
-            </div>
+            <div className="flex flex-col gap-3">
+              <button type="button" className="ios-btn-primary w-full transition-all active:scale-[0.98]" onClick={handleLogin}>{t('signIn')}</button>
+              <button type="button" className="ios-btn-secondary w-full transition-all active:scale-[0.98]" onClick={handleSignUp}>{t('signUp')}</button>
             </div>
           </div>
         </div>
       ) : (
-        <div className="flex flex-1 flex-col min-h-0 w-full max-md:min-h-0">
-          <div className="flex flex-col flex-1 min-h-0 w-full max-md:rounded-none max-md:border-0 md:rounded-[20px] overflow-hidden md:ios-elevated md:border border-[var(--ios-border-subtle)] bg-[var(--ios-surface)] max-md:pt-safe">
-            <div className="flex flex-1 min-h-0 min-w-0 overflow-hidden">
-          {/* ЛЕВАЯ КОЛОНКА — iOS Sidebar */}
-          <div className={`flex flex-col min-h-0 min-w-0 overflow-hidden transition-all duration-300 ease-in-out z-20 border-r border-[var(--ios-separator)] ios-glass
+        <div className="flex flex-1 flex-col min-h-0 w-full max-md:min-h-0 pt-safe">
+          <div className="flex flex-1 flex-row min-h-0 w-full overflow-hidden md:max-w-6xl md:mx-auto md:my-3 md:rounded-[14px] md:border md:border-[var(--ios-border-subtle)] md:ios-elevated md:bg-[var(--ios-surface)]">
+          {/* ЛЕВАЯ КОЛОНКА — Messages sidebar */}
+          <div className={`flex flex-col min-h-0 min-w-0 overflow-hidden z-20 bg-[var(--ios-sidebar-bg)] border-r border-[var(--ios-separator)]
             ${selectedUser ? 'hidden md:flex md:flex-none' : 'flex w-full flex-1 md:flex-none'} 
-            ${isCollapsed ? 'md:w-20 p-2 items-start' : 'md:w-1/3 p-4'}`}>
-            
-            <div className="ios-navbar flex shrink-0 items-center px-3 md:px-4 py-2 border-b border-[var(--ios-separator)] min-h-[52px]">
-              {!isCollapsed && (
-                <h1 className="text-[28px] md:text-[22px] font-bold tracking-tight text-[var(--ios-text-primary)] truncate flex-1 pl-1">
-                  {t('appTitle')}
-                </h1>
-              )}
-            </div>
+            ${isCollapsed ? 'md:w-[72px]' : 'md:w-[340px] lg:w-[380px]'}`}>
 
-            <div
-              className={`flex mb-3 pb-2 border-none w-full shrink-0 ${
-                isCollapsed
-                  ? 'flex-col items-center gap-2 md:gap-2'
-                  : 'flex-row items-center justify-between'
-              }`}
-            >
-              <button 
-  type="button"
-  onClick={() => setIsCollapsed(!isCollapsed)} 
-  className="cursor-pointer hidden md:flex items-center justify-center w-10 h-10 text-[var(--ios-text-secondary)] hover:text-[var(--ios-accent)] ios-control rounded-[10px] transition-all duration-300 active:scale-90" 
-  title={isCollapsed ? "Развернуть" : "Свернуть"}
->
-  <svg 
-    xmlns="http://www.w3.org/2000/svg" 
-    viewBox="0 0 24 24" 
-    fill="none" 
-    stroke="currentColor" 
-    strokeWidth="2.5" 
-    strokeLinecap="round" 
-    strokeLinejoin="round" 
-    className={`w-5 h-5 transition-transform duration-500 ${isCollapsed ? 'rotate-180' : ''}`}
-  >
-    <path d="M15 18l-6-6 6-6" />
-  </svg>
-</button>
-
-              {isCollapsed && (
-                <div className="hidden md:flex flex-col gap-2">
-                  <button
-                    type="button"
-                    onClick={toggleTheme}
-                    className={`${themeBtnBase} w-10 h-10 text-lg`}
-                    title={theme === 'light' ? 'Тёмная тема' : 'Светлая тема'}
-                    aria-label={theme === 'light' ? 'Включить тёмную тему' : 'Включить светлую тему'}
-                  >
-                    <span aria-hidden>{theme === 'light' ? '🌙' : '☀️'}</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setIsSettingsOpen(true)}
-                    className={`${themeBtnBase} w-10 h-10 text-lg`}
-                    title="Настройки"
-                    aria-label="Открыть настройки"
-                  >
-                    <span aria-hidden>⚙️</span>
-                  </button>
-                </div>
-              )}
-              
-              {!isCollapsed && (
-                <div className="flex-1 md:ml-2 pb-2 flex justify-between items-center overflow-hidden gap-2 min-w-0">
-                <button
-                  type="button"
-                  onClick={() =>
-                    openProfile({
-                      id: session.user.id,
-                      email: session.user.email ?? '',
-                    })
-                  }
-                  className="flex flex-col ml-3 overflow-hidden leading-tight min-w-0 text-left cursor-pointer focus:outline-none hover:brightness-105 active:scale-[0.99] transition-all"
-                  aria-label="Открыть профиль"
-                >
-                  <span className="text-[11px] uppercase tracking-[0.12em] text-[var(--ios-text-secondary)] font-semibold">
-                    {t('profile')}
-                  </span>
-                  <span className="text-sm font-semibold text-[var(--ios-text-primary)] truncate">
-                    {session.user.email}
-                  </span>
-                </button>
-                  <div className="flex items-center gap-2 shrink-0">
-                  <button
-                    type="button"
-                    onClick={toggleTheme}
-                    className={`${themeBtnBase} w-9 h-9 md:w-10 md:h-10 text-base md:text-lg`}
-                    title={theme === 'light' ? 'Тёмная тема' : 'Светлая тема'}
-                    aria-label={theme === 'light' ? 'Включить тёмную тему' : 'Включить светлую тему'}
-                  >
-                    <span aria-hidden>{theme === 'light' ? '🌙' : '☀️'}</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setIsSettingsOpen(true)}
-                    className={`${themeBtnBase} w-9 h-9 md:w-10 md:h-10 text-base md:text-lg`}
-                    title="Настройки"
-                    aria-label="Открыть настройки"
-                  >
-                    <span aria-hidden>⚙️</span>
-                  </button>
-                  <button 
-  type="button"
-  className="cursor-pointer px-4 py-1.5 rounded-full text-xs md:text-sm font-medium transition-all duration-300 active:scale-95 shrink-0 ios-control text-[var(--ios-danger)] hover:brightness-110 border border-[var(--ios-border)]" 
-  onClick={() => supabase.auth.signOut()}
->
-  {t('logout')}
-</button>
+            {!isCollapsed ? (
+              <div className="shrink-0 px-4 pt-2 pb-3">
+                <div className="flex items-end justify-between gap-3 mb-3">
+                  <h1 className="ios-large-title text-[var(--ios-text-primary)]">{t('appTitle')}</h1>
+                  <div className="flex items-center gap-1 pb-1">
+                    <button type="button" onClick={toggleTheme} className="ios-icon-btn" aria-label={theme === 'light' ? 'Dark mode' : 'Light mode'}>
+                      {themeIcon}
+                    </button>
+                    <button type="button" onClick={() => setIsSettingsOpen(true)} className="ios-icon-btn" aria-label={t('settings')}>
+                      <IconGear className="w-[19px] h-[19px]" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => openProfile({ id: session.user.id, email: session.user.email ?? '' })}
+                      className="ios-icon-btn"
+                      aria-label={t('profile')}
+                    >
+                      <IosAvatar seed={session.user.email ?? 'me'} label={session.user.email ?? 'M'} size="sm" className="!w-8 !h-8 !text-xs" />
+                    </button>
                   </div>
                 </div>
-              )}
-            </div>
-            
-            {!isCollapsed && (
-              <div className="mb-4 pb-4 w-full shrink-0">
-                {contacts.length === 0 ? (
-                  <h3 className="text-[var(--ios-text-secondary)] font-semibold mb-2 text-xs uppercase tracking-wider">{t('findUser')}</h3>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => setIsFindCollapsed((v) => !v)}
-                    aria-expanded={!isFindCollapsed}
-                    className="w-full flex items-center justify-between text-[var(--ios-text-secondary)] font-semibold mb-2 text-xs uppercase tracking-wider"
-                  >
-                    <span>{t('findUser')}</span>
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className={`w-4 h-4 transition-transform duration-300 ${isFindCollapsed ? '-rotate-90' : 'rotate-0'}`}
-                      aria-hidden="true"
-                    >
-                      <path d="M15 18l-6-6 6-6" />
-                    </svg>
-                  </button>
-                )}
 
                 <div
-                  className={`transition-all duration-300 ease-in-out overflow-hidden ${
-                    contacts.length > 0 && isFindCollapsed
-                      ? 'max-h-0 opacity-0 pointer-events-none'
-                      : 'max-h-[92px] opacity-100'
+                  className={`transition-all duration-300 overflow-hidden ${
+                    contacts.length > 0 && isFindCollapsed ? 'max-h-0 opacity-0' : 'max-h-24 opacity-100 mb-3'
                   }`}
                 >
-                  <div className="flex gap-2">
+                  <label className="ios-search">
+                    <IconSearch />
                     <input
-                      className="ios-field pl-3.5 flex-1 rounded-[10px] text-sm text-[var(--ios-text-primary)] placeholder:text-[var(--ios-text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--ios-accent)]/30 transition-all w-full"
                       placeholder={t('requestEmailPlaceholder')}
                       value={newContactEmail}
                       onChange={(e) => setNewContactEmail(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && sendRequest(newContactEmail)}
                     />
-                    <button
-                      type="button"
-                      className="cursor-pointer w-10 h-10 md:w-11 md:h-11 flex items-center justify-center text-white bg-[var(--ios-bubble-sent)] rounded-[10px] hover:brightness-110 active:scale-95 transition-all duration-300 shrink-0 ml-2 border border-[var(--ios-accent)]/25"
-                      onClick={() => sendRequest(newContactEmail)}
-                    >
-                      <span className="text-2xl leading-none font-light mb-0.5">+</span>
+                    <button type="button" onClick={() => sendRequest(newContactEmail)} className="ios-icon-btn !w-8 !h-8" aria-label={t('findUser')}>
+                      <IconPlus className="w-[18px] h-[18px]" />
                     </button>
-                  </div>
+                  </label>
                 </div>
+
+                {contacts.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setIsFindCollapsed((v) => !v)}
+                    className="text-[var(--ios-accent)] text-[13px] font-medium mb-2"
+                  >
+                    {isFindCollapsed ? t('findUser') : t('cancel')}
+                  </button>
+                )}
+
+                <div className="flex items-center justify-between">
+                  <button
+                    type="button"
+                    onClick={() => supabase.auth.signOut()}
+                    className="text-[var(--ios-danger)] text-[13px] font-medium"
+                  >
+                    {t('logout')}
+                  </button>
+                  <button type="button" onClick={() => setIsCollapsed(true)} className="hidden md:inline-flex ios-icon-btn text-[var(--ios-text-secondary)]" title="Collapse">
+                    <IconChevronLeft className="w-5 h-5 rotate-180" />
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="hidden md:flex flex-col items-center gap-3 p-2 pt-4">
+                <button type="button" onClick={() => setIsCollapsed(false)} className="ios-icon-btn text-[var(--ios-text-secondary)]">
+                  <IconChevronLeft className="w-5 h-5" />
+                </button>
+                <button type="button" onClick={toggleTheme} className="ios-icon-btn">{themeIcon}</button>
+                <button type="button" onClick={() => setIsSettingsOpen(true)} className="ios-icon-btn"><IconGear /></button>
               </div>
             )}
 
-            <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden w-full no-scrollbar max-md:pb-[max(1.5rem,env(safe-area-inset-bottom,0px))] md:pb-0">
-              {incomingRequests.length > 0 && (
-<div className="mb-4 w-full shrink-0">
-  {!isCollapsed && (
-    <h3 className="text-[var(--ios-text-secondary)] font-medium mb-3 text-xs uppercase tracking-widest px-2">
-      {t('newRequests')}
-    </h3>
-  )}
-  <ul className={`w-full flex flex-col ${isCollapsed ? 'items-start' : 'items-center'} gap-2`}>
+            <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden w-full no-scrollbar px-3 md:px-4 max-md:pb-[max(1.5rem,env(safe-area-inset-bottom,0px))]">
+              {incomingRequests.length > 0 && !isCollapsed && (
+<div className="mb-3 w-full shrink-0">
+  <p className="text-[var(--ios-text-secondary)] text-[13px] font-medium uppercase tracking-wide px-1 mb-2">{t('newRequests')}</p>
+  <ul className="ios-grouped">
     {incomingRequests.map(u => (
-      <li 
-        key={u.id} 
-        className={`w-full transition-all duration-300 ${
-          isCollapsed 
-            ? 'flex justify-start' 
-            : 'p-3.5 rounded-[14px] ios-glass flex flex-col gap-3'
-        }`}
-      >
-        {isCollapsed ? (
-           <div 
-             className="relative w-12 h-12 ios-control text-[var(--ios-accent)] rounded-full flex justify-center items-center font-medium uppercase text-lg border border-[var(--ios-border)] cursor-pointer hover:scale-105 transition-all" 
-             onClick={() => setIsCollapsed(false)}
-           >
-             {u.email[0]}
-             {/* Красивый бейдж уведомления */}
-             <span className="absolute -top-1 -right-1 bg-[var(--ios-danger)] text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold border border-[var(--ios-border)]">
-               !
-             </span>
-           </div>
-        ) : (
-           <>
-             <span className="truncate text-sm font-medium text-[var(--ios-text-primary)] text-center">
-               {u.email}
-             </span>
-             <div className="flex gap-2 w-full">
-               <button 
-                 type="button"
-                 className="ios-control text-white text-xs py-2.5 flex-1 rounded-[10px] bg-[var(--ios-success)] hover:brightness-110 active:scale-95 transition-all font-medium border border-white/10" 
-                 onClick={() => acceptRequest(u.id)}
-               >
-                 Принять
-               </button>
-               <button 
-                 type="button"
-                 className="ios-control text-[var(--ios-text-secondary)] text-xs py-2.5 flex-1 rounded-[10px] border border-[var(--ios-border)] hover:text-[var(--ios-danger)] active:scale-95 transition-all font-medium" 
-                 onClick={() => rejectRequest(u.id)}
-               >
-                 Отклонить
-               </button>
-             </div>
-           </>
-        )}
+      <li key={u.id} className="ios-grouped-row p-3 flex flex-col gap-2.5">
+        <div className="flex items-center gap-3">
+          <IosAvatar seed={u.email} label={u.email} size="md" />
+          <span className="truncate text-[17px] font-medium text-[var(--ios-text-primary)]">{u.email}</span>
+        </div>
+        <div className="flex gap-2">
+          <button type="button" className="flex-1 py-2 rounded-[10px] bg-[var(--ios-success)] text-white text-[15px] font-semibold active:opacity-80" onClick={() => acceptRequest(u.id)}>Принять</button>
+          <button type="button" className="flex-1 py-2 rounded-[10px] bg-[var(--ios-search-bg)] text-[var(--ios-danger)] text-[15px] font-semibold active:opacity-80" onClick={() => rejectRequest(u.id)}>Отклонить</button>
+        </div>
       </li>
     ))}
   </ul>
@@ -1589,15 +1468,13 @@ export default function App() {
               )}
 
               {!isCollapsed && outgoingRequests.length > 0 && (
-                <div className="mb-4 w-full shrink-0">
-  <h3 className="text-[var(--ios-text-secondary)] font-medium mb-3 text-xs uppercase tracking-widest px-2">
-    {t('myRequests')}
-  </h3>
-  <ul className="w-full flex flex-col gap-2">
+                <div className="mb-3 w-full shrink-0">
+  <p className="text-[var(--ios-text-secondary)] text-[13px] font-medium uppercase tracking-wide px-1 mb-2">{t('myRequests')}</p>
+  <ul className="ios-grouped">
     {outgoingRequests.map(u => (
       <li 
         key={u.id} 
-        className="p-3.5 rounded-[14px] ios-glass text-sm flex justify-between items-center group transition-all duration-300 hover:brightness-110"
+        className="ios-grouped-row p-3 flex justify-between items-center group"
       >
         <div className="flex flex-col truncate pr-2 w-full">
           <span className="font-medium text-[var(--ios-text-primary)] truncate">{u.email}</span>
@@ -1631,66 +1508,47 @@ export default function App() {
 </div>
               )}
 
-              {!isCollapsed && <h3 className="text-[var(--ios-text-secondary)] font-semibold mb-2 text-[13px] uppercase tracking-wide px-1 mt-5">{t('myFriends')}</h3>}
-              <ul className={`w-full flex flex-col ${isCollapsed ? 'gap-2' : 'ios-grouped gap-0'}`}>
+              {!isCollapsed && contacts.length > 0 && (
+                <p className="text-[var(--ios-text-secondary)] text-[13px] font-medium uppercase tracking-wide px-1 mb-2 mt-1">{t('myFriends')}</p>
+              )}
+              <ul className={`w-full ${isCollapsed ? 'flex flex-col items-center gap-2 px-1' : 'ios-grouped'}`}>
   {contacts.map(u => {
     const isSelected = selectedUser?.id === u.id;
     return (
       <li 
         key={u.id} 
-        className={`cursor-pointer transition-all duration-200 w-full group flex items-center ${
+        className={`cursor-pointer w-full group flex items-center ${
           isCollapsed
-            ? 'justify-start p-1'
-            : isSelected
-              ? 'px-3 py-2.5 justify-between ios-list-row ios-list-row-selected'
-              : 'px-3 py-2.5 justify-between ios-list-row ios-grouped-row text-[var(--ios-text-primary)]'
+            ? 'justify-center p-1'
+            : `ios-grouped-row ios-list-row px-3 py-2 gap-3 ${isSelected ? 'ios-list-row-selected' : ''}`
         }`}
         onClick={() => setSelectedUser(u)}
       >
         {isCollapsed ? (
-          <div className={`relative w-12 h-12 rounded-full flex justify-center items-center font-bold uppercase text-xl transition-all duration-300 ${
-            isSelected 
-              ? 'bg-[var(--ios-bubble-sent)] text-white ios-elevated border border-white/15' 
-              : 'ios-control text-[var(--ios-text-secondary)] border border-[var(--ios-border)]'
-          }`}>
-            {u.email[0]}
-            {/* Кружок непрочитанных (свернутый вид) */}
+          <div className="relative">
+            <IosAvatar seed={u.email} label={u.email} size="md" className={isSelected ? 'ring-2 ring-[var(--ios-accent)] ring-offset-2 ring-offset-[var(--ios-sidebar-bg)]' : ''} />
             {unreadCounts[u.id] > 0 && (
-              <span className="absolute -top-1 -right-1 bg-[var(--ios-danger)] text-white text-[10px] min-w-[18px] h-[18px] rounded-full flex items-center justify-center font-bold border border-[var(--ios-border)]">
+              <span className="absolute -top-0.5 -right-0.5 bg-[var(--ios-danger)] text-white text-[10px] min-w-[18px] h-[18px] rounded-full flex items-center justify-center font-bold px-1">
                 {unreadCounts[u.id] > 9 ? '9+' : unreadCounts[u.id]}
               </span>
             )}
           </div>
         ) : (
           <>
-            <div className="flex items-center truncate p-1">
-              {/* Аватарка (развернутый вид) */}
-               <div className={`w-8 h-8 md:w-7 md:h-7 rounded-full flex items-center justify-center mr-1.5 uppercase font-bold shrink-0 text-sm md:text-sm transition-all duration-300 ${
-                 isSelected
-                   ? 'bg-[var(--ios-bubble-sent)] text-white border border-white/15'
-                   : 'ios-control text-[var(--ios-accent)] border border-[var(--ios-border)]'
-               }`}>
-                 {u.email[0]}
-               </div>
-               {/* Имя / Почта */}
-               <span className={`truncate text-sm md:text-sm transition-colors ${
-                 isSelected ? 'font-bold text-[var(--ios-text-primary)]' : 'font-medium text-[var(--ios-text-secondary)] group-hover:text-[var(--ios-text-primary)]'
-               }`}>
-                 {u.email}
-               </span>
+            <IosAvatar seed={u.email} label={u.email} size="lg" />
+            <div className="flex-1 min-w-0">
+              <p className={`truncate text-[17px] leading-tight ${isSelected ? 'font-semibold' : 'font-medium'} text-[var(--ios-text-primary)]`}>{u.email}</p>
+              <p className="text-[15px] text-[var(--ios-text-secondary)] truncate">{t('online')}</p>
             </div>
-            
-            <div className="flex items-center gap-1 shrink-0">
-              {/* Бейдж непрочитанных (развернутый вид) */}
+            <div className="flex flex-col items-end gap-1 shrink-0">
               {unreadCounts[u.id] > 0 && (
-                <span className="bg-[var(--ios-bubble-sent)] text-white text-[9px] font-bold px-1 py-0.5 rounded-full border border-white/10">
-                  {unreadCounts[u.id]}
+                <span className="bg-[var(--ios-accent)] text-white text-[12px] font-semibold min-w-[22px] h-[22px] px-1.5 rounded-full flex items-center justify-center">
+                  {unreadCounts[u.id] > 99 ? '99+' : unreadCounts[u.id]}
                 </span>
               )}
-              {/* Крестик удаления из друзей */}
               <button 
                 type="button"
-                className="cursor-pointer text-[var(--ios-text-secondary)] hover:text-[var(--ios-danger)] ios-control w-6 h-6 flex items-center justify-center rounded-full text-base transition-all duration-300 active:scale-90 shrink-0" 
+                className="text-[var(--ios-text-tertiary)] hover:text-[var(--ios-danger)] text-lg leading-none opacity-0 group-hover:opacity-100 transition-opacity" 
                 onClick={(e) => removeContact(e, u.id)}
                 title="Удалить из друзей"
               >
@@ -1706,63 +1564,48 @@ export default function App() {
             </div>
           </div>
 
-{/* ПРАВАЯ КОЛОНКА (САМ ЧАТ) */}
-          <div className={`flex flex-col relative transition-all duration-300 ease-in-out z-10 w-full min-h-0 flex-1 overflow-hidden bg-[var(--ios-chat-bg)] border-l border-[var(--ios-border-subtle)] max-md:border-l-0
-            ${selectedUser ? 'flex md:flex-1 max-md:w-full max-md:flex-1' : 'hidden md:flex md:flex-1'}`}>   
+{/* ПРАВАЯ КОЛОНКА — Messages thread */}
+          <div className={`flex flex-col relative z-10 w-full min-h-0 flex-1 overflow-hidden ios-chat-canvas
+            ${selectedUser ? 'flex max-md:w-full' : 'hidden md:flex'}`}>   
             
             {!selectedUser ? (
-              <div className="flex-1 flex flex-col items-center justify-center text-[var(--ios-text-secondary)] p-6 text-center bg-[var(--ios-chat-bg)]">
-                <div className="w-20 h-20 md:w-24 md:h-24 rounded-[22px] bg-[var(--ios-accent-tint)] flex items-center justify-center text-4xl md:text-5xl mb-5">💬</div>
-                <p className="text-base md:text-lg font-medium text-[var(--ios-text-primary)]">{t('chooseFriendTitle')}</p>
-                <p className="text-xs md:text-sm mt-2 text-[var(--ios-text-secondary)]">{t('chooseFriendSubtitle')}</p>
+              <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
+                <MessagesAppIcon className="w-24 h-24 mb-6 opacity-90" />
+                <p className="text-[20px] font-semibold text-[var(--ios-text-primary)] max-w-sm">{t('chooseFriendTitle')}</p>
+                <p className="text-[15px] mt-2 text-[var(--ios-text-secondary)]">{t('chooseFriendSubtitle')}</p>
               </div>
             ) : (
               <>
-                {/* ШАПКА ЧАТА — iOS Navigation Bar */}
-                <div className="ios-navbar px-2 md:px-3 z-20 flex items-center shrink-0 w-full gap-2 min-h-[52px]">
+                <div className="ios-navbar px-2 md:px-4 z-20 flex items-center shrink-0 w-full min-h-[44px]">
                   <button 
                     type="button"
                     onClick={() => setSelectedUser(null)}
-                    className="md:hidden flex items-center justify-center gap-1 min-h-[44px] px-2 py-2 rounded-full text-[var(--ios-accent)] hover:bg-[var(--ios-hover-surface)] active:scale-[0.98] transition shrink-0 font-medium text-[17px]"
+                    className="md:hidden ios-icon-btn -ml-1"
+                    aria-label={t('back')}
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-7 h-7 shrink-0" aria-hidden="true">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
-                    </svg>
-                    <span>{t('back')}</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={toggleTheme}
-                    className={`md:hidden ${themeBtnBase} min-h-[48px] w-12 shrink-0 rounded-[12px] text-xl`}
-                    title={theme === 'light' ? 'Тёмная тема' : 'Светлая тема'}
-                    aria-label={theme === 'light' ? 'Включить тёмную тему' : 'Включить светлую тему'}
-                  >
-                    <span aria-hidden>{theme === 'light' ? '🌙' : '☀️'}</span>
+                    <IconChevronLeft className="w-6 h-6 text-[var(--ios-accent)]" />
                   </button>
                   <button
                     type="button"
                     onClick={() => openProfile(selectedUser)}
-                    className="flex flex-1 min-w-0 items-center text-left cursor-pointer focus:outline-none hover:brightness-105 active:scale-[0.99] transition-all"
+                    className="flex flex-1 min-w-0 items-center justify-center md:justify-start gap-2.5 text-left"
                     aria-label="Открыть профиль пользователя"
                   >
-                    <div className="w-9 h-9 rounded-full bg-[var(--ios-accent-tint)] flex items-center justify-center mr-2.5 uppercase text-base shrink-0 font-semibold text-[var(--ios-accent)]">
-                      {selectedUser.email[0]}
-                    </div>
-                    <div className="flex flex-col overflow-hidden min-w-0">
-                      <span className="text-[17px] truncate font-semibold text-[var(--ios-text-primary)]">
-                        {selectedUser.email}
+                    <IosAvatar seed={selectedUser.email} label={selectedUser.email} size="sm" className="md:hidden" />
+                    <div className="flex flex-col items-center md:items-start min-w-0">
+                      <span className="text-[17px] truncate font-semibold text-[var(--ios-text-primary)] leading-tight">
+                        {selectedUser.email.split('@')[0]}
                       </span>
-                      <span className="text-[10px] md:text-xs text-[var(--ios-success)] font-medium">
-                        {t('online')}
-                      </span>
+                      <span className="text-[12px] text-[var(--ios-text-secondary)] hidden md:block">{t('online')}</span>
                     </div>
                   </button>
+                  <button type="button" onClick={toggleTheme} className="md:hidden ios-icon-btn">{themeIcon}</button>
                 </div>
                 
                 {/* ОБЛАСТЬ СООБЩЕНИЙ */}
                 <div
                   ref={messagesViewportRef}
-                  className="bg-[var(--ios-chat-bg)] flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-3 md:p-4 flex flex-col gap-3 pb-3 w-full no-scrollbar"
+                  className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-3 md:px-5 py-4 flex flex-col gap-1 pb-3 w-full no-scrollbar"
                 >
                   {messages.map((m) => {
                     const isMe = m.sender_id === session.user.id;
@@ -1773,7 +1616,7 @@ export default function App() {
                       <div
                         key={m.id}
                         id={`msg-${m.id}`}
-                        className={`relative flex flex-col mb-4 ${isMe ? 'items-end' : 'items-start'}`}
+                        className={`relative flex flex-col mb-2 ${isMe ? 'items-end' : 'items-start'}`}
                       >
                         
                         {/* КОНТЕКСТНОЕ МЕНЮ (Эмодзи + Копировать + Перевести) */}
@@ -1855,7 +1698,7 @@ export default function App() {
                           onTouchEnd={handlePressEnd}
                           onTouchMove={handlePressEnd}
                           style={{ WebkitTouchCallout: 'none', WebkitTapHighlightColor: 'transparent' }}
-                          className={`max-w-[85%] md:max-w-[70%] px-3.5 py-2.5 md:px-4 md:py-3 relative flex flex-col shrink-0 transition-all duration-300 select-none md:select-text rounded-[18px] md:rounded-[20px] ${isMe ? 'rounded-br-[5px] ios-bubble-sent bg-[var(--ios-bubble-sent)] text-white border border-white/12' : 'rounded-bl-[5px] ios-bubble-received bg-[var(--ios-bubble-received)] text-[var(--ios-text-primary)] border border-[var(--ios-bubble-received-border)]'}`}
+                          className={`ios-bubble relative flex flex-col shrink-0 select-none md:select-text ${isMe ? 'ios-bubble-sent' : 'ios-bubble-received'}`}
                         >
                           {m.file_url && (
                             <div className="mb-2 overflow-hidden rounded-xl">
@@ -1871,7 +1714,7 @@ export default function App() {
                           )}
 
                           {m.content && (
-                            <span className="break-words text-[14px] md:text-[15px] leading-relaxed px-0.5 font-medium max-md:pointer-events-none select-none md:select-text">
+                            <span className="break-words leading-snug max-md:pointer-events-none select-none md:select-text">
                               {m.content}
                             </span>
                           )}
@@ -1915,7 +1758,7 @@ export default function App() {
                 </div>
                 
                 {/* ПАНЕЛЬ ВВОДА — safe-area для home indicator + место над клавиатурой (iOS) */}
-                <div className="border-t border-[var(--ios-separator)] flex flex-col shrink-0 w-full ios-glass pb-composer-safe max-md:ios-composer-shadow">
+                <div className="ios-composer-bar flex flex-col shrink-0 w-full pb-composer-safe">
                   
                   {/* ПРЕДПРОСМОТР ФАЙЛА */}
                   {pendingFile && (
@@ -1936,92 +1779,41 @@ export default function App() {
                     </div>
                   )}
 
-                  {/* СТРОКА С КНОПКАМИ И ИНПУТОМ */}
-                  <div className="p-2 max-md:px-3 max-md:pb-1 md:p-3 flex gap-1 md:gap-2 items-end shrink-0 border-t border-[var(--ios-border-subtle)] z-40 relative">
-                    
-                    {/* КНОПКА ФАЙЛА */}
-                    <button type="button" onClick={() => fileInputRef.current?.click()} className="text-[var(--ios-text-secondary)] hover:text-[var(--ios-accent)] p-2 md:p-2.5 rounded-full ios-control mb-1 md:mb-1 active:scale-95 shrink-0 transition-colors" disabled={isSending}>
-                      <span className="text-xl md:text-xl">📎</span>
+                  <div className="px-3 py-2 flex gap-2 items-end shrink-0 z-40 relative">
+                    <button type="button" onClick={() => fileInputRef.current?.click()} className="ios-icon-btn text-[var(--ios-accent)] mb-0.5" disabled={isSending} aria-label="Attach">
+                      <IconPlus className="w-[22px] h-[22px]" />
                     </button>
                     <input type="file" className="hidden" ref={fileInputRef} onChange={handleFileUpload} accept="image/*,.pdf,.doc,.docx" />
-                    
-                    {/* 🪄 МАГИЧЕСКАЯ ПАЛОЧКА */}
-                    <div className="relative flex items-end">
-                          {showStyleMenu && (
-                        <div className="absolute bottom-full left-0 mb-3 ios-glass-prominent p-2 rounded-[14px] ios-elevated border border-[var(--ios-border)] flex flex-col gap-1 w-48 animate-in zoom-in-95 origin-bottom-left" style={{ zIndex: 9999 }}>
-                          <span className="text-xs text-[var(--ios-text-secondary)] font-bold px-2 py-1 uppercase tracking-wider">{t('styleMenuTitle')}</span>
-                          {(
-                            [
-                              { label: t('styleBusiness'), prompt: 'Business and polite' },
-                              { label: t('styleFriendly'), prompt: 'Friendly and fun' },
-                              { label: t('styleStrict'), prompt: 'Strict and concise' },
-                              { label: t('styleSlang'), prompt: 'Bold slang' },
-                            ] as const
-                          ).map((style) => (
-                            <button
-                              key={style.prompt}
-                              type="button"
-                              onClick={() => handleAiAction('style', style.prompt)}
-                              disabled={isAiLoading}
-                              className="text-sm text-left px-3 py-2 text-[var(--ios-text-primary)] hover:bg-[var(--ios-hover-surface)] rounded-[10px] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                              {style.label}
-                            </button>
+
+                    <div className="relative flex items-end gap-1 mb-0.5">
+                      {showStyleMenu && (
+                        <div className="absolute bottom-full left-0 mb-2 ios-glass-prominent p-2 rounded-[14px] flex flex-col gap-0.5 w-52 z-[9999]">
+                          <span className="text-[11px] text-[var(--ios-text-secondary)] font-semibold px-2 py-1 uppercase">{t('styleMenuTitle')}</span>
+                          {([{ label: t('styleBusiness'), prompt: 'Business and polite' }, { label: t('styleFriendly'), prompt: 'Friendly and fun' }, { label: t('styleStrict'), prompt: 'Strict and concise' }, { label: t('styleSlang'), prompt: 'Bold slang' }] as const).map((style) => (
+                            <button key={style.prompt} type="button" onClick={() => handleAiAction('style', style.prompt)} disabled={isAiLoading} className="text-left px-3 py-2.5 text-[17px] rounded-[10px] hover:bg-[var(--ios-hover-surface)] disabled:opacity-50">{style.label}</button>
                           ))}
                         </div>
                       )}
-                      <button type="button" onClick={() => { setShowStyleMenu(!showStyleMenu); setShowTranslateMenu(false); }} className={`p-2 md:p-2.5 rounded-full mb-1 active:scale-95 shrink-0 transition-colors ios-control ${showStyleMenu ? 'text-[var(--ios-accent)] ring-1 ring-[var(--ios-accent)]/35' : 'text-[var(--ios-text-secondary)] hover:text-[var(--ios-accent)]'}`} disabled={isSending || isAiLoading} title={t('magicWandTitle')}>
-                        <span className="text-xl">🪄</span>
-                      </button>
-                    </div>
-
-                    {/* 🌐 ПЕРЕВОД */}
-                    <div className="relative flex items-end">
-                          {showTranslateMenu && (
-                        <div className="absolute bottom-full left-0 mb-3 ios-glass-prominent p-2 rounded-[14px] ios-elevated border border-[var(--ios-border)] flex flex-col gap-1 w-52 animate-in zoom-in-95 origin-bottom-left" style={{ zIndex: 9999 }}>
-                          <span className="text-xs text-[var(--ios-text-secondary)] font-bold px-2 py-1 uppercase tracking-wider">{t('translateMenuTitle')}</span>
-                          {(
-                            [
-                              { label: t('langEnglish'), prompt: 'English' },
-                              { label: t('langNorwegian'), prompt: 'Norwegian' },
-                              { label: t('langRussian'), prompt: 'Russian' },
-                            ] as const
-                          ).map((lang) => (
-                            <button
-                              key={lang.prompt}
-                              type="button"
-                              onClick={() => handleAiAction('translate', lang.prompt)}
-                              disabled={isAiLoading}
-                              className="text-sm text-left px-3 py-2 text-[var(--ios-text-primary)] hover:bg-[var(--ios-hover-surface)] rounded-[10px] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                              {lang.label}
-                            </button>
+                      {showTranslateMenu && (
+                        <div className="absolute bottom-full left-0 mb-2 ios-glass-prominent p-2 rounded-[14px] flex flex-col gap-0.5 w-56 z-[9999]">
+                          <span className="text-[11px] text-[var(--ios-text-secondary)] font-semibold px-2 py-1 uppercase">{t('translateMenuTitle')}</span>
+                          {([{ label: t('langEnglish'), prompt: 'English' }, { label: t('langNorwegian'), prompt: 'Norwegian' }, { label: t('langRussian'), prompt: 'Russian' }] as const).map((lang) => (
+                            <button key={lang.prompt} type="button" onClick={() => handleAiAction('translate', lang.prompt)} disabled={isAiLoading} className="text-left px-3 py-2.5 text-[17px] rounded-[10px] hover:bg-[var(--ios-hover-surface)] disabled:opacity-50">{lang.label}</button>
                           ))}
-                          <div className="flex gap-1 mt-1 border-t border-[var(--ios-border-subtle)] pt-1.5 px-1">
-                            <input value={customLang} onChange={e => setCustomLang(e.target.value)} placeholder={t('customLangPlaceholder')} className="text-xs p-1.5 ios-field rounded-[8px] flex-1 outline-none focus:ring-1 focus:ring-[var(--ios-accent)]/40 text-[var(--ios-text-primary)] placeholder:text-[var(--ios-text-secondary)]" />
-                            <button
-                              type="button"
-                              onClick={() => handleAiAction('translate', customLang)}
-                              disabled={isAiLoading}
-                              className="ios-control text-white text-xs px-2 py-1.5 rounded-[8px] bg-[var(--ios-bubble-sent)] hover:brightness-110 disabled:opacity-60 disabled:cursor-not-allowed"
-                            >
-                              {isAiLoading ? '...' : t('go')}
-                            </button>
+                          <div className="flex gap-1 mt-1 border-t border-[var(--ios-separator)] pt-2 px-1">
+                            <input value={customLang} onChange={e => setCustomLang(e.target.value)} placeholder={t('customLangPlaceholder')} className="flex-1 px-2 py-1.5 rounded-[8px] bg-[var(--ios-search-bg)] text-[13px] outline-none" />
+                            <button type="button" onClick={() => handleAiAction('translate', customLang)} disabled={isAiLoading} className="px-2.5 py-1.5 rounded-[8px] bg-[var(--ios-accent)] text-white text-[13px] font-semibold disabled:opacity-50">{isAiLoading ? '…' : t('go')}</button>
                           </div>
                         </div>
                       )}
-                      <button type="button" onClick={() => { setShowTranslateMenu(!showTranslateMenu); setShowStyleMenu(false); }} className={`p-2 md:p-2.5 rounded-full mb-1 active:scale-95 shrink-0 transition-colors ios-control ${showTranslateMenu ? 'text-[var(--ios-accent)] ring-1 ring-[var(--ios-accent)]/35' : 'text-[var(--ios-text-secondary)] hover:text-[var(--ios-accent)]'}`} disabled={isSending || isAiLoading} title={t('translateTitle')}>
-                        <span className="text-xl">🌐</span>
-                      </button>
+                      <button type="button" onClick={() => { setShowStyleMenu(!showStyleMenu); setShowTranslateMenu(false) }} className={`ios-icon-btn !w-8 !h-8 ${showStyleMenu ? 'bg-[var(--ios-accent-tint)]' : ''}`} disabled={isSending || isAiLoading} title={t('magicWandTitle')}><IconSparkles className="w-4 h-4" /></button>
+                      <button type="button" onClick={() => { setShowTranslateMenu(!showTranslateMenu); setShowStyleMenu(false) }} className={`ios-icon-btn !w-8 !h-8 ${showTranslateMenu ? 'bg-[var(--ios-accent-tint)]' : ''}`} disabled={isSending || isAiLoading} title={t('translateTitle')}><IconGlobe className="w-4 h-4" /></button>
                     </div>
 
-                    {/* ПОЛЕ ВВОДА ТЕКСТА + ВИЗУАЛЬНАЯ ОБРАТНАЯ СВЯЗЬ ИИ */}
-                    <div className="relative w-full md:flex-1 min-w-0">
+                    <div className="relative flex-1 min-w-0">
                       <input
                         ref={composerInputRef}
-                        className={`ios-field w-full p-3 md:p-4 rounded-full outline-none focus:ring-2 focus:ring-[var(--ios-accent)]/35 transition-all text-[14px] md:text-[15px] min-w-0 text-[var(--ios-text-primary)] placeholder:text-[var(--ios-text-secondary)] ${
-                          isAiLoading ? 'ring-2 ring-[var(--ios-accent)]/30 animate-pulse' : ''
-                        } ${aiProcessingFromInput && isAiLoading ? 'text-transparent caret-transparent' : ''}`}
+                        className={`ios-composer-field w-full ${isAiLoading ? 'animate-pulse' : ''} ${aiProcessingFromInput && isAiLoading ? 'text-transparent caret-transparent' : ''}`}
                         value={text}
                         onChange={(e) => setText(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
@@ -2065,20 +1857,19 @@ export default function App() {
                       )}
                     </div>
                     
-                    {/* КНОПКА ОТПРАВКИ */}
                     <button 
                       type="button"
-                      className={`w-12 h-12 md:w-14 md:h-14 flex items-center justify-center rounded-full font-bold transition-all duration-300 mb-0.5 md:mb-1 shrink-0
-                      ${isSending || isAiLoading || (text.trim() === '' && pendingFile === null) 
-                        ? 'opacity-40 cursor-not-allowed text-[var(--ios-text-secondary)]' 
-                        : 'bg-[var(--ios-bubble-sent)] text-white hover:brightness-110 active:scale-95 border-[var(--ios-accent)]/30'}`} 
+                      className="ios-send-btn mb-0.5"
                       onClick={sendMessage} 
                       disabled={isSending || isAiLoading || (text.trim() === '' && pendingFile === null)}
+                      aria-label="Send"
                     >
                       {isSending ? (
-                        <span className="animate-pulse text-white/70">...</span>
+                        <span className="animate-pulse text-white/80 text-sm">…</span>
+                      ) : editingMessageId !== null ? (
+                        <span className="text-white text-sm font-bold">✓</span>
                       ) : (
-                        <span className="text-lg md:text-xl transform translate-x-0.5">{editingMessageId !== null ? '✓' : '➤'}</span>
+                        <IconSend className="w-4 h-4 translate-x-px" />
                       )}
                     </button>
                     
@@ -2087,7 +1878,6 @@ export default function App() {
               </>
             )}
           </div>
-            </div>
           </div>
         </div>
       )}
