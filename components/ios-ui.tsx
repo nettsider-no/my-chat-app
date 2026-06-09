@@ -1,24 +1,28 @@
 type IconProps = { className?: string }
 
-export function IconChevronLeft({ className = 'w-5 h-5' }: IconProps) {
+function iconCls(base: string, className?: string) {
+  return className ? `${base} ${className}` : base
+}
+
+export function IconChevronLeft({ className }: IconProps) {
   return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+    <svg className={iconCls('w-5 h-5 shrink-0', className)} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
       <path d="M15 18l-6-6 6-6" />
     </svg>
   )
 }
 
-export function IconChevronRight({ className = 'w-4 h-4' }: IconProps) {
+export function IconChevronRight({ className }: IconProps) {
   return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+    <svg className={iconCls('w-3.5 h-3.5 shrink-0 opacity-35', className)} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
       <path d="M9 18l6-6-6-6" />
     </svg>
   )
 }
 
-export function IconSearch({ className = 'w-4 h-4' }: IconProps) {
+export function IconSearch({ className }: IconProps) {
   return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden>
+    <svg className={iconCls('w-4 h-4 shrink-0', className)} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden>
       <circle cx="11" cy="11" r="7" />
       <path d="M20 20l-3.5-3.5" />
     </svg>

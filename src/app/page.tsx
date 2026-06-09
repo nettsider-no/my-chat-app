@@ -1236,6 +1236,15 @@ export default function App() {
   const totalUnread = Object.values(unreadCounts).reduce((a, b) => a + b, 0)
   const canSend = text.trim() !== '' || pendingFile !== null
 
+  const sortedContacts = [...contacts].sort((a, b) => {
+    const ta = conversationPreviews[a.id]?.created_at
+    const tb = conversationPreviews[b.id]?.created_at
+    if (!ta && !tb) return displayName(a.email).localeCompare(displayName(b.email))
+    if (!ta) return 1
+    if (!tb) return -1
+    return new Date(tb).getTime() - new Date(ta).getTime()
+  })
+
   const toggleReaction = async (messageId: number, emoji: string) => {
     if (!session) return
     const userId = session.user.id
@@ -1473,15 +1482,16 @@ export default function App() {
                     <div key={u.id} className="imessage-row opacity-80">
                       <span className="imessage-unread-spacer" />
                       <IosAvatar seed={u.email} label={u.email} size="md" />
-                      <div className="flex-1 min-w-0 pr-2">
-                        <div className="flex items-baseline justify-between gap-2">
-                          <p className="truncate text-[17px] font-medium text-[var(--ios-text-primary)]">{displayName(u.email)}</p>
-                          <button type="button" className="text-[var(--ios-danger)] text-[13px]" onClick={() => cancelOutgoingRequest(u.id)}>×</button>
+                      <div className="imessage-row-body">
+                        <div className="imessage-row-top">
+                          <span className="imessage-row-name">{displayName(u.email)}</span>
+                          <button type="button" className="text-[var(--ios-danger)] text-[13px] shrink-0" onClick={() => cancelOutgoingRequest(u.id)}>×</button>
                         </div>
-                        <p className="imessage-row-preview mt-0.5">
+                        <p className="imessage-row-preview">
                           {u.requestStatus === 'pending' ? '⏳ Pending' : '🚫 Declined'}
                         </p>
                       </div>
+                      <span />
                     </div>
                   ))}
 
@@ -1489,39 +1499,42 @@ export default function App() {
                     <div key={u.id} className="imessage-row">
                       <span className="imessage-unread-dot" />
                       <IosAvatar seed={u.email} label={u.email} size="md" />
-                      <div className="flex-1 min-w-0 pr-2">
-                        <div className="flex items-baseline justify-between gap-2">
-                          <p className="truncate text-[17px] font-semibold text-[var(--ios-text-primary)]">{displayName(u.email)}</p>
+                      <div className="imessage-row-body">
+                        <div className="imessage-row-top">
+                          <span className="imessage-row-name imessage-row-name-unread">{displayName(u.email)}</span>
                           <span className="imessage-row-time">{t('newRequests')}</span>
                         </div>
-                        <p className="imessage-row-preview mt-0.5">{u.email}</p>
+                        <p className="imessage-row-preview">{u.email}</p>
                         <div className="flex gap-2 mt-2">
                           <button type="button" className="flex-1 py-1.5 rounded-full bg-[var(--ios-accent)] text-white text-[14px] font-medium" onClick={() => acceptRequest(u.id)}>Принять</button>
                           <button type="button" className="flex-1 py-1.5 rounded-full bg-[var(--ios-search-bg)] text-[var(--ios-danger)] text-[14px] font-medium" onClick={() => rejectRequest(u.id)}>Отклонить</button>
                         </div>
                       </div>
+                      <span />
                     </div>
                   ))}
 
-                  {contacts.map((u) => {
+                  {sortedContacts.map((u) => {
                     const unread = unreadCounts[u.id] > 0
                     const preview = conversationPreviews[u.id]
                     return (
                       <div key={u.id} className="imessage-row cursor-pointer" onClick={() => setSelectedUser(u)}>
                         {unread ? <span className="imessage-unread-dot" /> : <span className="imessage-unread-spacer" />}
                         <IosAvatar seed={u.email} label={u.email} size="md" />
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-baseline justify-between gap-2">
-                            <p className={`truncate text-[17px] ${unread ? 'font-bold' : 'font-semibold'} text-[var(--ios-text-primary)]`}>
+                        <div className="imessage-row-body">
+                          <div className="imessage-row-top">
+                            <span className={`imessage-row-name ${unread ? 'imessage-row-name-unread' : ''}`}>
                               {displayName(u.email)}
-                            </p>
-                            {preview && <span className="imessage-row-time">{formatListTime(preview.created_at)}</span>}
+                            </span>
+                            {preview && (
+                              <span className="imessage-row-time">{formatListTime(preview.created_at)}</span>
+                            )}
                           </div>
-                          <p className={`imessage-row-preview mt-0.5 ${unread ? 'text-[var(--ios-text-primary)]' : ''}`}>
+                          <p className={`imessage-row-preview ${unread ? 'imessage-row-preview-unread' : ''}`}>
                             {previewText(u.id)}
                           </p>
                         </div>
-                        <IconChevronRight className="text-[var(--ios-preview-text)] shrink-0" />
+                        <IconChevronRight className="imessage-row-chevron" />
                         {isEditMode && (
                           <button
                             type="button"
