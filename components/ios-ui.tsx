@@ -12,6 +12,18 @@ export function IconChevronLeft({ className }: IconProps) {
   )
 }
 
+export function IconBack({ className }: IconProps) {
+  return (
+    /* eslint-disable-next-line @next/next/no-img-element */
+    <img
+      src="/icons/back-flaticon.png"
+      alt=""
+      aria-hidden
+      className={iconCls('w-10 h-10 shrink-0 object-contain', className)}
+    />
+  )
+}
+
 export function IconChevronRight({ className }: IconProps) {
   return (
     <svg className={iconCls('w-3.5 h-3.5 shrink-0 opacity-35', className)} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -22,10 +34,13 @@ export function IconChevronRight({ className }: IconProps) {
 
 export function IconSearch({ className }: IconProps) {
   return (
-    <svg className={iconCls('w-4 h-4 shrink-0', className)} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden>
-      <circle cx="11" cy="11" r="7" />
-      <path d="M20 20l-3.5-3.5" />
-    </svg>
+    /* eslint-disable-next-line @next/next/no-img-element */
+    <img
+      src="/icons/search-flaticon.png"
+      alt=""
+      aria-hidden
+      className={iconCls('w-[18px] h-[18px] shrink-0 object-contain', className)}
+    />
   )
 }
 
@@ -56,29 +71,73 @@ export function IconFilter({ className }: IconProps) {
 
 export function IconMic({ className }: IconProps) {
   return (
-    <svg className={iconCls('w-5 h-5 shrink-0', className)} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-      <rect x="4" y="10" width="2.5" height="8" rx="1.2" />
-      <rect x="8.5" y="7" width="2.5" height="11" rx="1.2" />
-      <rect x="13" y="9" width="2.5" height="9" rx="1.2" />
-      <rect x="17.5" y="6" width="2.5" height="12" rx="1.2" />
-    </svg>
+    /* eslint-disable-next-line @next/next/no-img-element */
+    <img
+      src="/icons/mic-flaticon.png"
+      alt=""
+      aria-hidden
+      className={iconCls('w-[18px] h-[18px] shrink-0 object-contain', className)}
+    />
   )
 }
 
-export function IconSend({ className = 'w-5 h-5' }: IconProps) {
+export function IconSend({ className }: IconProps) {
   return (
-    <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-      <path d="M3.4 20.6 22 12 3.4 3.4l-.9 7.3 9.8 1-9.8 1 .9 7.3z" />
-    </svg>
+    /* eslint-disable-next-line @next/next/no-img-element */
+    <img
+      src="/icons/send-flaticon.png"
+      alt=""
+      aria-hidden
+      className={iconCls('w-[30px] h-[30px] shrink-0 object-contain', className)}
+    />
   )
 }
 
-export function IconGear({ className = 'w-5 h-5' }: IconProps) {
+export function IconPhotos({ className }: IconProps) {
   return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <circle cx="12" cy="12" r="3" />
-      <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
-    </svg>
+    /* eslint-disable-next-line @next/next/no-img-element */
+    <img
+      src="/icons/photos-flaticon.png"
+      alt=""
+      aria-hidden
+      className={iconCls('w-6 h-6 shrink-0 object-contain rounded-[6px]', className)}
+    />
+  )
+}
+
+export function IconPen({ className }: IconProps) {
+  return (
+    /* eslint-disable-next-line @next/next/no-img-element */
+    <img
+      src="/icons/pen-flaticon.png"
+      alt=""
+      aria-hidden
+      className={iconCls('w-6 h-6 shrink-0 object-contain rounded-full', className)}
+    />
+  )
+}
+
+export function IconTranslate({ className }: IconProps) {
+  return (
+    /* eslint-disable-next-line @next/next/no-img-element */
+    <img
+      src="/icons/translate-icon-icons.png"
+      alt=""
+      aria-hidden
+      className={iconCls('w-6 h-6 shrink-0 object-contain', className)}
+    />
+  )
+}
+
+export function IconGear({ className }: IconProps) {
+  return (
+    /* eslint-disable-next-line @next/next/no-img-element */
+    <img
+      src="/icons/settings-flaticon.png"
+      alt=""
+      aria-hidden
+      className={iconCls('w-10 h-10 shrink-0 object-contain', className)}
+    />
   )
 }
 
@@ -159,22 +218,28 @@ export function IosAvatar({
 }: {
   seed: string
   label: string
-  size?: 'sm' | 'md' | 'lg' | 'xl' | 'thread'
+  size?: 'inbox' | 'sm' | 'md' | 'lg' | 'xl' | 'thread' | 'threadLg'
   variant?: 'color' | 'person'
   className?: string
 }) {
   const sizes = {
+    inbox: 'w-10 h-10 text-sm',
     sm: 'w-9 h-9 text-sm',
     md: 'w-12 h-12 text-base',
     lg: 'w-[52px] h-[52px] text-lg',
     xl: 'w-20 h-20 text-3xl',
     thread: 'w-14 h-14',
+    threadLg: 'w-16 h-16 text-2xl',
   }
   if (variant === 'person') {
     return (
-      <div className={`${sizes[size]} rounded-full flex items-center justify-center shrink-0 imessage-person-avatar ${className}`}>
-        <IconPerson className="w-[55%] h-[55%]" />
-      </div>
+      /* eslint-disable-next-line @next/next/no-img-element */
+      <img
+        src="/icons/user-flaticon.png"
+        alt=""
+        aria-hidden
+        className={`${sizes[size]} rounded-full shrink-0 object-cover ${className}`}
+      />
     )
   }
   return (

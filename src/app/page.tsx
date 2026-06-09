@@ -6,14 +6,15 @@ import type { Session } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
 import { applyTheme, readStoredTheme, type ThemeMode } from '@/lib/theme'
 import {
-  IconChevronLeft,
+  IconBack,
   IconChevronRight,
-  IconFilter,
-  IconGear,
   IconGlobe,
   IconMic,
   IconMoon,
+  IconPen,
+  IconPhotos,
   IconPlus,
+  IconTranslate,
   IconSearch,
   IconSend,
   IconSun,
@@ -81,6 +82,7 @@ type I18nKey =
   | 'translateMenuTitle'
   | 'magicWandTitle'
   | 'translateTitle'
+  | 'photoTitle'
   | 'customLangPlaceholder'
   | 'go'
   | 'styleBusiness'
@@ -127,8 +129,9 @@ const I18N: Record<UiLanguage, Record<I18nKey, string>> = {
     aiStyleLabel: 'Стиль: {x}',
     styleMenuTitle: 'Изменить стиль',
     translateMenuTitle: 'Перевести текст',
-    magicWandTitle: 'Магическая палочка',
-    translateTitle: 'Перевод',
+    magicWandTitle: 'Стиль текста',
+    translateTitle: 'Перевести',
+    photoTitle: 'Фото',
     customLangPlaceholder: 'Свой язык...',
     go: 'Go',
     styleBusiness: 'Деловой и вежливый',
@@ -174,8 +177,9 @@ const I18N: Record<UiLanguage, Record<I18nKey, string>> = {
     aiStyleLabel: 'Style: {x}',
     styleMenuTitle: 'Change style',
     translateMenuTitle: 'Translate text',
-    magicWandTitle: 'Magic wand',
+    magicWandTitle: 'Text style',
     translateTitle: 'Translate',
+    photoTitle: 'Photo',
     customLangPlaceholder: 'Custom language…',
     go: 'Go',
     styleBusiness: 'Business & polite',
@@ -221,8 +225,9 @@ const I18N: Record<UiLanguage, Record<I18nKey, string>> = {
     aiStyleLabel: 'Stil: {x}',
     styleMenuTitle: 'Endre stil',
     translateMenuTitle: 'Oversett tekst',
-    magicWandTitle: 'Tryllestav',
+    magicWandTitle: 'Tekststil',
     translateTitle: 'Oversett',
+    photoTitle: 'Foto',
     customLangPlaceholder: 'Eget språk…',
     go: 'Go',
     styleBusiness: 'Formell og høflig',
@@ -268,8 +273,9 @@ const I18N: Record<UiLanguage, Record<I18nKey, string>> = {
     aiStyleLabel: 'Style : {x}',
     styleMenuTitle: 'Changer le style',
     translateMenuTitle: 'Traduire le texte',
-    magicWandTitle: 'Baguette magique',
+    magicWandTitle: 'Style du texte',
     translateTitle: 'Traduire',
+    photoTitle: 'Photo',
     customLangPlaceholder: 'Langue personnalisée…',
     go: 'Go',
     styleBusiness: 'Professionnel et poli',
@@ -315,8 +321,9 @@ const I18N: Record<UiLanguage, Record<I18nKey, string>> = {
     aiStyleLabel: 'النمط: {x}',
     styleMenuTitle: 'تغيير الأسلوب',
     translateMenuTitle: 'ترجمة النص',
-    magicWandTitle: 'عصا سحرية',
+    magicWandTitle: 'أسلوب النص',
     translateTitle: 'ترجمة',
+    photoTitle: 'صورة',
     customLangPlaceholder: 'لغة مخصصة…',
     go: 'Go',
     styleBusiness: 'رسمي ومهذب',
@@ -362,8 +369,9 @@ const I18N: Record<UiLanguage, Record<I18nKey, string>> = {
     aiStyleLabel: '风格：{x}',
     styleMenuTitle: '更改风格',
     translateMenuTitle: '翻译文本',
-    magicWandTitle: '魔法棒',
+    magicWandTitle: '文本风格',
     translateTitle: '翻译',
+    photoTitle: '照片',
     customLangPlaceholder: '自定义语言…',
     go: 'Go',
     styleBusiness: '商务且礼貌',
@@ -409,8 +417,9 @@ const I18N: Record<UiLanguage, Record<I18nKey, string>> = {
     aiStyleLabel: 'Стиль: {x}',
     styleMenuTitle: 'Змінити стиль',
     translateMenuTitle: 'Перекласти текст',
-    magicWandTitle: 'Чарівна паличка',
-    translateTitle: 'Переклад',
+    magicWandTitle: 'Стиль тексту',
+    translateTitle: 'Перекласти',
+    photoTitle: 'Фото',
     customLangPlaceholder: 'Своя мова…',
     go: 'Go',
     styleBusiness: 'Діловий і ввічливий',
@@ -456,8 +465,9 @@ const I18N: Record<UiLanguage, Record<I18nKey, string>> = {
     aiStyleLabel: 'Estilo: {x}',
     styleMenuTitle: 'Cambiar estilo',
     translateMenuTitle: 'Traducir texto',
-    magicWandTitle: 'Varita mágica',
+    magicWandTitle: 'Estilo de texto',
     translateTitle: 'Traducir',
+    photoTitle: 'Foto',
     customLangPlaceholder: 'Idioma personalizado…',
     go: 'Go',
     styleBusiness: 'Profesional y educado',
@@ -1215,7 +1225,7 @@ export default function App() {
   function previewText(contactId: string) {
     const p = conversationPreviews[contactId]
     if (!p) return t('online')
-    if (p.file_url) return p.content ? p.content : '📎 Attachment'
+    if (p.file_url) return p.content ? p.content : 'Attachment'
     if (p.content) {
       const prefix = p.sender_id === session?.user.id ? 'You: ' : ''
       return `${prefix}${p.content}`
@@ -1374,6 +1384,100 @@ export default function App() {
                     {t('logout')}
                   </button>
                 </div>
+                <div className="mt-4 px-2 flex flex-col gap-1.5 text-center text-[11px] leading-snug text-[var(--ios-text-tertiary)]">
+                  <a
+                    href="https://www.flaticon.com/ru/free-icons/"
+                    title="настройки иконки"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[var(--ios-text-secondary)] underline underline-offset-2"
+                  >
+                    Настройки иконки от apien - Flaticon
+                  </a>
+                  <a
+                    href="https://www.flaticon.com/ru/free-icons/-"
+                    title="Добавить пользователя иконки"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[var(--ios-text-secondary)] underline underline-offset-2"
+                  >
+                    Добавить пользователя иконки от afif fudin - Flaticon
+                  </a>
+                  <a
+                    href="https://www.flaticon.com/ru/free-icons/"
+                    title="пользователь иконки"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[var(--ios-text-secondary)] underline underline-offset-2"
+                  >
+                    Пользователь иконки от Freepik - Flaticon
+                  </a>
+                  <a
+                    href="https://www.flaticon.com/ru/free-icons/"
+                    title="поиск иконки"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[var(--ios-text-secondary)] underline underline-offset-2"
+                  >
+                    Поиск иконки от apien - Flaticon
+                  </a>
+                  <a
+                    href="https://www.flaticon.com/ru/free-icons/"
+                    title="микрофон иконки"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[var(--ios-text-secondary)] underline underline-offset-2"
+                  >
+                    Микрофон иконки от Karacis - Flaticon
+                  </a>
+                  <a
+                    href="https://www.flaticon.com/ru/free-icons/-"
+                    title="Кнопка назад иконки"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[var(--ios-text-secondary)] underline underline-offset-2"
+                  >
+                    Кнопка назад иконки от riajulislam - Flaticon
+                  </a>
+                  <a
+                    href="https://www.flaticon.com/ru/free-icons/"
+                    title="приложение иконки"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[var(--ios-text-secondary)] underline underline-offset-2"
+                  >
+                    Приложение иконки от Freepik - Flaticon
+                  </a>
+                  <a
+                    href="https://www.flaticon.com/ru/free-icons/"
+                    title="ручка иконки"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[var(--ios-text-secondary)] underline underline-offset-2"
+                  >
+                    Ручка иконки от Freepik - Flaticon
+                  </a>
+                  <p className="text-[var(--ios-text-secondary)]">
+                    гугл перевод текст язык значок by Chameleon Design on{' '}
+                    <a
+                      href="https://icon-icons.com/ru/authors/231-chameleon-design"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="underline underline-offset-2"
+                    >
+                      Icon-Icons.com
+                    </a>
+                  </p>
+                  <a
+                    href="https://www.flaticon.com/ru/free-icons/"
+                    title="Отправить иконки"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[var(--ios-text-secondary)] underline underline-offset-2"
+                  >
+                    Отправить иконки от HideMaru - Flaticon
+                  </a>
+                </div>
               </div>
             </div>
           </div>
@@ -1451,29 +1555,39 @@ export default function App() {
         </div>
       ) : (
         <div className="flex flex-1 flex-col min-h-0 w-full max-md:min-h-0 pt-safe">
-          <div className="flex flex-1 flex-row min-h-0 w-full overflow-hidden md:max-w-6xl md:mx-auto md:my-3 md:rounded-[14px] md:border md:border-[var(--ios-border-subtle)] md:ios-elevated md:bg-[var(--ios-surface)]">
+          <div className="flex flex-1 flex-row min-h-0 w-full overflow-hidden bg-[var(--ios-root-bg)]">
           {/* iMessage inbox list */}
-          <div className={`imessage-inbox relative flex flex-col min-h-0 min-w-0 z-20 border-r border-[var(--ios-separator)]
-            ${selectedUser ? 'hidden md:flex md:flex-none' : 'flex w-full flex-1 md:flex-none'} 
-            ${isCollapsed ? 'md:w-[72px]' : 'md:w-[340px] lg:w-[390px]'}`}>
+          <div
+            className={`imessage-sidebar-shell relative z-20
+            ${selectedUser ? 'hidden md:flex md:flex-none' : 'flex w-full flex-1 md:flex-none'}
+            ${isCollapsed ? 'md:w-[80px]' : 'md:w-[356px] lg:w-[406px]'}`}
+          >
+            <div className="imessage-inbox relative flex flex-col min-h-0 min-w-0 flex-1 w-full overflow-hidden">
 
             {!isCollapsed ? (
               <>
-                <div className="shrink-0 px-4 pt-1 pb-0 flex items-center justify-between">
+                <div className="imessage-inbox-topbar imessage-toolbar-row shrink-0 px-4">
                   <button
                     type="button"
-                    className="imessage-header-btn"
+                    className="imessage-header-icon"
                     onClick={() => setShowAddUser((v) => !v)}
                     aria-label={t('findUser')}
                     aria-expanded={showAddUser}
                   >
-                    <IconPlus className={`transition-transform duration-200 ${showAddUser ? 'rotate-45' : ''}`} />
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src="/icons/add-user-flaticon.png" alt="" className="imessage-header-flaticon" />
                   </button>
-                  <button type="button" className="imessage-header-btn imessage-header-btn-muted" onClick={() => setIsSettingsOpen(true)} aria-label={t('settings')}>
-                    <IconFilter />
+                  <h1 className="imessage-inbox-topbar-title">{t('appTitle')}</h1>
+                  <button
+                    type="button"
+                    className="imessage-header-icon"
+                    onClick={() => setIsSettingsOpen(true)}
+                    aria-label={t('settings')}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src="/icons/settings-flaticon.png" alt="" className="imessage-header-flaticon" />
                   </button>
                 </div>
-                <h1 className="imessage-inbox-title px-4 text-[var(--ios-text-primary)]">{t('appTitle')}</h1>
 
                 {showAddUser && (
                   <div className="px-4 pb-3 pt-1">
@@ -1499,35 +1613,48 @@ export default function App() {
                         </button>
                       )}
                     </label>
+                    <p className="mt-2 text-center text-[11px] leading-snug text-[var(--ios-text-tertiary)]">
+                      <a
+                        href="https://www.flaticon.com/ru/free-icons/-"
+                        title="Добавить пользователя иконки"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[var(--ios-text-secondary)] underline underline-offset-2"
+                      >
+                        Добавить пользователя иконки от afif fudin - Flaticon
+                      </a>
+                    </p>
                   </div>
                 )}
 
-                <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden no-scrollbar pb-20">
+                <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden no-scrollbar pb-28">
                   {outgoingRequests.map((u) => (
                     <div key={u.id} className="imessage-row opacity-80">
                       <span className="imessage-unread-spacer" />
-                      <IosAvatar seed={u.email} label={u.email} size="md" />
+                      <IosAvatar seed={u.email} label={u.email} size="inbox" variant="person" />
                       <div className="imessage-row-body">
                         <div className="imessage-row-top">
                           <span className="imessage-row-name">{displayName(u.email)}</span>
                           <button type="button" className="text-[var(--ios-danger)] text-[13px] shrink-0" onClick={() => cancelOutgoingRequest(u.id)}>×</button>
                         </div>
                         <p className="imessage-row-preview">
-                          {u.requestStatus === 'pending' ? '⏳ Pending' : '🚫 Declined'}
+                          {u.requestStatus === 'pending' ? 'Pending' : 'Declined'}
                         </p>
                       </div>
-                      <span />
                     </div>
                   ))}
 
                   {incomingRequests.map((u) => (
                     <div key={u.id} className="imessage-row">
                       <span className="imessage-unread-dot" />
-                      <IosAvatar seed={u.email} label={u.email} size="md" />
+                      <IosAvatar seed={u.email} label={u.email} size="inbox" variant="person" />
                       <div className="imessage-row-body">
                         <div className="imessage-row-top">
                           <span className="imessage-row-name imessage-row-name-unread">{displayName(u.email)}</span>
-                          <span className="imessage-row-time">{t('newRequests')}</span>
+                          <span className="imessage-row-meta">
+                            <span className="imessage-row-time">{t('newRequests')}</span>
+                            <IconChevronRight className="imessage-row-chevron" />
+                          </span>
                         </div>
                         <p className="imessage-row-preview">{u.email}</p>
                         <div className="flex gap-2 mt-2">
@@ -1535,7 +1662,6 @@ export default function App() {
                           <button type="button" className="flex-1 py-1.5 rounded-full bg-[var(--ios-search-bg)] text-[var(--ios-danger)] text-[14px] font-medium" onClick={() => rejectRequest(u.id)}>Отклонить</button>
                         </div>
                       </div>
-                      <span />
                     </div>
                   ))}
 
@@ -1545,28 +1671,30 @@ export default function App() {
                     return (
                       <div key={u.id} className="imessage-row cursor-pointer" onClick={() => setSelectedUser(u)}>
                         {unread ? <span className="imessage-unread-dot" /> : <span className="imessage-unread-spacer" />}
-                        <IosAvatar seed={u.email} label={u.email} size="md" />
+                        <IosAvatar seed={u.email} label={u.email} size="inbox" variant="person" />
                         <div className="imessage-row-body">
                           <div className="imessage-row-top">
                             <span className={`imessage-row-name ${unread ? 'imessage-row-name-unread' : ''}`}>
                               {displayName(u.email)}
                             </span>
-                            {preview && (
-                              <span className="imessage-row-time">{formatListTime(preview.created_at)}</span>
-                            )}
+                            <span className="imessage-row-meta">
+                              {preview && (
+                                <span className="imessage-row-time">{formatListTime(preview.created_at)}</span>
+                              )}
+                              <IconChevronRight className="imessage-row-chevron" />
+                            </span>
                           </div>
                           <p className={`imessage-row-preview ${unread ? 'imessage-row-preview-unread' : ''}`}>
                             {previewText(u.id)}
                           </p>
                         </div>
-                        <IconChevronRight className="imessage-row-chevron" />
                       </div>
                     )
                   })}
                 </div>
 
                 <div className="imessage-bottom-search">
-                  <label className="imessage-inbox-find">
+                  <label className="imessage-float-search">
                     <IconSearch />
                     <input
                       placeholder="Search"
@@ -1574,17 +1702,22 @@ export default function App() {
                       onChange={(e) => setMessageSearchQuery(e.target.value)}
                       readOnly
                     />
+                    <IconMic className="opacity-60" />
                   </label>
                 </div>
               </>
             ) : (
               <div className="hidden md:flex flex-col items-center gap-3 p-2 pt-4">
                 <button type="button" onClick={() => setIsCollapsed(false)} className="ios-icon-btn text-[var(--ios-text-secondary)]">
-                  <IconChevronLeft className="w-5 h-5" />
+                  <IconBack className="w-7 h-7" />
                 </button>
-                <button type="button" onClick={() => setIsSettingsOpen(true)} className="ios-icon-btn"><IconGear /></button>
+                <button type="button" onClick={() => setIsSettingsOpen(true)} className="ios-icon-btn" aria-label={t('settings')}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/icons/settings-flaticon.png" alt="" className="w-7 h-7 object-contain" />
+                </button>
               </div>
             )}
+            </div>
           </div>
 
 {/* ПРАВАЯ КОЛОНКА — Messages thread */}
@@ -1599,37 +1732,35 @@ export default function App() {
               </div>
             ) : (
               <>
-                <div className="imessage-thread-header">
-                  <button
-                    type="button"
-                    onClick={() => setSelectedUser(null)}
-                    className="imessage-back-btn md:hidden"
-                    aria-label={t('back')}
-                  >
-                    <IconChevronLeft className="w-7 h-7" />
-                    {totalUnread > 0 && <span className="imessage-back-badge">{totalUnread > 9 ? '9+' : totalUnread}</span>}
-                  </button>
-                  <div className="hidden md:block" />
-                  <button
-                    type="button"
-                    onClick={() => openProfile(selectedUser)}
-                    className="imessage-thread-contact"
-                    aria-label="Открыть профиль пользователя"
-                  >
-                    <IosAvatar seed={selectedUser.email} label={selectedUser.email} size="thread" variant="person" />
-                    <span className="imessage-thread-name truncate max-w-full">
-                      {displayName(selectedUser.email)}
-                      <IconChevronRight className="w-3.5 h-3.5 text-[var(--ios-preview-text)]" />
-                    </span>
-                  </button>
-                  <div className="hidden md:block" />
-                </div>
-                
-                {/* ОБЛАСТЬ СООБЩЕНИЙ */}
                 <div
                   ref={messagesViewportRef}
-                  className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-4 md:px-6 py-3 flex flex-col pb-3 w-full no-scrollbar bg-[var(--ios-chat-bg)]"
+                  className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-4 md:px-6 flex flex-col pb-3 w-full no-scrollbar bg-[var(--ios-chat-bg)]"
                 >
+                  <div className="imessage-thread-header -mx-4 md:-mx-6 px-4 md:px-6">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedUser(null)}
+                      className="imessage-back-btn imessage-header-icon"
+                      aria-label={t('back')}
+                    >
+                      <IconBack className="imessage-header-flaticon" />
+                      {totalUnread > 0 && <span className="imessage-back-badge">{totalUnread > 9 ? '9+' : totalUnread}</span>}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => openProfile(selectedUser)}
+                      className="imessage-thread-contact"
+                      aria-label="Открыть профиль пользователя"
+                    >
+                      <IosAvatar seed={selectedUser.email} label={selectedUser.email} size="threadLg" variant="person" />
+                      <span className="imessage-thread-name-pill">
+                        <span className="truncate">{displayName(selectedUser.email)}</span>
+                        <IconChevronRight className="!w-2.5 !h-3.5 !opacity-50 shrink-0" />
+                      </span>
+                    </button>
+                    <div className="imessage-thread-header-side" aria-hidden />
+                  </div>
+                  <div className="py-1 flex flex-col w-full">
                   {messages.map((m, idx) => {
                     const isMe = m.sender_id === session.user.id;
                     const msgReactions = allReactions.filter((r) => r.message_id === m.id)
@@ -1786,12 +1917,13 @@ export default function App() {
                     );
                   })}
                   <div ref={messagesEndRef} className="shrink-0" />
+                  </div>
                 </div>
                 
                 {/* ПАНЕЛЬ ВВОДА — safe-area для home indicator + место над клавиатурой (iOS) */}
-                <div className="imessage-composer-area flex flex-col w-full bg-[var(--ios-chat-bg)]">
+                <div className="imessage-composer-area flex flex-col w-full">
                   {pendingFile && (
-                    <div className="px-4 py-2 flex items-center gap-3 border-t border-[var(--ios-separator)]">
+                    <div className="px-4 py-2 flex items-center gap-3">
                       {pendingFile.type.startsWith('image/') ? (
                         /* eslint-disable-next-line @next/next/no-img-element */
                         <img src={URL.createObjectURL(pendingFile)} alt="Preview" className="h-14 w-14 object-cover rounded-lg" />
@@ -1838,16 +1970,31 @@ export default function App() {
                         <div className="imessage-composer-panel" role="menu">
                           {composerPanel === 'plus' && (
                             <>
-                              <button type="button" className="imessage-composer-panel-item" onClick={() => { fileInputRef.current?.click(); setComposerPanel('closed') }}>📎 Attachment</button>
-                              <button type="button" className="imessage-composer-panel-item" onClick={() => setComposerPanel('style')}>{t('magicWandTitle')}</button>
-                              <button type="button" className="imessage-composer-panel-item" onClick={() => setComposerPanel('translate')}>{t('translateTitle')}</button>
+                              <button type="button" className="imessage-composer-panel-item" onClick={() => { fileInputRef.current?.click(); setComposerPanel('closed') }}>
+                                <span className="imessage-composer-panel-leading">
+                                  <IconPhotos className="imessage-composer-panel-icon" />
+                                </span>
+                                <span className="imessage-composer-panel-label">{t('photoTitle')}</span>
+                              </button>
+                              <button type="button" className="imessage-composer-panel-item" onClick={() => setComposerPanel('style')}>
+                                <span className="imessage-composer-panel-leading">
+                                  <IconPen className="imessage-composer-panel-icon" />
+                                </span>
+                                <span className="imessage-composer-panel-label">{t('magicWandTitle')}</span>
+                              </button>
+                              <button type="button" className="imessage-composer-panel-item" onClick={() => setComposerPanel('translate')}>
+                                <span className="imessage-composer-panel-leading">
+                                  <IconTranslate className="imessage-composer-panel-icon" />
+                                </span>
+                                <span className="imessage-composer-panel-label">{t('translateTitle')}</span>
+                              </button>
                             </>
                           )}
                           {composerPanel === 'style' && (
                             <>
                               <button type="button" className="imessage-composer-panel-back" onClick={() => setComposerPanel('plus')}>‹ {t('magicWandTitle')}</button>
                               {([{ label: t('styleBusiness'), prompt: 'Business and polite' }, { label: t('styleFriendly'), prompt: 'Friendly and fun' }, { label: t('styleStrict'), prompt: 'Strict and concise' }, { label: t('styleSlang'), prompt: 'Bold slang' }] as const).map((style) => (
-                                <button key={style.prompt} type="button" className="imessage-composer-panel-item" onClick={() => { handleAiAction('style', style.prompt) }}>{style.label}</button>
+                                <button key={style.prompt} type="button" className="imessage-composer-panel-item imessage-composer-panel-item-plain" onClick={() => { handleAiAction('style', style.prompt) }}>{style.label}</button>
                               ))}
                             </>
                           )}
@@ -1855,7 +2002,7 @@ export default function App() {
                             <>
                               <button type="button" className="imessage-composer-panel-back" onClick={() => setComposerPanel('plus')}>‹ {t('translateTitle')}</button>
                               {([{ label: t('langEnglish'), prompt: 'English' }, { label: t('langNorwegian'), prompt: 'Norwegian' }, { label: t('langRussian'), prompt: 'Russian' }] as const).map((lang) => (
-                                <button key={lang.prompt} type="button" className="imessage-composer-panel-item" onClick={() => { handleAiAction('translate', lang.prompt) }}>{lang.label}</button>
+                                <button key={lang.prompt} type="button" className="imessage-composer-panel-item imessage-composer-panel-item-plain" onClick={() => { handleAiAction('translate', lang.prompt) }}>{lang.label}</button>
                               ))}
                               <div className="flex gap-2 mt-1 pt-2 border-t border-[var(--ios-separator)] px-1">
                                 <input value={customLang} onChange={(e) => setCustomLang(e.target.value)} placeholder={t('customLangPlaceholder')} className="flex-1 px-2 py-1.5 rounded-[8px] bg-[var(--ios-search-bg)] text-[13px] outline-none" />
@@ -1893,7 +2040,7 @@ export default function App() {
 
                     {canSend && (
                       <button type="button" className="ios-send-btn mb-0.5" onClick={sendMessage} disabled={isSending || isAiLoading} aria-label="Send">
-                        {isSending ? '…' : editingMessageId !== null ? '✓' : <IconSend className="w-4 h-4 translate-x-px" />}
+                        {isSending ? '…' : editingMessageId !== null ? '✓' : <IconSend />}
                       </button>
                     )}
                   </div>
