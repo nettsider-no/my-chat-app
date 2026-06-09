@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react'
 import type { ChangeEvent, ClipboardEvent } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
@@ -508,6 +508,8 @@ export default function App() {
   const [profilePeer, setProfilePeer] = useState<Profile | null>(null)
 
   const [messages, setMessages] = useState<ChatMessage[]>([])
+  // Кэш переписок по собеседнику — чат открывается мгновенно из памяти, свежие данные приходят фоном
+  const messagesCacheRef = useRef<Record<string, ChatMessage[]>>({})
   const [text, setText] = useState('')
   const [isSending, setIsSending] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -1027,6 +1029,10 @@ export default function App() {
     const userId = session.user.id
     const peerId = selectedUser.id
 
+    // Мгновенно показываем кэш (как Telegram), свежие данные подтянутся фоном
+    const cached = messagesCacheRef.current[peerId]
+    setMessages(cached ?? [])
+
     async function fetchMessagesAndMarkRead() {
       const { data } = await supabase
         .from('messages')
@@ -1035,7 +1041,11 @@ export default function App() {
           `and(sender_id.eq.${userId},receiver_id.eq.${peerId}),and(sender_id.eq.${peerId},receiver_id.eq.${userId})`
         )
         .order('created_at', { ascending: true })
-      if (data) setMessages(data as ChatMessage[])
+      if (data) {
+        const fresh = data as ChatMessage[]
+        messagesCacheRef.current[peerId] = fresh
+        setMessages(fresh)
+      }
 
       const { data: reactData } = await supabase.from('message_reactions').select('*')
       if (reactData) setAllReactions(reactData as MessageReaction[])
@@ -1065,12 +1075,20 @@ export default function App() {
               if (msg.sender_id === peerId) {
                 void supabase.from('messages').update({ is_read: true }).eq('id', msg.id)
               }
-              setMessages((prev) => [...prev, msg])
+              setMessages((prev) => {
+                const next = [...prev, msg]
+                messagesCacheRef.current[peerId] = next
+                return next
+              })
             }
           }
           if (payload.eventType === 'UPDATE' && payload.new) {
             const updated = payload.new as ChatMessage
-            setMessages((prev) => prev.map((m) => (m.id === updated.id ? updated : m)))
+            setMessages((prev) => {
+              const next = prev.map((m) => (m.id === updated.id ? updated : m))
+              messagesCacheRef.current[peerId] = next
+              return next
+            })
             void fetchSidebarData()
           }
         }
@@ -1097,16 +1115,51 @@ export default function App() {
   }, [selectedUser?.id])
 
   const scrollToBottom = useCallback((behavior: ScrollBehavior = 'smooth') => {
-    messagesEndRef.current?.scrollIntoView({ behavior })
+    const el = messagesViewportRef.current
+    if (!el) return
+    // Не дёргаем пользователя, если он листает историю выше
+    const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 320
+    if (!nearBottom) return
+    if (behavior === 'smooth') {
+      el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' })
+    } else {
+      el.scrollTop = el.scrollHeight
+    }
   }, [])
 
-  useEffect(() => {
-    scrollToBottom('auto')
-  }, [selectedUser, scrollToBottom])
+  // Telegram-style: позиция скролла выставляется ДО отрисовки кадра —
+  // чат всегда открывается сразу на последнем сообщении, без видимой прокрутки
+  const prevChatKeyRef = useRef<string | null>(null)
+  const lastMsgIdRef = useRef<number | null>(null)
 
-  useEffect(() => {
-    scrollToBottom('smooth')
-  }, [messages, scrollToBottom])
+  useLayoutEffect(() => {
+    const el = messagesViewportRef.current
+    if (!el) return
+
+    const chatKey = selectedUser?.id ?? null
+    const lastMsg = messages.length > 0 ? messages[messages.length - 1] : null
+    const isNewChat = chatKey !== prevChatKeyRef.current
+    const isNewMessage = lastMsg !== null && lastMsg.id !== lastMsgIdRef.current
+
+    if (isNewChat || lastMsgIdRef.current === null) {
+      // Открытие чата (или первая загрузка истории): мгновенно вниз,
+      // ещё до того как пользователь увидит кадр
+      el.scrollTop = el.scrollHeight
+    } else if (isNewMessage && lastMsg) {
+      const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 160
+      if (lastMsg.sender_id === session?.user.id) {
+        // Своё сообщение — мгновенно вниз
+        el.scrollTop = el.scrollHeight
+      } else if (nearBottom) {
+        // Чужое сообщение и мы внизу — плавно доскролливаем
+        el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' })
+      }
+      // Если пользователь листает историю выше — не дёргаем его
+    }
+
+    prevChatKeyRef.current = chatKey
+    lastMsgIdRef.current = lastMsg?.id ?? null
+  }, [selectedUser?.id, messages, session?.user.id])
 
   function handleFileUpload(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0]
