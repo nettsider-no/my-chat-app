@@ -8,7 +8,6 @@ import { applyTheme, readStoredTheme, type ThemeMode } from '@/lib/theme'
 import {
   IconChevronLeft,
   IconChevronRight,
-  IconCompose,
   IconFilter,
   IconGear,
   IconGlobe,
@@ -483,11 +482,12 @@ export default function App() {
 
   const [selectedUser, setSelectedUser] = useState<Profile | null>(null)
   const [newContactEmail, setNewContactEmail] = useState('')
+  const [messageSearchQuery, setMessageSearchQuery] = useState('')
 
   const [toastMsg, setToastMsg] = useState<string | null>(null)
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [isEditMode, setIsEditMode] = useState(false)
-  const [showPlusMenu, setShowPlusMenu] = useState(false)
+  const [composerPanel, setComposerPanel] = useState<'closed' | 'plus' | 'style' | 'translate'>('closed')
   const [conversationPreviews, setConversationPreviews] = useState<
     Record<string, { content: string | null; file_url: string | null; created_at: string; sender_id: string }>
   >({})
@@ -581,8 +581,6 @@ export default function App() {
 
   // === ИИ ФИШКИ (Состояния) ===
   const [isAiLoading, setIsAiLoading] = useState(false);
-  const [showStyleMenu, setShowStyleMenu] = useState(false);
-  const [showTranslateMenu, setShowTranslateMenu] = useState(false);
   const [aiProcessingLabel, setAiProcessingLabel] = useState<string | null>(null)
   const [aiProcessingFromInput, setAiProcessingFromInput] = useState(false)
   const [customLang, setCustomLang] = useState('');
@@ -600,8 +598,7 @@ export default function App() {
 
     setIsAiLoading(true);
     setAiProcessingFromInput(isFromInput)
-    setShowStyleMenu(false);
-    setShowTranslateMenu(false);
+    setComposerPanel('closed');
     setAiProcessingLabel(
       msgId
         ? action === 'translate'
@@ -1092,8 +1089,9 @@ export default function App() {
   }, [session, selectedUser, fetchSidebarData])
 
   useEffect(() => {
-    // При смене диалога выходим из режима редактирования
+    // При смене диалога выходим из режима редактирования и закрываем меню
     setEditingMessageId(null)
+    setComposerPanel('closed')
   }, [selectedUser?.id])
 
   const scrollToBottom = useCallback((behavior: ScrollBehavior = 'smooth') => {
@@ -1243,6 +1241,14 @@ export default function App() {
     if (!ta) return 1
     if (!tb) return -1
     return new Date(tb).getTime() - new Date(ta).getTime()
+  })
+
+  const filteredContacts = sortedContacts.filter((u) => {
+    const q = messageSearchQuery.trim().toLowerCase()
+    if (!q) return true
+    const name = displayName(u.email).toLowerCase()
+    const preview = previewText(u.id).toLowerCase()
+    return name.includes(q) || u.email.toLowerCase().includes(q) || preview.includes(q)
   })
 
   const toggleReaction = async (messageId: number, emoji: string) => {
@@ -1475,9 +1481,31 @@ export default function App() {
                     <IconFilter />
                   </button>
                 </div>
-                <h1 className="ios-large-title px-4 pt-1 pb-3 text-[var(--ios-text-primary)]">{t('appTitle')}</h1>
+                <h1 className="imessage-inbox-title px-4 text-[var(--ios-text-primary)]">{t('appTitle')}</h1>
 
-                <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden no-scrollbar pb-28">
+                <div className="px-4 pb-3 pt-1">
+                  <label className="imessage-inbox-find">
+                    <IconSearch />
+                    <input
+                      type="email"
+                      placeholder={t('findUser')}
+                      value={newContactEmail}
+                      onChange={(e) => setNewContactEmail(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && sendRequest(newContactEmail)}
+                    />
+                    {newContactEmail.trim() && (
+                      <button
+                        type="button"
+                        className="imessage-inbox-find-go"
+                        onClick={() => void sendRequest(newContactEmail)}
+                      >
+                        {t('go')}
+                      </button>
+                    )}
+                  </label>
+                </div>
+
+                <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden no-scrollbar pb-24">
                   {outgoingRequests.map((u) => (
                     <div key={u.id} className="imessage-row opacity-80">
                       <span className="imessage-unread-spacer" />
@@ -1514,7 +1542,7 @@ export default function App() {
                     </div>
                   ))}
 
-                  {sortedContacts.map((u) => {
+                  {filteredContacts.map((u) => {
                     const unread = unreadCounts[u.id] > 0
                     const preview = conversationPreviews[u.id]
                     return (
@@ -1550,28 +1578,15 @@ export default function App() {
                 </div>
 
                 <div className="imessage-floating-bar absolute bottom-0 left-0 right-0">
-                  <div className="flex items-center gap-3">
-                    <label className="imessage-search-pill">
-                      <IconSearch />
-                      <input
-                        placeholder="Search"
-                        value={newContactEmail}
-                        onChange={(e) => setNewContactEmail(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && sendRequest(newContactEmail)}
-                      />
-                      <IconMic className="opacity-70" />
-                    </label>
-                    <button
-                      type="button"
-                      className="imessage-compose-btn"
-                      aria-label={t('findUser')}
-                      onClick={() => {
-                        if (newContactEmail.trim()) void sendRequest(newContactEmail)
-                      }}
-                    >
-                      <IconCompose />
-                    </button>
-                  </div>
+                  <label className="imessage-search-pill w-full">
+                    <IconSearch />
+                    <input
+                      placeholder="Search"
+                      value={messageSearchQuery}
+                      onChange={(e) => setMessageSearchQuery(e.target.value)}
+                    />
+                    <IconMic className="opacity-70" />
+                  </label>
                 </div>
               </>
             ) : (
@@ -1786,7 +1801,7 @@ export default function App() {
                 </div>
                 
                 {/* ПАНЕЛЬ ВВОДА — safe-area для home indicator + место над клавиатурой (iOS) */}
-                <div className="flex flex-col shrink-0 w-full bg-[var(--ios-chat-bg)]">
+                <div className="imessage-composer-area flex flex-col w-full bg-[var(--ios-chat-bg)]">
                   {pendingFile && (
                     <div className="px-4 py-2 flex items-center gap-3 border-t border-[var(--ios-separator)]">
                       {pendingFile.type.startsWith('image/') ? (
@@ -1809,25 +1824,58 @@ export default function App() {
                     </div>
                   )}
 
-                  <div className="imessage-composer relative">
-                    <div className="relative">
-                      <button
-                        type="button"
-                        className="imessage-plus-btn"
-                        disabled={isSending}
-                        aria-label="More"
-                        onClick={() => setShowPlusMenu((v) => !v)}
-                      >
-                        <IconPlus className="w-5 h-5" />
-                      </button>
-                      {showPlusMenu && (
-                        <div className="absolute bottom-full left-0 mb-2 ios-glass-prominent rounded-[14px] p-2 z-50 min-w-[180px]">
-                          <button type="button" className="w-full text-left px-3 py-2.5 text-[17px] rounded-[10px] hover:bg-[var(--ios-hover-surface)]" onClick={() => { fileInputRef.current?.click(); setShowPlusMenu(false) }}>📎 Attachment</button>
-                          <button type="button" className="w-full text-left px-3 py-2.5 text-[17px] rounded-[10px] hover:bg-[var(--ios-hover-surface)]" onClick={() => { setShowStyleMenu(true); setShowPlusMenu(false) }}>{t('magicWandTitle')}</button>
-                          <button type="button" className="w-full text-left px-3 py-2.5 text-[17px] rounded-[10px] hover:bg-[var(--ios-hover-surface)]" onClick={() => { setShowTranslateMenu(true); setShowPlusMenu(false) }}>{t('translateTitle')}</button>
-                        </div>
+                  {composerPanel !== 'closed' && (
+                    <button
+                      type="button"
+                      className="imessage-composer-backdrop"
+                      aria-label={t('cancel')}
+                      onClick={() => setComposerPanel('closed')}
+                    />
+                  )}
+
+                  {composerPanel !== 'closed' && (
+                    <div className="imessage-composer-panel" role="menu">
+                      {composerPanel === 'plus' && (
+                        <>
+                          <button type="button" className="imessage-composer-panel-item" onClick={() => { fileInputRef.current?.click(); setComposerPanel('closed') }}>📎 Attachment</button>
+                          <button type="button" className="imessage-composer-panel-item" onClick={() => setComposerPanel('style')}>{t('magicWandTitle')}</button>
+                          <button type="button" className="imessage-composer-panel-item" onClick={() => setComposerPanel('translate')}>{t('translateTitle')}</button>
+                        </>
+                      )}
+                      {composerPanel === 'style' && (
+                        <>
+                          <button type="button" className="imessage-composer-panel-back" onClick={() => setComposerPanel('plus')}>‹ {t('magicWandTitle')}</button>
+                          {([{ label: t('styleBusiness'), prompt: 'Business and polite' }, { label: t('styleFriendly'), prompt: 'Friendly and fun' }, { label: t('styleStrict'), prompt: 'Strict and concise' }, { label: t('styleSlang'), prompt: 'Bold slang' }] as const).map((style) => (
+                            <button key={style.prompt} type="button" className="imessage-composer-panel-item" onClick={() => { handleAiAction('style', style.prompt) }}>{style.label}</button>
+                          ))}
+                        </>
+                      )}
+                      {composerPanel === 'translate' && (
+                        <>
+                          <button type="button" className="imessage-composer-panel-back" onClick={() => setComposerPanel('plus')}>‹ {t('translateTitle')}</button>
+                          {([{ label: t('langEnglish'), prompt: 'English' }, { label: t('langNorwegian'), prompt: 'Norwegian' }, { label: t('langRussian'), prompt: 'Russian' }] as const).map((lang) => (
+                            <button key={lang.prompt} type="button" className="imessage-composer-panel-item" onClick={() => { handleAiAction('translate', lang.prompt) }}>{lang.label}</button>
+                          ))}
+                          <div className="flex gap-2 mt-1 pt-2 border-t border-[var(--ios-separator)] px-1">
+                            <input value={customLang} onChange={(e) => setCustomLang(e.target.value)} placeholder={t('customLangPlaceholder')} className="flex-1 px-2 py-1.5 rounded-[8px] bg-[var(--ios-search-bg)] text-[13px] outline-none" />
+                            <button type="button" onClick={() => { handleAiAction('translate', customLang) }} className="px-2.5 py-1.5 rounded-[8px] bg-[var(--ios-accent)] text-white text-[13px] font-semibold">{t('go')}</button>
+                          </div>
+                        </>
                       )}
                     </div>
+                  )}
+
+                  <div className="imessage-composer relative z-20">
+                    <button
+                      type="button"
+                      className={`imessage-plus-btn ${composerPanel !== 'closed' ? 'imessage-plus-btn-active' : ''}`}
+                      disabled={isSending}
+                      aria-label="More"
+                      aria-expanded={composerPanel !== 'closed'}
+                      onClick={() => setComposerPanel((p) => (p === 'closed' ? 'plus' : 'closed'))}
+                    >
+                      <IconPlus className={`w-5 h-5 transition-transform duration-200 ${composerPanel !== 'closed' ? 'rotate-45' : ''}`} />
+                    </button>
                     <input type="file" className="hidden" ref={fileInputRef} onChange={handleFileUpload} accept="image/*,.pdf,.doc,.docx" />
 
                     <div className="relative flex-1 min-w-0">
@@ -1840,8 +1888,11 @@ export default function App() {
                         onPaste={handlePaste}
                         placeholder={`${t('messagePlaceholder')} • SMS`}
                         disabled={isSending || isAiLoading}
+                        onFocus={() => setComposerPanel('closed')}
                       />
-                      {!canSend && !isAiLoading && <IconMic className="imessage-input-mic w-5 h-5" />}
+                      {!canSend && !isAiLoading && composerPanel === 'closed' && (
+                        <IconMic className="imessage-input-mic w-5 h-5" />
+                      )}
                       {aiProcessingFromInput && isAiLoading && aiProcessingLabel && (
                         <div className="absolute inset-0 flex items-center justify-center pointer-events-none px-10">
                           <span className="text-[13px] text-[var(--ios-preview-text)] truncate">{aiProcessingLabel}</span>
@@ -1855,29 +1906,6 @@ export default function App() {
                       </button>
                     )}
                   </div>
-
-                  {(showStyleMenu || showTranslateMenu) && (
-                    <div className="px-3 pb-2">
-                      {showStyleMenu && (
-                        <div className="ios-glass-prominent rounded-[14px] p-2 mb-2">
-                          {([{ label: t('styleBusiness'), prompt: 'Business and polite' }, { label: t('styleFriendly'), prompt: 'Friendly and fun' }, { label: t('styleStrict'), prompt: 'Strict and concise' }, { label: t('styleSlang'), prompt: 'Bold slang' }] as const).map((style) => (
-                            <button key={style.prompt} type="button" onClick={() => { handleAiAction('style', style.prompt); setShowStyleMenu(false) }} className="block w-full text-left px-3 py-2 text-[17px] rounded-[10px] hover:bg-[var(--ios-hover-surface)]">{style.label}</button>
-                          ))}
-                        </div>
-                      )}
-                      {showTranslateMenu && (
-                        <div className="ios-glass-prominent rounded-[14px] p-2">
-                          {([{ label: t('langEnglish'), prompt: 'English' }, { label: t('langNorwegian'), prompt: 'Norwegian' }, { label: t('langRussian'), prompt: 'Russian' }] as const).map((lang) => (
-                            <button key={lang.prompt} type="button" onClick={() => { handleAiAction('translate', lang.prompt); setShowTranslateMenu(false) }} className="block w-full text-left px-3 py-2 text-[17px] rounded-[10px] hover:bg-[var(--ios-hover-surface)]">{lang.label}</button>
-                          ))}
-                          <div className="flex gap-2 mt-2 pt-2 border-t border-[var(--ios-separator)] px-1">
-                            <input value={customLang} onChange={(e) => setCustomLang(e.target.value)} placeholder={t('customLangPlaceholder')} className="flex-1 px-2 py-1.5 rounded-[8px] bg-[var(--ios-search-bg)] text-[13px] outline-none" />
-                            <button type="button" onClick={() => { handleAiAction('translate', customLang); setShowTranslateMenu(false) }} className="px-2.5 py-1.5 rounded-[8px] bg-[var(--ios-accent)] text-white text-[13px] font-semibold">{t('go')}</button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
                 </div>
               </>
             )}

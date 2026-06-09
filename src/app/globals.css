@@ -418,6 +418,50 @@ button:disabled,
   background: var(--ios-sidebar-bg);
 }
 
+.imessage-inbox-title {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  line-height: 1.15;
+  padding-top: 6px;
+  padding-bottom: 2px;
+}
+
+.imessage-inbox-find {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 0 12px;
+  border-radius: 10px;
+  background: var(--ios-search-bg);
+  color: var(--ios-preview-text);
+}
+
+.imessage-inbox-find input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--ios-text-primary);
+  font-size: 16px;
+}
+
+.imessage-inbox-find input::placeholder {
+  color: var(--ios-preview-text);
+}
+
+.imessage-inbox-find-go {
+  flex-shrink: 0;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--ios-accent);
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+}
+
 .imessage-edit-pill {
   padding: 6px 14px;
   border-radius: 999px;
@@ -668,6 +712,85 @@ button:disabled,
   font-weight: 500;
 }
 
+.imessage-composer-area {
+  position: relative;
+  flex-shrink: 0;
+  z-index: 20;
+}
+
+.imessage-composer-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 25;
+  border: none;
+  background: rgba(0, 0, 0, 0.28);
+  animation: imessage-fade-in 0.2s ease;
+}
+
+[data-theme="dark"] .imessage-composer-backdrop {
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.imessage-composer-panel {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 10px;
+  right: 10px;
+  z-index: 30;
+  padding: 6px;
+  border-radius: 14px;
+  background: var(--ios-glass-bg);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  border: 0.5px solid var(--ios-glass-border);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+  animation: imessage-panel-in 0.22s cubic-bezier(0.2, 0.9, 0.3, 1);
+  max-height: min(50vh, 320px);
+  overflow-y: auto;
+}
+
+.imessage-composer-panel-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 11px 12px;
+  border-radius: 10px;
+  font-size: 17px;
+  color: var(--ios-text-primary);
+  transition: background 0.15s ease;
+}
+
+.imessage-composer-panel-item:hover,
+.imessage-composer-panel-item:active {
+  background: var(--ios-hover-surface);
+}
+
+.imessage-composer-panel-back {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 8px 12px 6px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ios-accent);
+}
+
+@keyframes imessage-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes imessage-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 .imessage-composer {
   display: flex;
   align-items: flex-end;
@@ -675,6 +798,8 @@ button:disabled,
   padding: 8px 12px max(8px, env(safe-area-inset-bottom));
   background: var(--ios-chat-bg);
   border-top: 0.5px solid var(--ios-separator);
+  position: relative;
+  z-index: 30;
 }
 
 .imessage-plus-btn {
@@ -688,6 +813,11 @@ button:disabled,
   color: var(--ios-text-secondary);
   flex-shrink: 0;
   margin-bottom: 2px;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.imessage-plus-btn-active {
+  background: var(--ios-hover-surface);
 }
 
 .imessage-input-pill {
