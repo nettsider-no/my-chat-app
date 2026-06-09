@@ -1,55 +1,103 @@
 @import "tailwindcss";
 
-/* Светлая тема по умолчанию (:root) */
+/* ── iOS 27 design tokens (Apple HIG + Liquid Glass) ── */
 :root {
   color-scheme: light;
-  --mac-desktop-bg: #d8d8de;
-  --mac-desktop-bg-mid: #e4e4ea;
-  --mac-window-bg: #f5f5f7;
-  --mac-sidebar-bg: #e6e6ed;
-  --mac-chat-bg: #ffffff;
-  --mac-elevated: rgba(255, 255, 255, 0.92);
-  /* чёткие границы и ховеры списков / меню */
-  --mac-border: rgba(0, 0, 0, 0.14);
-  --mac-border-subtle: rgba(0, 0, 0, 0.09);
-  --mac-hover-surface: rgba(0, 0, 0, 0.07);
-  --mac-text-primary: #1d1d1f;
-  --mac-text-secondary: #5c5c62;
-  --mac-imessage-sent: #007aff;
-  --mac-imessage-received: #e4e4ea;
-  --mac-imessage-received-border: rgba(0, 0, 0, 0.11);
-  --mac-accent: #007aff;
-  --mac-danger: #ff3b30;
-  --mac-success: #34c759;
-  --mac-shadow-ambient: rgba(0, 0, 0, 0.12);
-  --mac-composer-shadow: rgba(0, 0, 0, 0.08);
-  --background: var(--mac-desktop-bg);
-  --foreground: var(--mac-text-primary);
+  --ios-root-bg: #f2f2f7;
+  --ios-root-bg-accent: #e8e8ee;
+  --ios-surface: #ffffff;
+  --ios-surface-secondary: #f2f2f7;
+  --ios-sidebar-bg: rgba(242, 242, 247, 0.72);
+  --ios-chat-bg: #ffffff;
+  --ios-elevated: rgba(255, 255, 255, 0.88);
+  --ios-border: rgba(60, 60, 67, 0.18);
+  --ios-border-subtle: rgba(60, 60, 67, 0.12);
+  --ios-separator: rgba(60, 60, 67, 0.16);
+  --ios-hover-surface: rgba(60, 60, 67, 0.06);
+  --ios-pressed-surface: rgba(60, 60, 67, 0.1);
+  --ios-text-primary: #000000;
+  --ios-text-secondary: rgba(60, 60, 67, 0.6);
+  --ios-text-tertiary: rgba(60, 60, 67, 0.3);
+  --ios-bubble-sent: #007aff;
+  --ios-bubble-received: #e9e9eb;
+  --ios-bubble-received-border: rgba(60, 60, 67, 0.08);
+  --ios-accent: #007aff;
+  --ios-accent-tint: rgba(0, 122, 255, 0.14);
+  --ios-danger: #ff3b30;
+  --ios-success: #34c759;
+  --ios-warning: #ff9500;
+  --ios-shadow-soft: rgba(0, 0, 0, 0.08);
+  --ios-shadow-ambient: rgba(0, 0, 0, 0.12);
+  --ios-composer-shadow: rgba(0, 0, 0, 0.06);
+  --ios-glass-bg: rgba(255, 255, 255, 0.62);
+  --ios-glass-border: rgba(255, 255, 255, 0.72);
+  --ios-glass-highlight: rgba(255, 255, 255, 0.95);
+  --ios-glass-shadow: rgba(0, 0, 0, 0.06);
+  --ios-radius-sm: 10px;
+  --ios-radius-md: 12px;
+  --ios-radius-lg: 14px;
+  --ios-radius-xl: 20px;
+  --ios-radius-bubble: 18px;
+  --ios-radius-pill: 999px;
+  --ios-nav-height: 44px;
+  --ios-toolbar-height: 52px;
+  --background: var(--ios-root-bg);
+  --foreground: var(--ios-text-primary);
+
+  /* legacy aliases */
+  --mac-desktop-bg: var(--ios-root-bg);
+  --mac-desktop-bg-mid: var(--ios-root-bg-accent);
+  --mac-window-bg: var(--ios-surface);
+  --mac-sidebar-bg: var(--ios-sidebar-bg);
+  --mac-chat-bg: var(--ios-chat-bg);
+  --mac-elevated: var(--ios-elevated);
+  --mac-border: var(--ios-border);
+  --mac-border-subtle: var(--ios-border-subtle);
+  --mac-hover-surface: var(--ios-hover-surface);
+  --mac-text-primary: var(--ios-text-primary);
+  --mac-text-secondary: var(--ios-text-secondary);
+  --mac-imessage-sent: var(--ios-bubble-sent);
+  --mac-imessage-received: var(--ios-bubble-received);
+  --mac-imessage-received-border: var(--ios-bubble-received-border);
+  --mac-accent: var(--ios-accent);
+  --mac-danger: var(--ios-danger);
+  --mac-success: var(--ios-success);
+  --mac-shadow-ambient: var(--ios-shadow-ambient);
+  --mac-composer-shadow: var(--ios-composer-shadow);
 }
 
 [data-theme="dark"] {
   color-scheme: dark;
-  --mac-desktop-bg: #0d0d0f;
-  --mac-desktop-bg-mid: #141418;
-  --mac-window-bg: #1c1c1e;
-  --mac-sidebar-bg: #252528;
-  --mac-chat-bg: #1a1a1c;
-  --mac-elevated: rgba(58, 58, 60, 0.55);
-  --mac-border: rgba(255, 255, 255, 0.11);
-  --mac-border-subtle: rgba(255, 255, 255, 0.07);
-  --mac-hover-surface: rgba(255, 255, 255, 0.09);
-  --mac-text-primary: #f2f2f7;
-  --mac-text-secondary: #98989d;
-  --mac-imessage-sent: #0a84ff;
-  --mac-imessage-received: #3a3a3c;
-  --mac-imessage-received-border: rgba(255, 255, 255, 0.08);
-  --mac-accent: #0a84ff;
-  --mac-danger: #ff453a;
-  --mac-success: #32d74b;
-  --mac-shadow-ambient: rgba(0, 0, 0, 0.55);
-  --mac-composer-shadow: rgba(0, 0, 0, 0.35);
-  --background: var(--mac-desktop-bg);
-  --foreground: var(--mac-text-primary);
+  --ios-root-bg: #000000;
+  --ios-root-bg-accent: #0c0c0e;
+  --ios-surface: #1c1c1e;
+  --ios-surface-secondary: #2c2c2e;
+  --ios-sidebar-bg: rgba(28, 28, 30, 0.78);
+  --ios-chat-bg: #000000;
+  --ios-elevated: rgba(44, 44, 46, 0.92);
+  --ios-border: rgba(84, 84, 88, 0.48);
+  --ios-border-subtle: rgba(84, 84, 88, 0.32);
+  --ios-separator: rgba(84, 84, 88, 0.36);
+  --ios-hover-surface: rgba(255, 255, 255, 0.08);
+  --ios-pressed-surface: rgba(255, 255, 255, 0.12);
+  --ios-text-primary: #ffffff;
+  --ios-text-secondary: rgba(235, 235, 245, 0.6);
+  --ios-text-tertiary: rgba(235, 235, 245, 0.3);
+  --ios-bubble-sent: #0a84ff;
+  --ios-bubble-received: #3a3a3c;
+  --ios-bubble-received-border: rgba(255, 255, 255, 0.06);
+  --ios-accent: #0a84ff;
+  --ios-accent-tint: rgba(10, 132, 255, 0.22);
+  --ios-danger: #ff453a;
+  --ios-success: #32d74b;
+  --ios-warning: #ff9f0a;
+  --ios-shadow-soft: rgba(0, 0, 0, 0.35);
+  --ios-shadow-ambient: rgba(0, 0, 0, 0.55);
+  --ios-composer-shadow: rgba(0, 0, 0, 0.4);
+  --ios-glass-bg: rgba(44, 44, 46, 0.58);
+  --ios-glass-border: rgba(255, 255, 255, 0.1);
+  --ios-glass-highlight: rgba(255, 255, 255, 0.08);
+  --ios-glass-shadow: rgba(0, 0, 0, 0.45);
 }
 
 @theme inline {
@@ -71,193 +119,176 @@ html {
   scrollbar-width: none;
 }
 
-.mac-glass {
-  background: linear-gradient(
-    165deg,
-    rgba(255, 255, 255, 0.92) 0%,
-    rgba(245, 245, 247, 0.88) 100%
-  );
-  backdrop-filter: blur(48px) saturate(190%);
-  -webkit-backdrop-filter: blur(48px) saturate(190%);
-  border: 1px solid var(--mac-border);
+/* Root canvas — subtle depth, not macOS desktop */
+.mac-desktop-bg,
+.ios-root-bg {
+  background:
+    radial-gradient(ellipse 120% 80% at 50% -25%, rgba(0, 122, 255, 0.1), transparent 55%),
+    radial-gradient(ellipse 70% 50% at 100% 100%, rgba(88, 86, 214, 0.08), transparent 50%),
+    linear-gradient(180deg, var(--ios-root-bg-accent) 0%, var(--ios-root-bg) 100%);
+}
+
+[data-theme="dark"] .mac-desktop-bg,
+[data-theme="dark"] .ios-root-bg {
+  background:
+    radial-gradient(ellipse 120% 80% at 50% -20%, rgba(10, 132, 255, 0.14), transparent 50%),
+    radial-gradient(ellipse 80% 50% at 100% 100%, rgba(88, 86, 214, 0.1), transparent 45%),
+    linear-gradient(180deg, var(--ios-root-bg-accent) 0%, var(--ios-root-bg) 100%);
+}
+
+/* Liquid Glass — functional layer (nav, toolbars, overlays) */
+.mac-glass,
+.ios-glass {
+  background: var(--ios-glass-bg);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  border-color: var(--ios-glass-border);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.95),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.04);
+    inset 0 1px 0 var(--ios-glass-highlight),
+    0 1px 2px var(--ios-glass-shadow);
 }
 
-[data-theme="dark"] .mac-glass {
-  background: linear-gradient(
-    165deg,
-    rgba(72, 72, 74, 0.45) 0%,
-    rgba(44, 44, 46, 0.5) 100%
-  );
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
-}
-
-.mac-glass-strong {
-  background: rgba(255, 255, 255, 0.88);
+.mac-glass-strong,
+.ios-glass-prominent {
+  background: color-mix(in srgb, var(--ios-glass-bg) 88%, var(--ios-surface) 12%);
   backdrop-filter: blur(56px) saturate(200%);
   -webkit-backdrop-filter: blur(56px) saturate(200%);
-  border: 1px solid var(--mac-border);
+  border-color: var(--ios-glass-border);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 1),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.06);
+    inset 0 1px 0 var(--ios-glass-highlight),
+    0 4px 24px var(--ios-glass-shadow);
 }
 
-[data-theme="dark"] .mac-glass-strong {
-  background: rgba(44, 44, 46, 0.78);
+/* Navigation bar */
+.mac-titlebar,
+.ios-navbar {
+  min-height: var(--ios-nav-height);
+  background: var(--ios-glass-bg);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  border-bottom: 0.5px solid var(--ios-separator);
+  box-shadow: inset 0 1px 0 var(--ios-glass-highlight);
+}
+
+/* Elevated surfaces (sheets, login card on iPad) */
+.mac-window-shadow,
+.ios-elevated {
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.08),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.2);
+    0 0 0 0.5px var(--ios-border-subtle),
+    0 2px 8px var(--ios-shadow-soft),
+    0 16px 40px var(--ios-shadow-ambient);
 }
 
-.mac-window-shadow {
+[data-theme="dark"] .mac-window-shadow,
+[data-theme="dark"] .ios-elevated {
   box-shadow:
-    0 0 0 0.5px rgba(0, 0, 0, 0.08),
-    0 0 0 1px rgba(255, 255, 255, 0.8) inset,
-    0 2px 8px rgba(0, 0, 0, 0.06),
-    0 16px 48px rgba(0, 0, 0, 0.1),
-    0 8px 24px rgba(0, 0, 0, 0.06);
+    0 0 0 0.5px rgba(255, 255, 255, 0.06),
+    0 8px 32px var(--ios-shadow-ambient);
 }
 
-[data-theme="dark"] .mac-window-shadow {
-  box-shadow:
-    0 0 0 0.5px rgba(0, 0, 0, 0.65),
-    0 0 0 1px rgba(255, 255, 255, 0.04) inset,
-    0 2px 4px rgba(0, 0, 0, 0.35),
-    0 24px 80px var(--mac-shadow-ambient),
-    0 12px 32px rgba(0, 0, 0, 0.4);
+/* Content-layer controls */
+.mac-neu-raised,
+.ios-control {
+  background: var(--ios-surface);
+  border: 0.5px solid var(--ios-border-subtle);
+  box-shadow: 0 1px 2px var(--ios-shadow-soft);
+  transition: background 0.15s ease, transform 0.15s ease;
 }
 
-.mac-titlebar {
-  background: linear-gradient(180deg, #f6f6f8 0%, #ececef 100%);
-  border-bottom: 1px solid var(--mac-border-subtle);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 1);
+.ios-control:hover {
+  background: color-mix(in srgb, var(--ios-surface) 92%, var(--ios-hover-surface) 8%);
 }
 
-[data-theme="dark"] .mac-titlebar {
-  background: linear-gradient(
-    180deg,
-    rgba(55, 55, 58, 0.92) 0%,
-    rgba(38, 38, 40, 0.88) 100%
-  );
+.ios-control:active {
+  background: color-mix(in srgb, var(--ios-surface) 85%, var(--ios-pressed-surface) 15%);
+}
+
+[data-theme="dark"] .ios-control {
+  background: var(--ios-surface-secondary);
+}
+
+.mac-neu-inset,
+.ios-field {
+  background: var(--ios-surface-secondary);
+  border: 0.5px solid var(--ios-border-subtle);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="dark"] .ios-field {
+  background: rgba(0, 0, 0, 0.28);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.35);
+}
+
+/* Grouped list (iOS Lists) */
+.ios-grouped {
+  background: var(--ios-surface);
+  border-radius: var(--ios-radius-lg);
+  overflow: hidden;
+  border: 0.5px solid var(--ios-border-subtle);
+}
+
+.ios-grouped-row {
+  border-bottom: 0.5px solid var(--ios-separator);
+}
+
+.ios-grouped-row:last-child {
+  border-bottom: none;
+}
+
+.ios-list-row {
+  transition: background 0.15s ease;
+}
+
+.ios-list-row:hover {
+  background: var(--ios-hover-surface);
+}
+
+.ios-list-row-selected {
+  background: var(--ios-accent-tint);
+}
+
+/* Message bubbles — content layer */
+.mac-msg-sent,
+.ios-bubble-sent {
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="dark"] .ios-bubble-sent {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+}
+
+.mac-msg-in,
+.ios-bubble-received {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65);
+}
+
+[data-theme="dark"] .ios-bubble-received {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
-.mac-traffic {
-  display: block;
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
+/* Tinted primary button (Liquid Glass tint) */
+.ios-btn-primary {
+  background: var(--ios-accent);
+  color: #ffffff;
+  border: 0.5px solid color-mix(in srgb, var(--ios-accent) 70%, #ffffff 30%);
   box-shadow:
-    0 0 0 0.5px rgba(0, 0, 0, 0.12),
-    inset 0 1px 1px rgba(255, 255, 255, 0.9),
-    inset 0 -1px 1px rgba(0, 0, 0, 0.08);
+    0 1px 2px rgba(0, 0, 0, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22);
 }
 
-[data-theme="dark"] .mac-traffic {
-  box-shadow:
-    0 0 0 0.5px rgba(0, 0, 0, 0.45),
-    inset 0 1px 1px rgba(255, 255, 255, 0.35),
-    inset 0 -1px 1px rgba(0, 0, 0, 0.25);
+.ios-btn-primary:hover {
+  filter: brightness(1.06);
 }
 
-.mac-traffic-close {
-  background: linear-gradient(180deg, #ff857d 0%, #ff5f57 100%);
-}
-.mac-traffic-minimize {
-  background: linear-gradient(180deg, #ffd76f 0%, #febc2e 100%);
-}
-.mac-traffic-zoom {
-  background: linear-gradient(180deg, #6ee577 0%, #28c840 100%);
+.ios-btn-secondary {
+  background: var(--ios-surface);
+  color: var(--ios-accent);
+  border: 0.5px solid var(--ios-border-subtle);
 }
 
-@media (min-width: 768px) {
-  .mac-traffic {
-    width: 13px;
-    height: 13px;
-  }
-}
-
-.mac-neu-inset {
-  background: linear-gradient(180deg, #ececf0 0%, #e2e2e8 100%);
-  box-shadow:
-    inset 0 2px 4px rgba(0, 0, 0, 0.07),
-    inset 0 1px 2px rgba(0, 0, 0, 0.05);
-  border: 1px solid rgba(0, 0, 0, 0.12);
-}
-
-[data-theme="dark"] .mac-neu-inset {
-  background: rgba(0, 0, 0, 0.35);
-  box-shadow:
-    inset 0 2px 6px rgba(0, 0, 0, 0.45),
-    inset 0 1px 2px rgba(0, 0, 0, 0.35),
-    inset 0 -1px 1px rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(0, 0, 0, 0.35);
-}
-
-.mac-neu-raised {
-  background: linear-gradient(180deg, #f0f0f5 0%, #dcdce4 100%);
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.9),
-    0 1px 2px rgba(0, 0, 0, 0.06),
-    0 4px 12px rgba(0, 0, 0, 0.08),
-    inset 0 1px 0 rgba(255, 255, 255, 0.75);
-  border: 1px solid rgba(0, 0, 0, 0.12);
-}
-
-[data-theme="dark"] .mac-neu-raised {
-  background: linear-gradient(180deg, #454548 0%, #323234 100%);
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.1),
-    0 4px 14px rgba(0, 0, 0, 0.45),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-body {
-  background: var(--mac-desktop-bg);
-  color: var(--mac-text-primary);
-  font-family:
-    var(--font-geist-sans),
-    -apple-system,
-    BlinkMacSystemFont,
-    "SF Pro Text",
-    "SF Pro Display",
-    system-ui,
-    sans-serif;
-  letter-spacing: -0.01em;
-}
-
-.mac-desktop-bg {
-  background:
-    radial-gradient(ellipse 100% 70% at 50% -15%, rgba(0, 122, 255, 0.14), transparent 55%),
-    radial-gradient(ellipse 70% 50% at 100% 100%, rgba(88, 86, 214, 0.1), transparent 50%),
-    linear-gradient(180deg, #ececf2 0%, var(--mac-desktop-bg) 100%);
-}
-
-[data-theme="dark"] .mac-desktop-bg {
-  background:
-    radial-gradient(ellipse 120% 80% at 50% -20%, rgba(10, 132, 255, 0.12), transparent 50%),
-    radial-gradient(ellipse 80% 50% at 100% 100%, rgba(88, 86, 214, 0.08), transparent 45%),
-    linear-gradient(180deg, var(--mac-desktop-bg-mid) 0%, var(--mac-desktop-bg) 100%);
-}
-
-.mac-composer-mobile-shadow {
-  box-shadow: 0 -8px 32px var(--mac-composer-shadow);
-}
-
-.mac-msg-sent {
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
-}
-[data-theme="dark"] .mac-msg-sent {
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
-}
-.mac-msg-in {
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.98);
-}
-[data-theme="dark"] .mac-msg-in {
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+.mac-composer-mobile-shadow,
+.ios-composer-shadow {
+  box-shadow: 0 -4px 24px var(--ios-composer-shadow);
 }
 
 .pb-composer-safe {
@@ -268,7 +299,22 @@ body {
   padding-top: env(safe-area-inset-top, 0px);
 }
 
-/* Global pointer cursor for clickable UI */
+body {
+  background: var(--ios-root-bg);
+  color: var(--ios-text-primary);
+  font-family:
+    var(--font-geist-sans),
+    -apple-system,
+    BlinkMacSystemFont,
+    "SF Pro Text",
+    "SF Pro Display",
+    "SF Compact Display",
+    system-ui,
+    sans-serif;
+  letter-spacing: -0.011em;
+  -webkit-font-smoothing: antialiased;
+}
+
 button,
 [role='button'] {
   cursor: pointer;
@@ -279,7 +325,6 @@ button:disabled,
   cursor: not-allowed;
 }
 
-/* --- AI processing feedback --- */
 @keyframes aiDot {
   0%,
   80%,

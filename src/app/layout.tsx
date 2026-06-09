@@ -6,7 +6,7 @@ import "./globals.css";
 // МЕТАДАННЫЕ (Наш паспорт приложения)
 export const metadata: Metadata = {
   title: "Messenger | Приватный чат",
-  description: "Мой личный защищенный мессенджер в стиле Apple",
+  description: "Приватный мессенджер в стиле iOS 27 и Liquid Glass",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
@@ -20,7 +20,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#f5f5f7",
+  themeColor: "#f2f2f7",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -52,7 +52,7 @@ export default function RootLayout({
         }} />
       </head>
       {/* Класс {GeistSans.className} применит шрифт ко всему сайту */}
-      <body className={`${GeistSans.className} antialiased mac-desktop-bg min-h-dvh`}>
+      <body className={`${GeistSans.className} antialiased ios-root-bg min-h-dvh`}>
         
         {/* --- КОД ONESIGNAL (Оставляем как есть) --- */}
         <Script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" strategy="beforeInteractive" />
