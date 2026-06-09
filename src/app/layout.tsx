@@ -37,11 +37,6 @@ export default function RootLayout({
   return (
     <html lang="ru" suppressHydrationWarning>
       <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `(function(){try{var k='messenger-theme';var t=localStorage.getItem(k);if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t);}catch(e){}})();`,
-          }}
-        />
         {/* Внедряем CSS-переменные прямо здесь для удобства */}
         <style dangerouslySetInnerHTML={{
           __html: `
@@ -51,8 +46,9 @@ export default function RootLayout({
           `
         }} />
       </head>
-      {/* Класс {GeistSans.className} применит шрифт ко всему сайту */}
-      <body className={`${GeistSans.className} antialiased ios-root-bg min-h-dvh`}>
+      {/* GeistSans.variable даёт CSS-переменную --font-geist-sans:
+          на Apple-устройствах рендерится родной SF, на остальных — Geist */}
+      <body className={`${GeistSans.variable} antialiased ios-root-bg min-h-dvh`}>
         
         {/* --- КОД ONESIGNAL (Оставляем как есть) --- */}
         <Script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" strategy="beforeInteractive" />

@@ -22,8 +22,11 @@
   --ios-text-secondary: rgba(60, 60, 67, 0.6);
   --ios-text-tertiary: rgba(60, 60, 67, 0.3);
   --ios-bubble-sent: #007aff;
-  --ios-bubble-received: #e9e9eb;
+  --ios-bubble-sent-top: #3ea2ff;
+  --ios-bubble-received: #ffffff;
   --ios-bubble-received-text: #000000;
+  --ios-bubble-received-border: rgba(60, 60, 67, 0.08);
+  --ios-bubble-shadow: rgba(0, 0, 0, 0.05);
   --ios-accent: #007aff;
   --ios-accent-tint: rgba(0, 122, 255, 0.12);
   --ios-danger: #ff3b30;
@@ -47,43 +50,6 @@
   --ios-caption: 12px;
   --background: var(--ios-root-bg);
   --foreground: var(--ios-text-primary);
-}
-
-[data-theme="dark"] {
-  color-scheme: dark;
-  --ios-root-bg: #000000;
-  --ios-surface: #1c1c1e;
-  --ios-surface-secondary: #1c1c1e;
-  --ios-sidebar-bg: var(--ios-root-bg);
-  --ios-chat-bg: var(--ios-root-bg);
-  --ios-search-bg: rgba(118, 118, 128, 0.24);
-  --ios-search-bg-focus: rgba(118, 118, 128, 0.32);
-  --ios-elevated: #1c1c1e;
-  --ios-border: rgba(84, 84, 88, 0.45);
-  --ios-border-subtle: rgba(84, 84, 88, 0.28);
-  --ios-separator: rgba(84, 84, 88, 0.35);
-  --ios-hover-surface: rgba(255, 255, 255, 0.06);
-  --ios-pressed-surface: rgba(255, 255, 255, 0.1);
-  --ios-text-primary: #ffffff;
-  --ios-text-secondary: rgba(235, 235, 245, 0.6);
-  --ios-text-tertiary: rgba(235, 235, 245, 0.3);
-  --ios-bubble-sent: #0a84ff;
-  --ios-bubble-received: #3a3a3c;
-  --ios-bubble-received-text: #ffffff;
-  --ios-accent: #0a84ff;
-  --ios-accent-tint: rgba(10, 132, 255, 0.2);
-  --ios-danger: #ff453a;
-  --ios-success: #32d74b;
-  --ios-shadow-soft: rgba(0, 0, 0, 0.4);
-  --ios-shadow-ambient: rgba(0, 0, 0, 0.55);
-  --ios-composer-shadow: rgba(0, 0, 0, 0.45);
-  --ios-glass-bg: rgba(28, 28, 30, 0.74);
-  --ios-glass-border: rgba(255, 255, 255, 0.08);
-  --ios-glass-highlight: rgba(255, 255, 255, 0.06);
-  --ios-glass-shadow: rgba(0, 0, 0, 0.5);
-  --ios-sidebar-panel-bg: rgba(28, 28, 30, 0.55);
-  --ios-sidebar-panel-border: rgba(255, 255, 255, 0.1);
-  --ios-sidebar-panel-shadow: 0 12px 36px rgba(0, 0, 0, 0.55);
 }
 
 @theme inline {
@@ -133,10 +99,6 @@ html {
   box-shadow:
     inset 0 0.5px 0 var(--ios-glass-highlight),
     0 8px 32px var(--ios-glass-shadow);
-}
-
-[data-theme="dark"] .ios-glass-prominent {
-  background: color-mix(in srgb, var(--ios-glass-bg) 90%, black 10%);
 }
 
 .ios-navbar {
@@ -254,7 +216,8 @@ html {
 }
 
 .ios-bubble-sent {
-  background: var(--ios-bubble-sent);
+  /* Лёгкий вертикальный градиент, как в iMessage: сверху светлее, снизу глубже */
+  background: linear-gradient(180deg, var(--ios-bubble-sent-top) 0%, var(--ios-bubble-sent) 100%);
   color: #ffffff;
   border-radius: 18px;
   border-bottom-right-radius: 4px;
@@ -263,6 +226,7 @@ html {
 .ios-bubble-received {
   background: var(--ios-bubble-received);
   color: var(--ios-bubble-received-text);
+  border: 0.5px solid var(--ios-bubble-received-border);
   border-radius: 18px;
   border-bottom-left-radius: 4px;
 }
@@ -291,10 +255,6 @@ html {
   outline: none;
 }
 
-[data-theme="dark"] .ios-composer-field {
-  background: #2c2c2e;
-}
-
 .ios-composer-field:focus {
   border-color: color-mix(in srgb, var(--ios-accent) 35%, var(--ios-border-subtle) 65%);
 }
@@ -314,7 +274,11 @@ html {
 }
 
 .ios-send-btn:disabled {
-  opacity: 0.35;
+  opacity: 0.4;
+}
+
+.imessage-input-shell .ios-send-btn:not(:disabled) {
+  opacity: 1;
 }
 
 .ios-send-btn:not(:disabled):active {
@@ -380,7 +344,23 @@ body {
     sans-serif;
   letter-spacing: -0.022em;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+  font-synthesis: none;
+  font-kerning: normal;
+}
+
+/* Время и даты — табличные цифры, чтобы не «прыгали» по ширине */
+.imessage-row-time,
+.imessage-date-separator,
+.ios-msg-time {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Крупные заголовки — чуть плотнее трекинг, как у SF Pro Display */
+.imessage-inbox-topbar-title,
+.ios-large-title {
+  letter-spacing: -0.03em;
 }
 
 button,
@@ -448,7 +428,7 @@ button:disabled,
   }
 
   .imessage-inbox {
-    border-radius: 12px;
+    border-radius: 18px;
     border: 0.5px solid var(--ios-sidebar-panel-border);
     background: var(--ios-sidebar-panel-bg);
     backdrop-filter: blur(28px);
@@ -478,7 +458,7 @@ button:disabled,
 .imessage-inbox-topbar-title {
   margin: 0;
   text-align: center;
-  font-size: 17px;
+  font-size: 21px;
   font-weight: 600;
   letter-spacing: -0.01em;
   line-height: 1.2;
@@ -579,13 +559,46 @@ button:disabled,
   align-items: center;
   column-gap: 10px;
   min-height: 58px;
-  padding: 7px 16px 7px 12px;
+  margin: 4px 8px;
+  padding: 7px 10px 7px 6px;
+  border-radius: 14px;
   background: transparent;
   position: relative;
+  transition: background 0.16s ease, transform 0.12s ease;
+}
+
+@media (hover: hover) {
+  .imessage-row:hover {
+    background: var(--ios-hover-surface);
+  }
 }
 
 .imessage-row:active {
-  background: var(--ios-hover-surface);
+  background: var(--ios-search-bg);
+  transform: scale(0.985);
+}
+
+/* Активный чат — светлая голубая "пилюля" в тон дефолтной иконке пользователя */
+.imessage-row-selected,
+.imessage-row-selected:active {
+  background: var(--ios-accent-tint);
+  transform: none;
+}
+
+@media (hover: hover) {
+  .imessage-row-selected:hover {
+    background: var(--ios-accent-tint);
+  }
+}
+
+.imessage-row-selected .imessage-row-name {
+  color: var(--ios-accent);
+}
+
+.imessage-row-selected .imessage-row-time,
+.imessage-row-selected .imessage-row-chevron {
+  color: var(--ios-accent);
+  opacity: 0.7;
 }
 
 .imessage-unread-dot {
@@ -608,8 +621,6 @@ button:disabled,
   flex-direction: column;
   gap: 1px;
   padding-right: 0;
-  padding-bottom: 7px;
-  border-bottom: 0.5px solid var(--ios-inbox-separator);
 }
 
 .imessage-row-top {
@@ -689,9 +700,10 @@ button:disabled,
   display: flex;
   align-items: center;
   gap: 8px;
-  width: 100%;
-  min-height: 44px;
-  padding: 0 14px;
+  width: min(100%, 292px);
+  margin: 0 auto;
+  min-height: 54px;
+  padding: 0 16px;
   border-radius: 999px;
   background: var(--ios-glass-bg);
   backdrop-filter: blur(40px) saturate(180%);
@@ -713,6 +725,44 @@ button:disabled,
 
 .imessage-float-search input::placeholder {
   color: var(--ios-preview-text);
+}
+
+/* Горизонтальное меню фильтров над списком чатов (All / Unread / Groups / Requests) */
+.imessage-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 2px 16px 10px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.imessage-filter-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.imessage-filter-pill {
+  flex: 1;
+  white-space: nowrap;
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--ios-text-primary);
+  background: var(--ios-search-bg);
+  transition: background 0.18s ease, color 0.18s ease, transform 0.12s ease;
+  cursor: pointer;
+}
+
+.imessage-filter-pill:active {
+  transform: scale(0.96);
+}
+
+.imessage-filter-pill-active {
+  background: var(--ios-accent-tint);
+  color: var(--ios-accent);
+  font-weight: 600;
 }
 
 .imessage-thread-header {
@@ -773,6 +823,7 @@ button:disabled,
 .imessage-thread-contact {
   grid-column: 2;
   grid-row: 1;
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -784,6 +835,44 @@ button:disabled,
   border: none;
 }
 
+/* Мягкое голубое свечение вокруг аватара и ника в шапке чата */
+.imessage-thread-contact-glow {
+  position: absolute;
+  inset: -20px -28px -10px;
+  border-radius: 40px;
+  background: rgba(147, 197, 253, 0.14);
+  filter: blur(28px);
+  pointer-events: none;
+  z-index: 0;
+  box-shadow:
+    0 0 60px rgba(59, 130, 246, 0.18),
+    0 0 80px rgba(125, 211, 252, 0.16);
+}
+
+.imessage-thread-avatar-wrap {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.imessage-thread-avatar-glow {
+  position: absolute;
+  inset: -18px;
+  border-radius: 999px;
+  background: rgba(103, 232, 249, 0.22);
+  filter: blur(22px);
+  pointer-events: none;
+  z-index: 0;
+  box-shadow: 0 0 48px rgba(96, 165, 250, 0.2);
+}
+
+.imessage-thread-avatar-wrap > *:not(.imessage-thread-avatar-glow) {
+  position: relative;
+  z-index: 1;
+}
+
 .imessage-thread-header-side {
   grid-column: 3;
   grid-row: 1;
@@ -791,6 +880,8 @@ button:disabled,
 }
 
 .imessage-thread-name-pill {
+  position: relative;
+  z-index: 1;
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -804,6 +895,7 @@ button:disabled,
   box-shadow:
     0 1px 4px rgba(0, 0, 0, 0.05),
     0 0 0 0.5px color-mix(in srgb, var(--ios-glass-highlight) 42%, transparent),
+    0 0 40px rgba(59, 130, 246, 0.12),
     inset 0 0.5px 0 var(--ios-glass-highlight),
     inset 0 -0.5px 0 color-mix(in srgb, var(--ios-separator) 36%, transparent);
   font-size: 14px;
@@ -812,23 +904,9 @@ button:disabled,
   color: var(--ios-text-primary);
 }
 
-[data-theme="dark"] .imessage-thread-name-pill {
-  border-color: color-mix(in srgb, var(--ios-border) 72%, transparent);
-  box-shadow:
-    0 1px 5px rgba(0, 0, 0, 0.28),
-    0 0 0 0.5px rgba(255, 255, 255, 0.08),
-    inset 0 0.5px 0 rgba(255, 255, 255, 0.1),
-    inset 0 -0.5px 0 rgba(255, 255, 255, 0.04);
-}
-
 .imessage-person-avatar {
   background: #b8c0cc;
   color: #ffffff;
-}
-
-[data-theme="dark"] .imessage-person-avatar {
-  background: #48484a;
-  color: #ebebf5;
 }
 
 .imessage-date-separator {
@@ -842,11 +920,20 @@ button:disabled,
   font-weight: 500;
 }
 
+/* Композер парит над перепиской: сообщения проскролливаются под ним,
+   фон полностью прозрачный — как у нижнего поиска в сайдбаре */
 .imessage-composer-area {
-  position: relative;
-  flex-shrink: 0;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
   z-index: 20;
   background: transparent;
+  pointer-events: none;
+}
+
+.imessage-composer-area * {
+  pointer-events: auto;
 }
 
 .imessage-composer-backdrop {
@@ -856,10 +943,6 @@ button:disabled,
   border: none;
   background: rgba(0, 0, 0, 0.28);
   animation: imessage-fade-in 0.2s ease;
-}
-
-[data-theme="dark"] .imessage-composer-backdrop {
-  background: rgba(0, 0, 0, 0.45);
 }
 
 .imessage-composer-panel {
@@ -875,9 +958,25 @@ button:disabled,
   -webkit-backdrop-filter: blur(40px) saturate(180%);
   border: 0.5px solid var(--ios-glass-border);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
-  animation: imessage-panel-in 0.22s cubic-bezier(0.2, 0.9, 0.3, 1);
+  /* Пружинное появление из плюсика: вырастает из нижнего левого угла с overshoot */
+  transform-origin: bottom left;
+  animation: imessage-panel-pop 0.38s cubic-bezier(0.34, 1.45, 0.5, 1);
   max-height: min(50vh, 320px);
   overflow-y: auto;
+}
+
+@keyframes imessage-panel-pop {
+  0% {
+    opacity: 0;
+    transform: translateY(14px) scale(0.55);
+  }
+  60% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .imessage-composer-panel-item {
@@ -949,6 +1048,192 @@ button:disabled,
   color: var(--ios-accent);
 }
 
+/* ── Контекстное меню сообщения (Telegram-style) ── */
+/* Затемнение чата при открытом меню — как в Telegram */
+.imessage-msg-backdrop {
+  background: rgba(0, 0, 0, 0.18);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  animation: imessage-fade-in 0.18s ease;
+  border: none;
+}
+
+/* Выделенное сообщение приподнимается над затемнением */
+.imessage-bubble-selected {
+  z-index: 30;
+  transform: scale(1.02);
+  box-shadow: 0 12px 44px rgba(0, 0, 0, 0.3);
+  transition: transform 0.18s cubic-bezier(0.2, 0.9, 0.3, 1), box-shadow 0.18s ease;
+  cursor: text;
+}
+
+.imessage-bubble-selected ::selection {
+  background: rgba(255, 220, 0, 0.45);
+}
+
+.ios-bubble-received.imessage-bubble-selected ::selection {
+  background: var(--ios-accent-tint);
+}
+
+.imessage-msg-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 70vh;
+  overflow: visible;
+}
+
+.imessage-msg-menu-emoji-row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: var(--ios-glass-bg);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  border: 0.5px solid var(--ios-glass-border);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+  animation: imessage-panel-in 0.22s cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+
+.imessage-msg-menu-emoji {
+  font-size: 22px;
+  line-height: 1;
+  padding: 4px;
+  border-radius: 999px;
+  transition: transform 0.15s ease, background 0.15s ease;
+  cursor: pointer;
+}
+
+.imessage-msg-menu-emoji:hover {
+  transform: scale(1.3) translateY(-2px);
+}
+
+.imessage-msg-menu-emoji:active {
+  transform: scale(0.9);
+}
+
+.imessage-msg-menu-emoji-active {
+  background: var(--ios-accent-tint);
+}
+
+.imessage-msg-menu-items {
+  min-width: 200px;
+  padding: 5px;
+  border-radius: 14px;
+  background: var(--ios-glass-bg);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  border: 0.5px solid var(--ios-glass-border);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+  animation: imessage-panel-in 0.22s cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+
+.imessage-msg-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 10px;
+  border-radius: 9px;
+  font-size: 15px;
+  font-weight: 500;
+  text-align: left;
+  color: var(--ios-text-primary);
+  transition: background 0.15s ease;
+}
+
+.imessage-msg-menu-item:hover,
+.imessage-msg-menu-item:active {
+  background: var(--ios-hover-surface);
+}
+
+.imessage-msg-menu-item:disabled {
+  opacity: 0.45;
+}
+
+.imessage-msg-menu-item-icon {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  line-height: 1;
+}
+
+/* ── Плашки реакций (Telegram-style) ── */
+.imessage-reaction-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2.5px 9px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  background: var(--ios-surface);
+  color: var(--ios-text-secondary);
+  border: 0.5px solid var(--ios-border-subtle);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+  transition: transform 0.15s ease, background 0.2s ease, color 0.2s ease;
+}
+
+.imessage-reaction-pill:hover {
+  transform: scale(1.08);
+}
+
+.imessage-reaction-pill:active {
+  transform: scale(0.9);
+}
+
+.imessage-reaction-pill-mine {
+  background: var(--ios-accent);
+  color: #ffffff;
+  border-color: transparent;
+}
+
+/* Сердечко при двойном тапе (как в Telegram) */
+.imessage-like-burst {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  font-size: 38px;
+  pointer-events: none;
+  z-index: 15;
+  /* GPU-композитинг: анимируем только transform/opacity, без layout/paint */
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+  transform: translate3d(-50%, -50%, 0) scale(0);
+  animation: imessage-like-pop 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  filter: drop-shadow(0 4px 14px rgba(255, 45, 85, 0.35));
+}
+
+@keyframes imessage-like-pop {
+  0% {
+    opacity: 0;
+    transform: translate3d(-50%, -50%, 0) scale(0.2);
+  }
+  18% {
+    opacity: 1;
+    transform: translate3d(-50%, -58%, 0) scale(1.35);
+  }
+  38% {
+    opacity: 1;
+    transform: translate3d(-50%, -62%, 0) scale(1.02);
+  }
+  55% {
+    opacity: 1;
+    transform: translate3d(-50%, -70%, 0) scale(1.08);
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(-50%, -135%, 0) scale(0.8);
+  }
+}
+
 @keyframes imessage-fade-in {
   from { opacity: 0; }
   to { opacity: 1; }
@@ -967,7 +1252,7 @@ button:disabled,
 
 .imessage-composer {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   gap: 10px;
   padding: 8px 12px max(8px, env(safe-area-inset-bottom));
   background: transparent;
@@ -980,13 +1265,12 @@ button:disabled,
   width: 34px;
   height: 34px;
   border-radius: 999px;
-  border: 1px solid rgba(118, 118, 128, 0.35);
+  border: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   color: var(--ios-text-secondary);
   flex-shrink: 0;
-  margin-bottom: 2px;
   transition: background 0.15s ease, transform 0.15s ease;
 }
 
@@ -994,35 +1278,113 @@ button:disabled,
   background: var(--ios-hover-surface);
 }
 
-.imessage-input-pill {
-  width: 100%;
-  min-height: 36px;
-  padding: 8px 40px 8px 14px;
-  border-radius: 999px;
-  border: 1px solid rgba(118, 118, 128, 0.35);
-  background: var(--ios-chat-bg);
-  color: var(--ios-text-primary);
-  font-size: 17px;
-  outline: none;
+.imessage-plus-icon {
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-[data-theme="dark"] .imessage-input-pill {
-  background: #1c1c1e;
+.imessage-plus-icon-open {
+  transform: rotate(135deg) scale(0.92);
+}
+
+/* Стеклянная плашка композера: внутри живут плюсик, поле и кнопка отправки */
+.imessage-input-shell {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+  gap: 4px;
+  min-height: 48px;
+  padding: 5px 7px 5px 8px;
+  border-radius: 999px;
+  border: 0.5px solid var(--ios-glass-border);
+  background: var(--ios-glass-bg);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  box-shadow: 0 4px 24px var(--ios-composer-shadow);
+  /* overflow: hidden нельзя — обрежет всплывающее меню плюсика; градиент
+     ::before скругляется сам через border-radius: inherit */
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Мягкий бело-голубой градиент, проявляется при наборе текста */
+.imessage-input-shell::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.7) 0%,
+    rgba(186, 230, 253, 0.45) 55%,
+    rgba(191, 219, 254, 0.55) 100%
+  );
+  opacity: 0;
+  transition: opacity 0.35s ease;
+  pointer-events: none;
+}
+
+/* Режим набора: голубое свечение и проявленный градиент */
+.imessage-input-shell-active {
+  border-color: rgba(255, 255, 255, 0.65);
+  box-shadow:
+    0 20px 60px rgba(59, 130, 246, 0.22),
+    0 4px 24px var(--ios-composer-shadow);
+}
+
+.imessage-input-shell-active::before {
+  opacity: 0.55;
+}
+
+.imessage-plus-wrap,
+.imessage-input-pill,
+.imessage-input-mic,
+.ios-send-btn {
+  position: relative;
+  z-index: 2;
+}
+
+.imessage-input-pill {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  padding: 8px 6px;
+  color: var(--ios-text-primary);
+  font-size: 17px;
+  font-weight: 500;
+  outline: none;
+  -webkit-text-fill-color: var(--ios-text-primary);
+}
+
+.imessage-input-shell-active .imessage-input-pill {
+  color: #000000;
+  -webkit-text-fill-color: #000000;
+}
+
+.imessage-input-shell-active .ios-send-btn {
+  opacity: 1;
+  filter: none;
+}
+
+.imessage-input-pill::placeholder {
+  color: var(--ios-preview-text);
 }
 
 .imessage-input-mic {
-  position: absolute;
-  right: 10px;
-  top: 50%;
-  transform: translateY(-50%);
+  flex-shrink: 0;
+  margin-right: 8px;
   color: var(--ios-text-secondary);
   pointer-events: none;
 }
 
 .ios-bubble-sent {
-  box-shadow: none;
+  box-shadow: 0 1px 2px var(--ios-bubble-shadow);
 }
 
 .ios-bubble-received {
-  box-shadow: none;
+  box-shadow: 0 1px 3px var(--ios-bubble-shadow);
 }

@@ -4,20 +4,16 @@ import { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react
 import type { ChangeEvent, ClipboardEvent } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
-import { applyTheme, readStoredTheme, type ThemeMode } from '@/lib/theme'
 import {
   IconBack,
   IconChevronRight,
   IconGlobe,
   IconMic,
-  IconMoon,
   IconPen,
   IconPhotos,
-  IconPlus,
   IconTranslate,
   IconSearch,
   IconSend,
-  IconSun,
   IosAvatar,
   MessagesAppIcon,
 } from '@/components/ios-ui'
@@ -123,7 +119,7 @@ const I18N: Record<UiLanguage, Record<I18nKey, string>> = {
     cancel: 'Отмена',
     copyText: 'Копировать текст',
     translate: 'Перевести',
-    edit: '✏️ Редактировать',
+    edit: 'Редактировать',
     aiThinking: '✨ ИИ думает…',
     aiTranslateLabel: 'Перевод: {x}',
     aiStyleLabel: 'Стиль: {x}',
@@ -171,7 +167,7 @@ const I18N: Record<UiLanguage, Record<I18nKey, string>> = {
     cancel: 'Cancel',
     copyText: 'Copy text',
     translate: 'Translate',
-    edit: '✏️ Edit',
+    edit: 'Edit',
     aiThinking: '✨ AI is thinking…',
     aiTranslateLabel: 'Translate: {x}',
     aiStyleLabel: 'Style: {x}',
@@ -219,7 +215,7 @@ const I18N: Record<UiLanguage, Record<I18nKey, string>> = {
     cancel: 'Avbryt',
     copyText: 'Kopier tekst',
     translate: 'Oversett',
-    edit: '✏️ Rediger',
+    edit: 'Rediger',
     aiThinking: '✨ AI tenker…',
     aiTranslateLabel: 'Oversett: {x}',
     aiStyleLabel: 'Stil: {x}',
@@ -267,7 +263,7 @@ const I18N: Record<UiLanguage, Record<I18nKey, string>> = {
     cancel: 'Annuler',
     copyText: 'Copier le texte',
     translate: 'Traduire',
-    edit: '✏️ Modifier',
+    edit: 'Modifier',
     aiThinking: '✨ L’IA réfléchit…',
     aiTranslateLabel: 'Traduire : {x}',
     aiStyleLabel: 'Style : {x}',
@@ -315,7 +311,7 @@ const I18N: Record<UiLanguage, Record<I18nKey, string>> = {
     cancel: 'إلغاء',
     copyText: 'نسخ النص',
     translate: 'ترجمة',
-    edit: '✏️ تعديل',
+    edit: 'تعديل',
     aiThinking: '✨ الذكاء الاصطناعي يفكر…',
     aiTranslateLabel: 'ترجمة: {x}',
     aiStyleLabel: 'النمط: {x}',
@@ -363,7 +359,7 @@ const I18N: Record<UiLanguage, Record<I18nKey, string>> = {
     cancel: '取消',
     copyText: '复制文本',
     translate: '翻译',
-    edit: '✏️ 编辑',
+    edit: '编辑',
     aiThinking: '✨ AI 思考中…',
     aiTranslateLabel: '翻译：{x}',
     aiStyleLabel: '风格：{x}',
@@ -411,7 +407,7 @@ const I18N: Record<UiLanguage, Record<I18nKey, string>> = {
     cancel: 'Скасувати',
     copyText: 'Копіювати текст',
     translate: 'Перекласти',
-    edit: '✏️ Редагувати',
+    edit: 'Редагувати',
     aiThinking: '✨ ШІ думає…',
     aiTranslateLabel: 'Переклад: {x}',
     aiStyleLabel: 'Стиль: {x}',
@@ -459,7 +455,7 @@ const I18N: Record<UiLanguage, Record<I18nKey, string>> = {
     cancel: 'Cancelar',
     copyText: 'Copiar texto',
     translate: 'Traducir',
-    edit: '✏️ Editar',
+    edit: 'Editar',
     aiThinking: '✨ La IA está pensando…',
     aiTranslateLabel: 'Traducir: {x}',
     aiStyleLabel: 'Estilo: {x}',
@@ -497,6 +493,7 @@ export default function App() {
   const [toastMsg, setToastMsg] = useState<string | null>(null)
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [showAddUser, setShowAddUser] = useState(false)
+  const [inboxFilter, setInboxFilter] = useState<'all' | 'unread' | 'groups' | 'requests'>('all')
   const [composerPanel, setComposerPanel] = useState<'closed' | 'plus' | 'style' | 'translate'>('closed')
   const [conversationPreviews, setConversationPreviews] = useState<
     Record<string, { content: string | null; file_url: string | null; created_at: string; sender_id: string }>
@@ -521,8 +518,6 @@ export default function App() {
 
   const [allReactions, setAllReactions] = useState<MessageReaction[]>([])
 
-  const [theme, setTheme] = useState<ThemeMode>('light')
-
   const t = useCallback(
     (key: I18nKey, vars?: Record<string, string>) => {
       const base = I18N[uiLanguage]?.[key] ?? I18N.ru[key] ?? key
@@ -533,26 +528,10 @@ export default function App() {
   )
 
   useEffect(() => {
-    const stored = readStoredTheme()
-    if (stored) {
-      setTheme(stored)
-      applyTheme(stored)
-    }
-  }, [])
-
-  useEffect(() => {
     if (typeof document === 'undefined') return
     document.documentElement.dir = uiLanguage === 'ar' ? 'rtl' : 'ltr'
   }, [uiLanguage])
 
-
-  const toggleTheme = useCallback(() => {
-    setTheme((prev) => {
-      const next: ThemeMode = prev === 'dark' ? 'light' : 'dark'
-      applyTheme(next)
-      return next
-    })
-  }, [])
 
   const showNotification = useCallback((msg: string) => {
     setToastMsg(msg)
@@ -665,6 +644,9 @@ export default function App() {
   const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const handlePressStart = (msgId: number, isMe: boolean) => {
+    // Меню уже открыто для этого сообщения — не перезапускаем,
+    // даём нативному выделению текста сработать (как в Telegram)
+    if (activeReactionMsgId === msgId) return
     pressTimer.current = setTimeout(() => {
       setActiveReactionIsMe(isMe)
       setActiveReactionMsgId(msgId);
@@ -675,12 +657,69 @@ export default function App() {
     if (pressTimer.current) clearTimeout(pressTimer.current);
   };
 
-// Добавляем функцию копирования
-  const copyToClipboard = (text: string) => {
-    if (!text) return;
-    navigator.clipboard.writeText(text);
-    showNotification('📋 Текст скопирован!');
-    setActiveReactionMsgId(null); // Закрываем меню после копирования
+  // Esc закрывает меню (десктоп)
+  useEffect(() => {
+    if (activeReactionMsgId === null) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setActiveReactionMsgId(null)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [activeReactionMsgId])
+
+  // Двойной тап по сообщению = быстрый лайк ❤️ (как в Telegram)
+  const lastTapRef = useRef<{ id: number; time: number } | null>(null)
+  // key нужен, чтобы повторный двойной тап перезапускал анимацию (новый mount span'а)
+  const [likeBurst, setLikeBurst] = useState<{ id: number; key: number } | null>(null)
+
+  const quickLike = (msgId: number) => {
+    // Сначала даём сердечку начать анимацию, а тяжёлое обновление
+    // реакций (ре-рендер списка + запрос) откладываем на пару кадров
+    setLikeBurst({ id: msgId, key: Date.now() })
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        void toggleReaction(msgId, '❤️')
+      })
+    })
+    setTimeout(() => setLikeBurst((cur) => (cur?.id === msgId ? null : cur)), 850)
+  }
+
+  const handleBubbleTouchEnd = (msgId: number) => {
+    handlePressEnd()
+    // В режиме выделения двойной тап не должен ставить лайк
+    if (activeReactionMsgId === msgId) return
+    const now = Date.now()
+    const last = lastTapRef.current
+    if (last && last.id === msgId && now - last.time < 300) {
+      lastTapRef.current = null
+      quickLike(msgId)
+    } else {
+      lastTapRef.current = { id: msgId, time: now }
+    }
+  }
+
+// Копирование как в Telegram: clipboard API + фолбэк для http/старых браузеров
+  const copyToClipboard = async (text: string) => {
+    if (!text) return
+    setActiveReactionMsgId(null)
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text)
+      } else {
+        const ta = document.createElement('textarea')
+        ta.value = text
+        ta.style.position = 'fixed'
+        ta.style.opacity = '0'
+        document.body.appendChild(ta)
+        ta.focus()
+        ta.select()
+        document.execCommand('copy')
+        ta.remove()
+      }
+      showNotification('📋 Текст скопирован!')
+    } catch {
+      showNotification('⚠️ Не удалось скопировать')
+    }
   };
 
   // Переопределяем позицию меню реакций/копирования так,
@@ -734,8 +773,8 @@ export default function App() {
       const top = Math.max(minTop, Math.min(rawTop, maxTop))
 
       const rawLeft = activeReactionIsMe
-        ? msgRect.right - menuRect.width - 8
-        : msgRect.left + 8
+        ? msgRect.right - menuRect.width
+        : msgRect.left
 
       const minLeft = viewportRect.left + padding
       const maxLeft = viewportRect.right - menuRect.width - padding
@@ -1288,6 +1327,74 @@ export default function App() {
 
   const totalUnread = Object.values(unreadCounts).reduce((a, b) => a + b, 0)
   const canSend = text.trim() !== '' || pendingFile !== null
+  const isTyping = text.trim() !== ''
+
+  const composerPlusControl = (
+    <div className="relative shrink-0 imessage-plus-wrap">
+      <button
+        type="button"
+        className={`imessage-plus-btn ${composerPanel !== 'closed' ? 'imessage-plus-btn-active' : ''}`}
+        disabled={isSending}
+        aria-label="More"
+        aria-expanded={composerPanel !== 'closed'}
+        onClick={() => setComposerPanel((p) => (p === 'closed' ? 'plus' : 'closed'))}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/icons/plus-flaticon.png"
+          alt=""
+          className={`imessage-plus-icon ${composerPanel !== 'closed' ? 'imessage-plus-icon-open' : ''}`}
+        />
+      </button>
+
+      {composerPanel !== 'closed' && (
+        <div className="imessage-composer-panel" role="menu">
+          {composerPanel === 'plus' && (
+            <>
+              <button type="button" className="imessage-composer-panel-item" onClick={() => { fileInputRef.current?.click(); setComposerPanel('closed') }}>
+                <span className="imessage-composer-panel-leading">
+                  <IconPhotos className="imessage-composer-panel-icon" />
+                </span>
+                <span className="imessage-composer-panel-label">{t('photoTitle')}</span>
+              </button>
+              <button type="button" className="imessage-composer-panel-item" onClick={() => setComposerPanel('style')}>
+                <span className="imessage-composer-panel-leading">
+                  <IconPen className="imessage-composer-panel-icon" />
+                </span>
+                <span className="imessage-composer-panel-label">{t('magicWandTitle')}</span>
+              </button>
+              <button type="button" className="imessage-composer-panel-item" onClick={() => setComposerPanel('translate')}>
+                <span className="imessage-composer-panel-leading">
+                  <IconTranslate className="imessage-composer-panel-icon" />
+                </span>
+                <span className="imessage-composer-panel-label">{t('translateTitle')}</span>
+              </button>
+            </>
+          )}
+          {composerPanel === 'style' && (
+            <>
+              <button type="button" className="imessage-composer-panel-back" onClick={() => setComposerPanel('plus')}>‹ {t('magicWandTitle')}</button>
+              {([{ label: t('styleBusiness'), prompt: 'Business and polite' }, { label: t('styleFriendly'), prompt: 'Friendly and fun' }, { label: t('styleStrict'), prompt: 'Strict and concise' }, { label: t('styleSlang'), prompt: 'Bold slang' }] as const).map((style) => (
+                <button key={style.prompt} type="button" className="imessage-composer-panel-item imessage-composer-panel-item-plain" onClick={() => { handleAiAction('style', style.prompt) }}>{style.label}</button>
+              ))}
+            </>
+          )}
+          {composerPanel === 'translate' && (
+            <>
+              <button type="button" className="imessage-composer-panel-back" onClick={() => setComposerPanel('plus')}>‹ {t('translateTitle')}</button>
+              {([{ label: t('langEnglish'), prompt: 'English' }, { label: t('langNorwegian'), prompt: 'Norwegian' }, { label: t('langRussian'), prompt: 'Russian' }] as const).map((lang) => (
+                <button key={lang.prompt} type="button" className="imessage-composer-panel-item imessage-composer-panel-item-plain" onClick={() => { handleAiAction('translate', lang.prompt) }}>{lang.label}</button>
+              ))}
+              <div className="flex gap-2 mt-1 pt-2 border-t border-[var(--ios-separator)] px-1">
+                <input value={customLang} onChange={(e) => setCustomLang(e.target.value)} placeholder={t('customLangPlaceholder')} className="flex-1 px-2 py-1.5 rounded-[8px] bg-[var(--ios-search-bg)] text-[13px] outline-none" />
+                <button type="button" onClick={() => { handleAiAction('translate', customLang) }} className="px-2.5 py-1.5 rounded-[8px] bg-[var(--ios-accent)] text-white text-[13px] font-semibold">{t('go')}</button>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  )
 
   const sortedContacts = [...contacts].sort((a, b) => {
     const ta = conversationPreviews[a.id]?.created_at
@@ -1339,8 +1446,6 @@ export default function App() {
       console.error('Ошибка при работе с реакцией:', error)
     }
   }
-
-  const themeIcon = theme === 'light' ? <IconMoon className="w-[18px] h-[18px]" /> : <IconSun className="w-[18px] h-[18px]" />
 
   const openProfile = (peer: Profile) => {
     setProfilePeer(peer)
@@ -1422,10 +1527,6 @@ export default function App() {
                   </div>
                 </div>
                 <div className="ios-grouped mt-3 overflow-hidden">
-                  <button type="button" onClick={toggleTheme} className="w-full px-4 py-3.5 flex items-center justify-between text-[17px] border-b border-[var(--ios-separator)]">
-                    <span>{theme === 'light' ? 'Dark Mode' : 'Light Mode'}</span>
-                    {themeIcon}
-                  </button>
                   <button
                     type="button"
                     onClick={() => {
@@ -1530,6 +1631,15 @@ export default function App() {
                   >
                     Отправить иконки от HideMaru - Flaticon
                   </a>
+                  <a
+                    href="https://www.flaticon.com/ru/free-icons/"
+                    title="плюс иконки"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[var(--ios-text-secondary)] underline underline-offset-2"
+                  >
+                    Плюс иконки - Flaticon
+                  </a>
                 </div>
               </div>
             </div>
@@ -1579,18 +1689,7 @@ export default function App() {
 
       {!session ? (
         <div className="flex-1 flex flex-col w-full h-full pt-safe px-5 pb-8 max-w-md mx-auto">
-          <div className="flex justify-end pt-3">
-            <button
-              type="button"
-              onClick={toggleTheme}
-              className="ios-icon-btn"
-              title={theme === 'light' ? 'Тёмная тема' : 'Светлая тема'}
-              aria-label={theme === 'light' ? 'Включить тёмную тему' : 'Включить светлую тему'}
-            >
-              {themeIcon}
-            </button>
-          </div>
-          <div className="flex-1 flex flex-col justify-center gap-8 -mt-6">
+          <div className="flex-1 flex flex-col justify-center gap-8">
             <div className="text-center">
               <MessagesAppIcon className="w-[88px] h-[88px] mx-auto mb-5" />
               <h1 className="ios-large-title text-[var(--ios-text-primary)]">{t('appTitle')}</h1>
@@ -1680,8 +1779,26 @@ export default function App() {
                   </div>
                 )}
 
+                <div className="imessage-filter-bar shrink-0">
+                  {([
+                    ['all', 'All'],
+                    ['unread', 'Unread'],
+                    ['groups', 'Groups'],
+                    ['requests', 'Requests'],
+                  ] as const).map(([key, label]) => (
+                    <button
+                      key={key}
+                      type="button"
+                      className={`imessage-filter-pill ${inboxFilter === key ? 'imessage-filter-pill-active' : ''}`}
+                      onClick={() => setInboxFilter(key)}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+
                 <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden no-scrollbar pb-28">
-                  {outgoingRequests.map((u) => (
+                  {(inboxFilter === 'all' || inboxFilter === 'requests') && outgoingRequests.map((u) => (
                     <div key={u.id} className="imessage-row opacity-80">
                       <span className="imessage-unread-spacer" />
                       <IosAvatar seed={u.email} label={u.email} size="inbox" variant="person" />
@@ -1697,7 +1814,7 @@ export default function App() {
                     </div>
                   ))}
 
-                  {incomingRequests.map((u) => (
+                  {(inboxFilter === 'all' || inboxFilter === 'requests') && incomingRequests.map((u) => (
                     <div key={u.id} className="imessage-row">
                       <span className="imessage-unread-dot" />
                       <IosAvatar seed={u.email} label={u.email} size="inbox" variant="person" />
@@ -1718,11 +1835,21 @@ export default function App() {
                     </div>
                   ))}
 
-                  {inboxContacts.map((u) => {
+                  {inboxContacts
+                    .filter((u) => {
+                      if (inboxFilter === 'unread') return unreadCounts[u.id] > 0
+                      if (inboxFilter === 'groups' || inboxFilter === 'requests') return false
+                      return true
+                    })
+                    .map((u) => {
                     const unread = unreadCounts[u.id] > 0
                     const preview = conversationPreviews[u.id]
                     return (
-                      <div key={u.id} className="imessage-row cursor-pointer" onClick={() => setSelectedUser(u)}>
+                      <div
+                        key={u.id}
+                        className={`imessage-row cursor-pointer ${selectedUser?.id === u.id ? 'imessage-row-selected' : ''}`}
+                        onClick={() => setSelectedUser(u)}
+                      >
                         {unread ? <span className="imessage-unread-dot" /> : <span className="imessage-unread-spacer" />}
                         <IosAvatar seed={u.email} label={u.email} size="inbox" variant="person" />
                         <div className="imessage-row-body">
@@ -1787,7 +1914,7 @@ export default function App() {
               <>
                 <div
                   ref={messagesViewportRef}
-                  className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-4 md:px-6 flex flex-col pb-3 w-full no-scrollbar bg-[var(--ios-chat-bg)]"
+                  className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-4 md:px-6 flex flex-col pb-24 w-full no-scrollbar bg-[var(--ios-chat-bg)]"
                 >
                   <div className="imessage-thread-header -mx-4 md:-mx-6 px-4 md:px-6">
                     <button
@@ -1805,7 +1932,11 @@ export default function App() {
                       className="imessage-thread-contact"
                       aria-label="Открыть профиль пользователя"
                     >
-                      <IosAvatar seed={selectedUser.email} label={selectedUser.email} size="threadLg" variant="person" />
+                      <span className="imessage-thread-contact-glow" aria-hidden />
+                      <span className="imessage-thread-avatar-wrap">
+                        <span className="imessage-thread-avatar-glow" aria-hidden />
+                        <IosAvatar seed={selectedUser.email} label={selectedUser.email} size="threadLg" variant="person" />
+                      </span>
                       <span className="imessage-thread-name-pill">
                         <span className="truncate">{displayName(selectedUser.email)}</span>
                         <IconChevronRight className="!w-2.5 !h-3.5 !opacity-50 shrink-0" />
@@ -1824,7 +1955,7 @@ export default function App() {
                       new Date(prev.created_at).toDateString() !== new Date(m.created_at).toDateString()
                     
                     return (
-                      <div key={m.id} id={`msg-${m.id}`} className="contents">
+                      <div key={m.id} className="contents">
                         {showDate && (
                           <div className="imessage-date-separator">{formatDateSeparator(m.created_at)}</div>
                         )}
@@ -1835,70 +1966,82 @@ export default function App() {
                         {/* КОНТЕКСТНОЕ МЕНЮ (Эмодзи + Копировать + Перевести) */}
                         {isMenuOpen && (
                           <>
-                            <div className="fixed inset-0 z-20" onClick={() => setActiveReactionMsgId(null)} />
+                            <div className="imessage-msg-backdrop fixed inset-0 z-20" onClick={() => setActiveReactionMsgId(null)} />
                             <div
                               ref={reactionMenuRef}
-                              className={`fixed z-30 flex flex-col gap-1.5 ios-glass-prominent p-2 rounded-[14px] ios-elevated border border-[var(--ios-border)] animate-in zoom-in duration-200 max-h-[70vh] overflow-auto transition-opacity ${
+                              className={`imessage-msg-menu fixed z-30 transition-opacity ${
                                 reactionMenuStyle ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-                              } ${isMe ? 'items-end' : 'items-start'}`}
+                              }`}
                               style={reactionMenuStyle ? { top: reactionMenuStyle.top, left: reactionMenuStyle.left } : undefined}
                             >
-                              <div className="flex gap-1">
-                                {['❤️', '👍', '🔥', '😂', '😢', '😁', '👑', '🐥'].map((emoji) => (
-                                  <button
-                                    key={emoji}
-                                    onClick={(e) => { e.stopPropagation(); toggleReaction(m.id, emoji); setActiveReactionMsgId(null); }}
-                                    disabled={isAiLoading}
-                                    className={`hover:scale-130 transition-transform px-1.5 py-0.5 text-base md:text-lg active:scale-90 cursor-pointer ${
-                                      isAiLoading ? 'opacity-50 cursor-not-allowed' : ''
-                                    }`}
-                                  >
-                                    {emoji}
-                                  </button>
-                                ))}
+                              {/* Ряд эмодзи как в Telegram */}
+                              <div className="imessage-msg-menu-emoji-row">
+                                {['❤️', '👍', '🔥', '😂', '😢', '😁', '👑', '🐥'].map((emoji) => {
+                                  const isMine = msgReactions.some(
+                                    (r) => r.emoji === emoji && r.user_id === session.user.id
+                                  )
+                                  return (
+                                    <button
+                                      key={emoji}
+                                      onClick={(e) => { e.stopPropagation(); toggleReaction(m.id, emoji); setActiveReactionMsgId(null); }}
+                                      disabled={isAiLoading}
+                                      className={`imessage-msg-menu-emoji ${isMine ? 'imessage-msg-menu-emoji-active' : ''}`}
+                                    >
+                                      {emoji}
+                                    </button>
+                                  )
+                                })}
                               </div>
+                              {/* Пункты меню строками, как в Telegram */}
                               {m.content && (
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    if (m.content) copyToClipboard(m.content)
-                                  }}
-                                  disabled={isAiLoading}
-                                  className="text-[12px] font-semibold text-[var(--ios-text-primary)] ios-field hover:brightness-110 px-3 py-1.5 rounded-[10px] w-full text-center transition-colors active:scale-95"
-                                >
-                                  {t('copyText')}
-                                </button>
-                              )}
-                              {isMe && m.content && (
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    setEditingMessageId(m.id)
-                                    setText(m.content ?? '')
-                                    setActiveReactionMsgId(null)
-                                    requestAnimationFrame(() => composerInputRef.current?.focus())
-                                  }}
-                                  disabled={isAiLoading || isSending}
-                                  className="text-[12px] font-semibold text-[var(--ios-text-primary)] ios-field hover:brightness-110 px-3 py-1.5 rounded-[10px] w-full text-center transition-colors active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                  {t('edit')}
-                                </button>
-                              )}
-                              {m.content && (
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    if (m.content) void handleAiAction('translate', 'Русский', m.id, m.content)
+                                <div className="imessage-msg-menu-items">
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      // Если выделена часть текста — копируем её, иначе всё сообщение
+                                      const selected = window.getSelection()?.toString().trim()
+                                      void copyToClipboard(selected || m.content || '')
+                                    }}
+                                    disabled={isAiLoading}
+                                    className="imessage-msg-menu-item"
+                                  >
+                                    <span className="imessage-msg-menu-item-icon" aria-hidden>📋</span>
+                                    <span>{t('copyText')}</span>
+                                  </button>
+                                  {isMe && (
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        setEditingMessageId(m.id)
+                                        setText(m.content ?? '')
+                                        setActiveReactionMsgId(null)
+                                        requestAnimationFrame(() => composerInputRef.current?.focus())
+                                      }}
+                                      disabled={isAiLoading || isSending}
+                                      className="imessage-msg-menu-item"
+                                    >
+                                      <span className="imessage-msg-menu-item-icon" aria-hidden>✏️</span>
+                                      <span>{t('edit')}</span>
+                                    </button>
+                                  )}
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      if (m.content) void handleAiAction('translate', 'Русский', m.id, m.content)
                                       setActiveReactionMsgId(null)
-                                  }}
-                                  disabled={isAiLoading}
-                                  className="text-[12px] font-semibold text-[var(--ios-accent)] ios-control border border-[var(--ios-accent)]/25 px-3 py-1.5 rounded-[10px] w-full text-center transition-colors active:scale-95 mt-0.5 flex items-center justify-center gap-1 hover:brightness-110"
-                                >
-                                  <span>🤖</span> {t('translate')}
-                                </button>
+                                    }}
+                                    disabled={isAiLoading}
+                                    className="imessage-msg-menu-item"
+                                  >
+                                    <span className="imessage-msg-menu-item-icon" aria-hidden>
+                                      <IconTranslate className="!w-[18px] !h-[18px]" />
+                                    </span>
+                                    <span>{t('translate')}</span>
+                                  </button>
+                                </div>
                               )}
                             </div>
                           </>
@@ -1906,18 +2049,38 @@ export default function App() {
 
                         {/* ПУЗЫРЕК СООБЩЕНИЯ */}
                         <div 
-                          onContextMenu={(e) => { e.preventDefault(); setActiveReactionIsMe(isMe); setActiveReactionMsgId(m.id); }}
+                          id={`msg-${m.id}`}
+                          onContextMenu={(e) => {
+                            // Меню открыто и есть выделенный текст — пускаем нативное меню браузера
+                            if (isMenuOpen) {
+                              if (window.getSelection()?.toString()) return
+                              e.preventDefault()
+                              return
+                            }
+                            e.preventDefault()
+                            setActiveReactionIsMe(isMe)
+                            setActiveReactionMsgId(m.id)
+                          }}
+                          onDoubleClick={() => { if (!isMenuOpen) quickLike(m.id) }}
                           onTouchStart={() => handlePressStart(m.id, isMe)}
-                          onTouchEnd={handlePressEnd}
+                          onTouchEnd={() => handleBubbleTouchEnd(m.id)}
                           onTouchMove={handlePressEnd}
-                          style={{ WebkitTouchCallout: 'none', WebkitTapHighlightColor: 'transparent' }}
-                          className={`ios-bubble relative flex flex-col shrink-0 select-none md:select-text ${isMe ? 'ios-bubble-sent' : 'ios-bubble-received'}`}
+                          style={{
+                            WebkitTouchCallout: isMenuOpen ? 'default' : 'none',
+                            WebkitTapHighlightColor: 'transparent',
+                          }}
+                          className={`ios-bubble relative flex flex-col shrink-0 ${isMe ? 'ios-bubble-sent' : 'ios-bubble-received'} ${
+                            isMenuOpen ? 'imessage-bubble-selected select-text' : 'select-none'
+                          }`}
                         >
+                          {likeBurst?.id === m.id && (
+                            <span key={likeBurst.key} className="imessage-like-burst" aria-hidden>❤️</span>
+                          )}
                           {m.file_url && (
                             <div className="mb-2 overflow-hidden rounded-xl">
                               {m.file_url.match(/\.(jpeg|jpg|gif|png|webp)$/i) ? (
                                 /* eslint-disable-next-line @next/next/no-img-element -- remote Supabase URLs; next/image needs domain config */
-                                <img src={m.file_url} alt="Вложение" onLoad={() => scrollToBottom('auto')} className="w-full h-full max-h-64 object-cover hover:scale-[1.02] transition-transform duration-500 rounded-xl shadow-sm" />
+                                <img src={m.file_url} alt="Вложение" onLoad={() => scrollToBottom('auto')} className="w-full h-full max-h-64 object-cover rounded-xl shadow-sm" />
                               ) : (
                                  <a href={m.file_url} target="_blank" rel="noopener noreferrer" className={`flex items-center gap-2 p-3 rounded-[12px] text-sm transition-colors ${isMe ? 'bg-black/15 hover:bg-black/25' : 'bg-black/25 hover:bg-black/35'}`}>
                                    <span className="text-lg">📎</span> <span className="font-medium">Файл</span>
@@ -1927,7 +2090,11 @@ export default function App() {
                           )}
 
                           {m.content && (
-                            <span className="break-words leading-snug max-md:pointer-events-none select-none md:select-text">
+                            <span
+                              className={`break-words leading-snug ${
+                                isMenuOpen ? 'select-text' : 'select-none max-md:pointer-events-none'
+                              }`}
+                            >
                               {m.content}
                             </span>
                           )}
@@ -1942,12 +2109,6 @@ export default function App() {
                             </div>
                           )}
 
-                          {isMe && (
-                            <span className="text-[11px] text-[var(--ios-preview-text)] self-end mt-1 px-1">
-                              {m.is_read ? 'Delivered' : 'Sent'}
-                            </span>
-                          )}
-
                           {msgReactions.length > 0 && (
                             <div className={`absolute -bottom-3.5 flex flex-wrap gap-1 z-10 ${isMe ? 'right-2' : 'left-2'}`}>
                               {Array.from(new Set(msgReactions.map((r) => r.emoji))).map((emoji) => {
@@ -1956,7 +2117,12 @@ export default function App() {
                                   (r) => r.emoji === emoji && r.user_id === session.user.id
                                 )
                                 return (
-                                  <button type="button" key={emoji} onClick={(e) => { e.stopPropagation(); toggleReaction(m.id, emoji); }} className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold transition-all hover:scale-110 active:scale-90 cursor-pointer border ios-control ${hasMyReaction ? 'border-[var(--ios-accent)]/40 text-[var(--ios-accent)]' : 'border-[var(--ios-border)] text-[var(--ios-text-secondary)]'}`}>
+                                  <button
+                                    type="button"
+                                    key={emoji}
+                                    onClick={(e) => { e.stopPropagation(); toggleReaction(m.id, emoji); }}
+                                    className={`imessage-reaction-pill ${hasMyReaction ? 'imessage-reaction-pill-mine' : ''}`}
+                                  >
                                     <span>{emoji}</span>
                                     {count > 1 && <span>{count}</span>}
                                   </button>
@@ -2007,69 +2173,11 @@ export default function App() {
                       />
                     )}
 
-                    <div className="relative shrink-0 self-end">
-                      <button
-                        type="button"
-                        className={`imessage-plus-btn ${composerPanel !== 'closed' ? 'imessage-plus-btn-active' : ''}`}
-                        disabled={isSending}
-                        aria-label="More"
-                        aria-expanded={composerPanel !== 'closed'}
-                        onClick={() => setComposerPanel((p) => (p === 'closed' ? 'plus' : 'closed'))}
-                      >
-                        <IconPlus className={`transition-transform duration-200 ${composerPanel !== 'closed' ? 'rotate-45' : ''}`} />
-                      </button>
-
-                      {composerPanel !== 'closed' && (
-                        <div className="imessage-composer-panel" role="menu">
-                          {composerPanel === 'plus' && (
-                            <>
-                              <button type="button" className="imessage-composer-panel-item" onClick={() => { fileInputRef.current?.click(); setComposerPanel('closed') }}>
-                                <span className="imessage-composer-panel-leading">
-                                  <IconPhotos className="imessage-composer-panel-icon" />
-                                </span>
-                                <span className="imessage-composer-panel-label">{t('photoTitle')}</span>
-                              </button>
-                              <button type="button" className="imessage-composer-panel-item" onClick={() => setComposerPanel('style')}>
-                                <span className="imessage-composer-panel-leading">
-                                  <IconPen className="imessage-composer-panel-icon" />
-                                </span>
-                                <span className="imessage-composer-panel-label">{t('magicWandTitle')}</span>
-                              </button>
-                              <button type="button" className="imessage-composer-panel-item" onClick={() => setComposerPanel('translate')}>
-                                <span className="imessage-composer-panel-leading">
-                                  <IconTranslate className="imessage-composer-panel-icon" />
-                                </span>
-                                <span className="imessage-composer-panel-label">{t('translateTitle')}</span>
-                              </button>
-                            </>
-                          )}
-                          {composerPanel === 'style' && (
-                            <>
-                              <button type="button" className="imessage-composer-panel-back" onClick={() => setComposerPanel('plus')}>‹ {t('magicWandTitle')}</button>
-                              {([{ label: t('styleBusiness'), prompt: 'Business and polite' }, { label: t('styleFriendly'), prompt: 'Friendly and fun' }, { label: t('styleStrict'), prompt: 'Strict and concise' }, { label: t('styleSlang'), prompt: 'Bold slang' }] as const).map((style) => (
-                                <button key={style.prompt} type="button" className="imessage-composer-panel-item imessage-composer-panel-item-plain" onClick={() => { handleAiAction('style', style.prompt) }}>{style.label}</button>
-                              ))}
-                            </>
-                          )}
-                          {composerPanel === 'translate' && (
-                            <>
-                              <button type="button" className="imessage-composer-panel-back" onClick={() => setComposerPanel('plus')}>‹ {t('translateTitle')}</button>
-                              {([{ label: t('langEnglish'), prompt: 'English' }, { label: t('langNorwegian'), prompt: 'Norwegian' }, { label: t('langRussian'), prompt: 'Russian' }] as const).map((lang) => (
-                                <button key={lang.prompt} type="button" className="imessage-composer-panel-item imessage-composer-panel-item-plain" onClick={() => { handleAiAction('translate', lang.prompt) }}>{lang.label}</button>
-                              ))}
-                              <div className="flex gap-2 mt-1 pt-2 border-t border-[var(--ios-separator)] px-1">
-                                <input value={customLang} onChange={(e) => setCustomLang(e.target.value)} placeholder={t('customLangPlaceholder')} className="flex-1 px-2 py-1.5 rounded-[8px] bg-[var(--ios-search-bg)] text-[13px] outline-none" />
-                                <button type="button" onClick={() => { handleAiAction('translate', customLang) }} className="px-2.5 py-1.5 rounded-[8px] bg-[var(--ios-accent)] text-white text-[13px] font-semibold">{t('go')}</button>
-                              </div>
-                            </>
-                          )}
-                        </div>
-                      )}
-                    </div>
-
                     <input type="file" className="hidden" ref={fileInputRef} onChange={handleFileUpload} accept="image/*,.pdf,.doc,.docx" />
 
-                    <div className="relative flex-1 min-w-0">
+                    <div className={`imessage-input-shell ${isTyping ? 'imessage-input-shell-active' : ''}`}>
+                      {composerPlusControl}
+
                       <input
                         ref={composerInputRef}
                         className={`imessage-input-pill ${aiProcessingFromInput && isAiLoading ? 'text-transparent caret-transparent' : ''}`}
@@ -2077,25 +2185,27 @@ export default function App() {
                         onChange={(e) => setText(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
                         onPaste={handlePaste}
-                        placeholder={`${t('messagePlaceholder')} • SMS`}
+                        placeholder={t('messagePlaceholder')}
                         disabled={isSending || isAiLoading}
                         onFocus={() => setComposerPanel('closed')}
                       />
+
                       {!canSend && !isAiLoading && composerPanel === 'closed' && (
                         <IconMic className="imessage-input-mic w-5 h-5" />
                       )}
+
+                      {canSend && (
+                        <button type="button" className="ios-send-btn" onClick={sendMessage} disabled={isSending || isAiLoading} aria-label="Send">
+                          {isSending ? '…' : editingMessageId !== null ? '✓' : <IconSend />}
+                        </button>
+                      )}
+
                       {aiProcessingFromInput && isAiLoading && aiProcessingLabel && (
-                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none px-10">
+                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none px-12">
                           <span className="text-[13px] text-[var(--ios-preview-text)] truncate">{aiProcessingLabel}</span>
                         </div>
                       )}
                     </div>
-
-                    {canSend && (
-                      <button type="button" className="ios-send-btn mb-0.5" onClick={sendMessage} disabled={isSending || isAiLoading} aria-label="Send">
-                        {isSending ? '…' : editingMessageId !== null ? '✓' : <IconSend />}
-                      </button>
-                    )}
                   </div>
                 </div>
               </>
