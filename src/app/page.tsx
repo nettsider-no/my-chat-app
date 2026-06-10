@@ -1331,20 +1331,46 @@ export default function App() {
 
   // Таймер для мобильного долгого нажатия
   const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const pressTouchRef = useRef<{ msgId: number; isMe: boolean; x: number; y: number } | null>(null)
+  const LONG_PRESS_MS = 520
+  const PRESS_MOVE_TOLERANCE_PX = 14
 
-  const handlePressStart = (msgId: number, isMe: boolean) => {
+  const clearPressTimer = () => {
+    if (pressTimer.current) {
+      clearTimeout(pressTimer.current)
+      pressTimer.current = null
+    }
+  }
+
+  const handlePressStart = (msgId: number, isMe: boolean, clientX: number, clientY: number) => {
     // Меню уже открыто для этого сообщения — не перезапускаем,
     // даём нативному выделению текста сработать (как в Telegram)
     if (activeReactionMsgId === msgId) return
+    clearPressTimer()
+    pressTouchRef.current = { msgId, isMe, x: clientX, y: clientY }
     pressTimer.current = setTimeout(() => {
+      if (pressTouchRef.current?.msgId !== msgId) return
       setActiveReactionIsMe(isMe)
-      setActiveReactionMsgId(msgId);
-    }, 400); // Если держим 400мс - открываем меню
-  };
+      setActiveReactionMsgId(msgId)
+      pressTouchRef.current = null
+    }, LONG_PRESS_MS)
+  }
+
+  const handlePressMove = (clientX: number, clientY: number) => {
+    const start = pressTouchRef.current
+    if (!start || !pressTimer.current) return
+    const dx = Math.abs(clientX - start.x)
+    const dy = Math.abs(clientY - start.y)
+    if (dx > PRESS_MOVE_TOLERANCE_PX || dy > PRESS_MOVE_TOLERANCE_PX) {
+      clearPressTimer()
+      pressTouchRef.current = null
+    }
+  }
 
   const handlePressEnd = () => {
-    if (pressTimer.current) clearTimeout(pressTimer.current);
-  };
+    clearPressTimer()
+    pressTouchRef.current = null
+  }
 
   const handleMessageContextMenu = (
     e: { preventDefault: () => void },
@@ -1371,6 +1397,15 @@ export default function App() {
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [activeReactionMsgId])
+
+  // Скролл переписки отменяет долгое нажатие — иначе меню открывается при прокрутке
+  useEffect(() => {
+    const viewportEl = messagesViewportRef.current
+    if (!viewportEl) return
+    const onScroll = () => handlePressEnd()
+    viewportEl.addEventListener('scroll', onScroll, { passive: true })
+    return () => viewportEl.removeEventListener('scroll', onScroll)
+  }, [])
 
   // Поиск по тексту сообщений в истории переписок (Supabase + локальный кэш)
   useEffect(() => {
@@ -4003,7 +4038,7 @@ export default function App() {
               <>
                 <div
                   ref={messagesViewportRef}
-                  className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-4 md:px-6 flex flex-col pb-[4.75rem] w-full no-scrollbar bg-[var(--ios-chat-bg)]"
+                  className="imessage-messages-viewport flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-4 md:px-6 flex flex-col w-full no-scrollbar bg-[var(--ios-chat-bg)]"
                 >
                   <div className="imessage-thread-header -mx-4 md:-mx-6 px-4 md:px-6">
                     <button
@@ -4247,9 +4282,16 @@ export default function App() {
                             handleMessageContextMenu(e, m.id, isMe, isMenuOpen)
                           }
                           onDoubleClick={() => { if (!isMenuOpen) quickLike(m.id) }}
-                          onTouchStart={() => handlePressStart(m.id, isMe)}
+                          onTouchStart={(e) => {
+                            const touch = e.touches[0]
+                            if (touch) handlePressStart(m.id, isMe, touch.clientX, touch.clientY)
+                          }}
                           onTouchEnd={() => handleBubbleTouchEnd(m.id)}
-                          onTouchMove={handlePressEnd}
+                          onTouchMove={(e) => {
+                            const touch = e.touches[0]
+                            if (touch) handlePressMove(touch.clientX, touch.clientY)
+                          }}
+                          onTouchCancel={handlePressEnd}
                           style={{
                             WebkitTouchCallout: isMenuOpen ? 'default' : 'none',
                             WebkitTapHighlightColor: 'transparent',
@@ -4273,9 +4315,16 @@ export default function App() {
                                   onContextMenu={(e) =>
                                     handleMessageContextMenu(e, m.id, isMe, isMenuOpen)
                                   }
-                                  onTouchStart={() => handlePressStart(m.id, isMe)}
+                                  onTouchStart={(e) => {
+                                    const touch = e.touches[0]
+                                    if (touch) handlePressStart(m.id, isMe, touch.clientX, touch.clientY)
+                                  }}
                                   onTouchEnd={() => handleBubbleTouchEnd(m.id)}
-                                  onTouchMove={handlePressEnd}
+                                  onTouchMove={(e) => {
+                                    const touch = e.touches[0]
+                                    if (touch) handlePressMove(touch.clientX, touch.clientY)
+                                  }}
+                                  onTouchCancel={handlePressEnd}
                                   className="w-full h-full max-h-64 object-cover rounded-xl shadow-sm"
                                 />
                               ) : (
