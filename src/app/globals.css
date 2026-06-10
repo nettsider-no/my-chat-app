@@ -697,6 +697,7 @@ button:disabled,
 
 .imessage-float-search {
   pointer-events: auto;
+  position: relative;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -711,9 +712,57 @@ button:disabled,
   border: 0.5px solid var(--ios-glass-border);
   box-shadow: 0 4px 24px var(--ios-composer-shadow);
   color: var(--ios-preview-text);
+  overflow: visible;
+  transition: border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.imessage-float-search::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.7) 0%,
+    rgba(186, 230, 253, 0.45) 55%,
+    rgba(191, 219, 254, 0.55) 100%
+  );
+  opacity: 0;
+  transition: opacity 0.35s ease;
+  pointer-events: none;
+}
+
+.imessage-float-search::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.35s ease;
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.1);
+}
+
+.imessage-float-search-voice-active {
+  border-color: rgba(255, 255, 255, 0.65);
+  box-shadow:
+    0 2px 10px rgba(59, 130, 246, 0.12),
+    0 4px 14px var(--ios-composer-shadow);
+}
+
+.imessage-float-search-voice-active::before {
+  opacity: 0.45;
+  z-index: 0;
+}
+
+.imessage-float-search-voice-active::after {
+  opacity: 1;
 }
 
 .imessage-float-search input {
+  position: relative;
+  z-index: 1;
   flex: 1;
   min-width: 0;
   border: none;
@@ -723,8 +772,159 @@ button:disabled,
   font-size: 17px;
 }
 
+.imessage-float-search > * {
+  position: relative;
+  z-index: 1;
+}
+
 .imessage-float-search input::placeholder {
   color: var(--ios-preview-text);
+}
+
+.imessage-float-search input[type='search']::-webkit-search-cancel-button {
+  display: none;
+}
+
+.imessage-groups-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 4px 16px 12px;
+  border-bottom: none;
+}
+
+.imessage-create-group-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 999px;
+  background-color: var(--ios-accent);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.2;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  transition: transform 0.12s ease, opacity 0.15s ease;
+}
+
+.imessage-create-group-btn:active {
+  transform: scale(0.98);
+  opacity: 0.92;
+}
+
+.imessage-create-group-icon-wrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
+  overflow: hidden;
+}
+
+.imessage-create-group-icon {
+  display: block;
+  width: 20px;
+  height: 20px;
+  max-width: 20px;
+  max-height: 20px;
+  object-fit: contain;
+  pointer-events: none;
+}
+
+.imessage-float-search.imessage-group-search {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  min-height: 44px;
+  padding: 0 14px;
+}
+
+.imessage-float-search.imessage-group-search input {
+  font-size: 16px;
+}
+
+.imessage-group-search-hit {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 4px 8px;
+  padding: 10px 12px;
+  border-radius: 14px;
+}
+
+.imessage-search-voice-btn {
+  width: 36px;
+  height: 36px;
+  margin-right: 0;
+}
+
+.imessage-search-clear {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  border: none;
+  background: var(--ios-search-bg);
+  color: var(--ios-text-secondary);
+  font-size: 17px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.imessage-search-clear:hover,
+.imessage-search-clear:active {
+  background: var(--ios-hover-surface);
+  color: var(--ios-text-primary);
+}
+
+.imessage-search-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 120px;
+  padding: 24px 20px;
+  text-align: center;
+}
+
+.imessage-search-empty p {
+  margin: 0;
+  font-size: 15px;
+  color: var(--ios-preview-text);
+}
+
+.imessage-search-section-title {
+  margin: 14px 16px 6px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--ios-preview-text);
+}
+
+.imessage-row-search-hit .imessage-row-preview {
+  color: var(--ios-text-primary);
+  font-weight: 500;
+}
+
+/* Подсветка совпадения в результатах поиска (как в Telegram) */
+.imessage-search-highlight {
+  background: rgba(255, 204, 0, 0.42);
+  color: inherit;
+  border-radius: 3px;
+  padding: 0 1px;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
 }
 
 /* Горизонтальное меню фильтров над списком чатов (All / Unread / Groups / Requests) */
@@ -763,6 +963,11 @@ button:disabled,
   background: var(--ios-accent-tint);
   color: var(--ios-accent);
   font-weight: 600;
+}
+
+.imessage-thread-contact-static {
+  cursor: default;
+  pointer-events: none;
 }
 
 .imessage-thread-header {
@@ -833,9 +1038,12 @@ button:disabled,
   padding-top: 0;
   background: transparent;
   border: none;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
 }
 
-/* Мягкое голубое свечение вокруг аватара и ника в шапке чата */
+/* Лёгкое голубое свечение вокруг аватара и ника в шапке чата */
 .imessage-thread-contact-glow {
   position: absolute;
   inset: -20px -28px -10px;
@@ -939,7 +1147,7 @@ button:disabled,
 .imessage-composer-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 25;
+  z-index: 20;
   border: none;
   background: rgba(0, 0, 0, 0.28);
   animation: imessage-fade-in 0.2s ease;
@@ -949,11 +1157,12 @@ button:disabled,
   position: absolute;
   bottom: calc(100% + 10px);
   left: 0;
-  z-index: 40;
+  z-index: 50;
+  pointer-events: auto;
   width: min(280px, calc(100vw - 32px));
   padding: 6px;
   border-radius: 14px;
-  background: var(--ios-glass-bg);
+  background: color-mix(in srgb, var(--ios-glass-bg) 88%, white 12%);
   backdrop-filter: blur(40px) saturate(180%);
   -webkit-backdrop-filter: blur(40px) saturate(180%);
   border: 0.5px solid var(--ios-glass-border);
@@ -1153,6 +1362,15 @@ button:disabled,
   opacity: 0.45;
 }
 
+.imessage-msg-menu-item-danger {
+  color: var(--ios-danger);
+}
+
+.imessage-msg-menu-item-danger:hover,
+.imessage-msg-menu-item-danger:active {
+  background: color-mix(in srgb, var(--ios-danger) 10%, var(--ios-surface));
+}
+
 .imessage-msg-menu-item-icon {
   width: 22px;
   height: 22px;
@@ -1261,6 +1479,12 @@ button:disabled,
   z-index: 30;
 }
 
+@media (max-width: 767px) {
+  .imessage-composer {
+    padding: 6px 10px 6px;
+  }
+}
+
 .imessage-plus-btn {
   width: 34px;
   height: 34px;
@@ -1304,10 +1528,17 @@ button:disabled,
   background: var(--ios-glass-bg);
   backdrop-filter: blur(40px) saturate(180%);
   -webkit-backdrop-filter: blur(40px) saturate(180%);
-  box-shadow: 0 4px 24px var(--ios-composer-shadow);
+  box-shadow: 0 2px 12px var(--ios-composer-shadow);
+  z-index: 30;
+  overflow: visible;
   /* overflow: hidden нельзя — обрежет всплывающее меню плюсика; градиент
      ::before скругляется сам через border-radius: inherit */
-  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  transition: border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+/* Меню плюсика должно быть выше затемняющего backdrop */
+.imessage-input-shell-menu-open {
+  z-index: 40;
 }
 
 /* Мягкий бело-голубой градиент, проявляется при наборе текста */
@@ -1327,24 +1558,81 @@ button:disabled,
   pointer-events: none;
 }
 
-/* Режим набора: голубое свечение и проявленный градиент */
+/* Режим набора: лёгкий градиент + компактное свечение (без «подпрыгивания» вверх) */
 .imessage-input-shell-active {
   border-color: rgba(255, 255, 255, 0.65);
+  /* Тень только вниз — не раздувает плашку визуально вверх */
   box-shadow:
-    0 20px 60px rgba(59, 130, 246, 0.22),
-    0 4px 24px var(--ios-composer-shadow);
+    0 2px 10px rgba(59, 130, 246, 0.12),
+    0 4px 14px var(--ios-composer-shadow);
 }
 
 .imessage-input-shell-active::before {
-  opacity: 0.55;
+  opacity: 0.45;
+  z-index: 0;
 }
 
-.imessage-plus-wrap,
+/* Мягкий ореол сзади — не влияет на layout и не толкает поле вверх */
+.imessage-input-shell-active::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  z-index: -1;
+  pointer-events: none;
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.1);
+}
+
+@media (max-width: 767px) {
+  .imessage-input-shell {
+    box-shadow: 0 1px 8px var(--ios-composer-shadow);
+  }
+
+  .imessage-input-shell-active {
+    box-shadow:
+      0 1px 6px rgba(59, 130, 246, 0.1),
+      0 2px 10px var(--ios-composer-shadow);
+  }
+
+  .imessage-input-shell-active::before {
+    opacity: 0.32;
+  }
+
+  .imessage-input-shell-active::after {
+    box-shadow: 0 4px 14px rgba(59, 130, 246, 0.08);
+  }
+
+  .imessage-float-search-voice-active {
+    box-shadow:
+      0 1px 6px rgba(59, 130, 246, 0.1),
+      0 2px 10px var(--ios-composer-shadow);
+  }
+
+  .imessage-float-search-voice-active::before {
+    opacity: 0.32;
+  }
+
+  .imessage-float-search-voice-active::after {
+    box-shadow: 0 4px 14px rgba(59, 130, 246, 0.08);
+  }
+}
+
+.imessage-plus-wrap {
+  position: relative;
+  z-index: 3;
+  overflow: visible;
+}
+
 .imessage-input-pill,
-.imessage-input-mic,
+.imessage-voice-btn,
 .ios-send-btn {
   position: relative;
   z-index: 2;
+}
+
+.imessage-input-pill-voice {
+  color: var(--ios-accent);
+  -webkit-text-fill-color: var(--ios-accent);
 }
 
 .imessage-input-pill {
@@ -1374,11 +1662,51 @@ button:disabled,
   color: var(--ios-preview-text);
 }
 
-.imessage-input-mic {
+.imessage-voice-btn {
   flex-shrink: 0;
-  margin-right: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  margin-right: 4px;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
   color: var(--ios-text-secondary);
-  pointer-events: none;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.12s ease, box-shadow 0.15s ease;
+}
+
+.imessage-voice-btn:hover:not(:disabled) {
+  background: var(--ios-hover-surface);
+}
+
+.imessage-voice-btn:active:not(:disabled) {
+  transform: scale(0.94);
+}
+
+.imessage-voice-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.imessage-voice-btn-listening {
+  color: var(--ios-accent);
+  background: var(--ios-accent-tint);
+  box-shadow: 0 0 0 6px color-mix(in srgb, var(--ios-accent) 12%, transparent);
+  animation: imessage-voice-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes imessage-voice-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--ios-accent) 10%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 10px color-mix(in srgb, var(--ios-accent) 4%, transparent);
+  }
 }
 
 .ios-bubble-sent {
@@ -1387,4 +1715,41 @@ button:disabled,
 
 .ios-bubble-received {
   box-shadow: 0 1px 3px var(--ios-bubble-shadow);
+}
+
+/* Подсветка сообщения, найденного через поиск в сайдбаре */
+.imessage-bubble-search-hit {
+  animation: imessage-search-hit-pulse 2.1s ease-out;
+}
+
+@keyframes imessage-search-hit-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.55);
+    transform: scale(1.02);
+  }
+  35% {
+    box-shadow: 0 0 0 7px rgba(59, 130, 246, 0.22);
+  }
+  100% {
+    box-shadow: 0 1px 3px var(--ios-bubble-shadow);
+    transform: scale(1);
+  }
+}
+
+.ios-bubble-sent.imessage-bubble-search-hit {
+  animation-name: imessage-search-hit-pulse-sent;
+}
+
+@keyframes imessage-search-hit-pulse-sent {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.45);
+    transform: scale(1.02);
+  }
+  35% {
+    box-shadow: 0 0 0 7px rgba(255, 255, 255, 0.2);
+  }
+  100% {
+    box-shadow: 0 1px 2px var(--ios-bubble-shadow);
+    transform: scale(1);
+  }
 }

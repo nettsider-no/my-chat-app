@@ -1,9 +1,15 @@
 'use client'
 
-import { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react'
-import type { ChangeEvent, ClipboardEvent } from 'react'
+import { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo } from 'react'
+import type { ChangeEvent, ClipboardEvent, ReactNode } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
+import {
+  isSpeechRecognitionSupported,
+  speechLangFromUi,
+  VoiceInputSession,
+} from '@/src/lib/voice-input'
+import { oneSignalLogin, oneSignalLogout } from '@/src/lib/onesignal'
 import {
   IconBack,
   IconChevronRight,
@@ -21,12 +27,17 @@ import type {
   Profile,
   OutgoingContact,
   ChatMessage,
+  ChatGroup,
+  GroupInvite,
+  GroupJoinRequest,
+  GroupVisibility,
   MessageReaction,
   ContactAcceptedRow,
   ContactPendingIncomingRow,
   ContactOutgoingRow,
   UnreadMessageRow,
   ContactsPayloadNew,
+  GroupMemberQueryRow,
 } from '@/src/types/chat'
 
 type UiLanguage = 'en' | 'no' | 'fr' | 'ar' | 'zh' | 'ru' | 'uk' | 'es'
@@ -51,6 +62,8 @@ type I18nKey =
   | 'signUp'
   | 'logout'
   | 'profile'
+  | 'myProfile'
+  | 'myProfileHint'
   | 'settings'
   | 'close'
   | 'language'
@@ -71,6 +84,9 @@ type I18nKey =
   | 'copyText'
   | 'translate'
   | 'edit'
+  | 'deleteMessage'
+  | 'downloadImage'
+  | 'messageDeleted'
   | 'aiThinking'
   | 'aiTranslateLabel'
   | 'aiStyleLabel'
@@ -88,6 +104,48 @@ type I18nKey =
   | 'langEnglish'
   | 'langNorwegian'
   | 'langRussian'
+  | 'searchPlaceholder'
+  | 'searchNoResults'
+  | 'searchMessages'
+  | 'groupsTab'
+  | 'createGroup'
+  | 'createGroupTitle'
+  | 'groupNamePlaceholder'
+  | 'selectMembers'
+  | 'createGroupBtn'
+  | 'membersCount'
+  | 'noGroupsYet'
+  | 'groupCreated'
+  | 'groupNameRequired'
+  | 'groupMembersRequired'
+  | 'groupDbNotReady'
+  | 'groupRlsFix'
+  | 'groupV2DbNotReady'
+  | 'groupInvitesSent'
+  | 'groupInviteTitle'
+  | 'acceptBtn'
+  | 'declineBtn'
+  | 'groupSettings'
+  | 'groupVisibility'
+  | 'groupPrivate'
+  | 'groupPublic'
+  | 'inviteMembers'
+  | 'deleteGroup'
+  | 'deleteGroupConfirm'
+  | 'groupDeleted'
+  | 'searchGroups'
+  | 'searchGroupsPlaceholder'
+  | 'requestJoin'
+  | 'joinRequestSent'
+  | 'pendingJoinRequests'
+  | 'noPublicGroupsFound'
+  | 'memberInvited'
+  | 'onlyCreatorCanDelete'
+  | 'save'
+  | 'voiceInput'
+  | 'voiceListening'
+  | 'voiceNotSupported'
+  | 'voicePermissionDenied'
 
 const I18N: Record<UiLanguage, Record<I18nKey, string>> = {
   ru: {
@@ -100,6 +158,8 @@ const I18N: Record<UiLanguage, Record<I18nKey, string>> = {
     signUp: 'Рег-ция',
     logout: 'Выйти',
     profile: 'Профиль',
+    myProfile: 'Мой профиль',
+    myProfileHint: 'Имя и email, которые видят другие в чатах.',
     settings: 'Настройки',
     close: 'Закрыть',
     language: 'Язык',
@@ -120,6 +180,9 @@ const I18N: Record<UiLanguage, Record<I18nKey, string>> = {
     copyText: 'Копировать текст',
     translate: 'Перевести',
     edit: 'Редактировать',
+    deleteMessage: 'Удалить',
+    downloadImage: 'Скачать изображение',
+    messageDeleted: '✅ Сообщение удалено',
     aiThinking: '✨ ИИ думает…',
     aiTranslateLabel: 'Перевод: {x}',
     aiStyleLabel: 'Стиль: {x}',
@@ -137,6 +200,51 @@ const I18N: Record<UiLanguage, Record<I18nKey, string>> = {
     langEnglish: 'Английский',
     langNorwegian: 'Норвежский',
     langRussian: 'Русский',
+    searchPlaceholder: 'Поиск',
+    searchNoResults: 'Ничего не найдено',
+    searchMessages: 'Сообщения',
+    groupsTab: 'Группы',
+    createGroup: 'Создать группу',
+    createGroupTitle: 'Новая группа',
+    groupNamePlaceholder: 'Название группы',
+    selectMembers: 'Участники',
+    createGroupBtn: 'Создать',
+    membersCount: '{n} участников',
+    noGroupsYet: 'Пока нет групп',
+    groupCreated: '✅ Группа создана',
+    groupNameRequired: '⚠️ Введите название группы',
+    groupMembersRequired: '⚠️ Выберите хотя бы одного участника',
+    groupDbNotReady:
+      '⚠️ Таблицы групп не созданы. Откройте Supabase → SQL Editor и выполните файл supabase/groups.sql',
+    groupRlsFix:
+      '⚠️ Ошибка RLS групп. Выполните в Supabase SQL Editor файл supabase/groups_rls_fix.sql',
+    groupV2DbNotReady:
+      '⚠️ Выполните supabase/groups_v2.sql в Supabase → SQL Editor (приглашения и публичные группы)',
+    groupInvitesSent: '✅ Приглашения отправлены',
+    groupInviteTitle: 'Приглашение в группу',
+    acceptBtn: 'Принять',
+    declineBtn: 'Отклонить',
+    groupSettings: 'Настройки группы',
+    groupVisibility: 'Видимость',
+    groupPrivate: 'Приватная',
+    groupPublic: 'Глобальная (в поиске)',
+    inviteMembers: 'Пригласить участников',
+    deleteGroup: 'Удалить группу',
+    deleteGroupConfirm: 'Удалить группу «{name}»? Это нельзя отменить.',
+    groupDeleted: '✅ Группа удалена',
+    searchGroups: 'Найти группу',
+    searchGroupsPlaceholder: 'Название публичной группы…',
+    requestJoin: 'Запросить вступление',
+    joinRequestSent: '✅ Запрос отправлен',
+    pendingJoinRequests: 'Запросы на вступление',
+    noPublicGroupsFound: 'Публичные группы не найдены',
+    memberInvited: '✅ Приглашение отправлено',
+    onlyCreatorCanDelete: '⚠️ Удалить группу может только создатель',
+    save: 'Сохранить',
+    voiceInput: 'Голосовой ввод',
+    voiceListening: 'Слушаю…',
+    voiceNotSupported: '⚠️ Голосовой ввод не поддерживается в этом браузере',
+    voicePermissionDenied: '⚠️ Разрешите доступ к микрофону',
   },
   en: {
     appTitle: 'Messenger',
@@ -148,6 +256,8 @@ const I18N: Record<UiLanguage, Record<I18nKey, string>> = {
     signUp: 'Sign up',
     logout: 'Log out',
     profile: 'Profile',
+    myProfile: 'My profile',
+    myProfileHint: 'Name and email others see in chats.',
     settings: 'Settings',
     close: 'Close',
     language: 'Language',
@@ -168,6 +278,9 @@ const I18N: Record<UiLanguage, Record<I18nKey, string>> = {
     copyText: 'Copy text',
     translate: 'Translate',
     edit: 'Edit',
+    deleteMessage: 'Delete',
+    downloadImage: 'Download image',
+    messageDeleted: '✅ Message deleted',
     aiThinking: '✨ AI is thinking…',
     aiTranslateLabel: 'Translate: {x}',
     aiStyleLabel: 'Style: {x}',
@@ -185,6 +298,49 @@ const I18N: Record<UiLanguage, Record<I18nKey, string>> = {
     langEnglish: 'English',
     langNorwegian: 'Norwegian',
     langRussian: 'Russian',
+    searchPlaceholder: 'Search',
+    searchNoResults: 'No results',
+    searchMessages: 'Messages',
+    groupsTab: 'Groups',
+    createGroup: 'Create group',
+    createGroupTitle: 'New group',
+    groupNamePlaceholder: 'Group name',
+    selectMembers: 'Members',
+    createGroupBtn: 'Create',
+    membersCount: '{n} members',
+    noGroupsYet: 'No groups yet',
+    groupCreated: '✅ Group created',
+    groupNameRequired: '⚠️ Enter a group name',
+    groupMembersRequired: '⚠️ Select at least one member',
+    groupDbNotReady:
+      '⚠️ Group tables are missing. Run supabase/groups.sql in Supabase → SQL Editor',
+    groupRlsFix: '⚠️ Group RLS error. Run supabase/groups_rls_fix.sql in Supabase → SQL Editor',
+    groupV2DbNotReady: '⚠️ Run supabase/groups_v2.sql in Supabase → SQL Editor',
+    groupInvitesSent: '✅ Invitations sent',
+    groupInviteTitle: 'Group invitation',
+    acceptBtn: 'Accept',
+    declineBtn: 'Decline',
+    groupSettings: 'Group settings',
+    groupVisibility: 'Visibility',
+    groupPrivate: 'Private',
+    groupPublic: 'Public (searchable)',
+    inviteMembers: 'Invite members',
+    deleteGroup: 'Delete group',
+    deleteGroupConfirm: 'Delete group "{name}"? This cannot be undone.',
+    groupDeleted: '✅ Group deleted',
+    searchGroups: 'Find group',
+    searchGroupsPlaceholder: 'Public group name…',
+    requestJoin: 'Request to join',
+    joinRequestSent: '✅ Request sent',
+    pendingJoinRequests: 'Join requests',
+    noPublicGroupsFound: 'No public groups found',
+    memberInvited: '✅ Invitation sent',
+    onlyCreatorCanDelete: '⚠️ Only the creator can delete the group',
+    save: 'Save',
+    voiceInput: 'Voice input',
+    voiceListening: 'Listening…',
+    voiceNotSupported: '⚠️ Voice input is not supported in this browser',
+    voicePermissionDenied: '⚠️ Allow microphone access',
   },
   no: {
     appTitle: 'Messenger',
@@ -196,6 +352,8 @@ const I18N: Record<UiLanguage, Record<I18nKey, string>> = {
     signUp: 'Registrer',
     logout: 'Logg ut',
     profile: 'Profil',
+    myProfile: 'Min profil',
+    myProfileHint: 'Navn og e-post andre ser i chatter.',
     settings: 'Innstillinger',
     close: 'Lukk',
     language: 'Språk',
@@ -216,6 +374,9 @@ const I18N: Record<UiLanguage, Record<I18nKey, string>> = {
     copyText: 'Kopier tekst',
     translate: 'Oversett',
     edit: 'Rediger',
+    deleteMessage: 'Slett',
+    downloadImage: 'Last ned bilde',
+    messageDeleted: '✅ Melding slettet',
     aiThinking: '✨ AI tenker…',
     aiTranslateLabel: 'Oversett: {x}',
     aiStyleLabel: 'Stil: {x}',
@@ -233,6 +394,48 @@ const I18N: Record<UiLanguage, Record<I18nKey, string>> = {
     langEnglish: 'Engelsk',
     langNorwegian: 'Norsk',
     langRussian: 'Russisk',
+    searchPlaceholder: 'Søk',
+    searchNoResults: 'Ingen resultater',
+    searchMessages: 'Meldinger',
+    groupsTab: 'Grupper',
+    createGroup: 'Opprett gruppe',
+    createGroupTitle: 'Ny gruppe',
+    groupNamePlaceholder: 'Gruppenavn',
+    selectMembers: 'Medlemmer',
+    createGroupBtn: 'Opprett',
+    membersCount: '{n} medlemmer',
+    noGroupsYet: 'Ingen grupper ennå',
+    groupCreated: '✅ Gruppe opprettet',
+    groupNameRequired: '⚠️ Skriv inn et gruppenavn',
+    groupMembersRequired: '⚠️ Velg minst ett medlem',
+    groupDbNotReady: '⚠️ Kjør supabase/groups.sql i Supabase → SQL Editor',
+    groupRlsFix: '⚠️ Kjør supabase/groups_rls_fix.sql i Supabase → SQL Editor',
+    groupV2DbNotReady: '⚠️ Kjør supabase/groups_v2.sql i Supabase → SQL Editor',
+    groupInvitesSent: '✅ Invitasjoner sendt',
+    groupInviteTitle: 'Gruppeinvitasjon',
+    acceptBtn: 'Godta',
+    declineBtn: 'Avslå',
+    groupSettings: 'Gruppeinnstillinger',
+    groupVisibility: 'Synlighet',
+    groupPrivate: 'Privat',
+    groupPublic: 'Offentlig (søkbar)',
+    inviteMembers: 'Inviter medlemmer',
+    deleteGroup: 'Slett gruppe',
+    deleteGroupConfirm: 'Slette gruppen «{name}»? Dette kan ikke angres.',
+    groupDeleted: '✅ Gruppe slettet',
+    searchGroups: 'Finn gruppe',
+    searchGroupsPlaceholder: 'Offentlig gruppenavn…',
+    requestJoin: 'Be om å bli med',
+    joinRequestSent: '✅ Forespørsel sendt',
+    pendingJoinRequests: 'Forespørsler om medlemskap',
+    noPublicGroupsFound: 'Ingen offentlige grupper funnet',
+    memberInvited: '✅ Invitasjon sendt',
+    onlyCreatorCanDelete: '⚠️ Bare oppretteren kan slette gruppen',
+    save: 'Lagre',
+    voiceInput: 'Taleinndata',
+    voiceListening: 'Lytter…',
+    voiceNotSupported: '⚠️ Taleinndata støttes ikke i denne nettleseren',
+    voicePermissionDenied: '⚠️ Tillat mikrofontilgang',
   },
   fr: {
     appTitle: 'Messenger',
@@ -244,6 +447,8 @@ const I18N: Record<UiLanguage, Record<I18nKey, string>> = {
     signUp: 'S’inscrire',
     logout: 'Déconnexion',
     profile: 'Profil',
+    myProfile: 'Mon profil',
+    myProfileHint: 'Nom et e-mail visibles par les autres dans les chats.',
     settings: 'Paramètres',
     close: 'Fermer',
     language: 'Langue',
@@ -264,6 +469,9 @@ const I18N: Record<UiLanguage, Record<I18nKey, string>> = {
     copyText: 'Copier le texte',
     translate: 'Traduire',
     edit: 'Modifier',
+    deleteMessage: 'Supprimer',
+    downloadImage: 'Télécharger l’image',
+    messageDeleted: '✅ Message supprimé',
     aiThinking: '✨ L’IA réfléchit…',
     aiTranslateLabel: 'Traduire : {x}',
     aiStyleLabel: 'Style : {x}',
@@ -281,6 +489,48 @@ const I18N: Record<UiLanguage, Record<I18nKey, string>> = {
     langEnglish: 'Anglais',
     langNorwegian: 'Norvégien',
     langRussian: 'Russe',
+    searchPlaceholder: 'Rechercher',
+    searchNoResults: 'Aucun résultat',
+    searchMessages: 'Messages',
+    groupsTab: 'Groupes',
+    createGroup: 'Créer un groupe',
+    createGroupTitle: 'Nouveau groupe',
+    groupNamePlaceholder: 'Nom du groupe',
+    selectMembers: 'Membres',
+    createGroupBtn: 'Créer',
+    membersCount: '{n} membres',
+    noGroupsYet: 'Pas encore de groupes',
+    groupCreated: '✅ Groupe créé',
+    groupNameRequired: '⚠️ Entrez un nom de groupe',
+    groupMembersRequired: '⚠️ Sélectionnez au moins un membre',
+    groupDbNotReady: '⚠️ Exécutez supabase/groups.sql dans Supabase → SQL Editor',
+    groupRlsFix: '⚠️ Exécutez supabase/groups_rls_fix.sql dans Supabase → SQL Editor',
+    groupV2DbNotReady: '⚠️ Exécutez supabase/groups_v2.sql dans Supabase → SQL Editor',
+    groupInvitesSent: '✅ Invitations envoyées',
+    groupInviteTitle: 'Invitation au groupe',
+    acceptBtn: 'Accepter',
+    declineBtn: 'Refuser',
+    groupSettings: 'Paramètres du groupe',
+    groupVisibility: 'Visibilité',
+    groupPrivate: 'Privé',
+    groupPublic: 'Public (recherchable)',
+    inviteMembers: 'Inviter des membres',
+    deleteGroup: 'Supprimer le groupe',
+    deleteGroupConfirm: 'Supprimer le groupe « {name} » ? Irréversible.',
+    groupDeleted: '✅ Groupe supprimé',
+    searchGroups: 'Trouver un groupe',
+    searchGroupsPlaceholder: 'Nom du groupe public…',
+    requestJoin: 'Demander à rejoindre',
+    joinRequestSent: '✅ Demande envoyée',
+    pendingJoinRequests: 'Demandes d\'adhésion',
+    noPublicGroupsFound: 'Aucun groupe public trouvé',
+    memberInvited: '✅ Invitation envoyée',
+    onlyCreatorCanDelete: '⚠️ Seul le créateur peut supprimer le groupe',
+    save: 'Enregistrer',
+    voiceInput: 'Saisie vocale',
+    voiceListening: 'Écoute…',
+    voiceNotSupported: '⚠️ Saisie vocale non prise en charge dans ce navigateur',
+    voicePermissionDenied: '⚠️ Autorisez l\'accès au micro',
   },
   ar: {
     appTitle: 'Messenger',
@@ -292,6 +542,8 @@ const I18N: Record<UiLanguage, Record<I18nKey, string>> = {
     signUp: 'تسجيل',
     logout: 'خروج',
     profile: 'الملف الشخصي',
+    myProfile: 'ملفي الشخصي',
+    myProfileHint: 'الاسم والبريد اللذان يراهما الآخرون في المحادثات.',
     settings: 'الإعدادات',
     close: 'إغلاق',
     language: 'اللغة',
@@ -312,6 +564,9 @@ const I18N: Record<UiLanguage, Record<I18nKey, string>> = {
     copyText: 'نسخ النص',
     translate: 'ترجمة',
     edit: 'تعديل',
+    deleteMessage: 'حذف',
+    downloadImage: 'تنزيل الصورة',
+    messageDeleted: '✅ تم حذف الرسالة',
     aiThinking: '✨ الذكاء الاصطناعي يفكر…',
     aiTranslateLabel: 'ترجمة: {x}',
     aiStyleLabel: 'النمط: {x}',
@@ -329,6 +584,48 @@ const I18N: Record<UiLanguage, Record<I18nKey, string>> = {
     langEnglish: 'الإنجليزية',
     langNorwegian: 'النرويجية',
     langRussian: 'الروسية',
+    searchPlaceholder: 'بحث',
+    searchNoResults: 'لا توجد نتائج',
+    searchMessages: 'الرسائل',
+    groupsTab: 'المجموعات',
+    createGroup: 'إنشاء مجموعة',
+    createGroupTitle: 'مجموعة جديدة',
+    groupNamePlaceholder: 'اسم المجموعة',
+    selectMembers: 'الأعضاء',
+    createGroupBtn: 'إنشاء',
+    membersCount: '{n} أعضاء',
+    noGroupsYet: 'لا توجد مجموعات بعد',
+    groupCreated: '✅ تم إنشاء المجموعة',
+    groupNameRequired: '⚠️ أدخل اسم المجموعة',
+    groupMembersRequired: '⚠️ اختر عضوًا واحدًا على الأقل',
+    groupDbNotReady: '⚠️ نفّذ supabase/groups.sql في Supabase → SQL Editor',
+    groupRlsFix: '⚠️ نفّذ supabase/groups_rls_fix.sql في Supabase → SQL Editor',
+    groupV2DbNotReady: '⚠️ نفّذ supabase/groups_v2.sql في Supabase → SQL Editor',
+    groupInvitesSent: '✅ تم إرسال الدعوات',
+    groupInviteTitle: 'دعوة إلى مجموعة',
+    acceptBtn: 'قبول',
+    declineBtn: 'رفض',
+    groupSettings: 'إعدادات المجموعة',
+    groupVisibility: 'الظهور',
+    groupPrivate: 'خاصة',
+    groupPublic: 'عامة (قابلة للبحث)',
+    inviteMembers: 'دعوة أعضاء',
+    deleteGroup: 'حذف المجموعة',
+    deleteGroupConfirm: 'حذف المجموعة «{name}»؟ لا يمكن التراجع.',
+    groupDeleted: '✅ تم حذف المجموعة',
+    searchGroups: 'البحث عن مجموعة',
+    searchGroupsPlaceholder: 'اسم المجموعة العامة…',
+    requestJoin: 'طلب الانضمام',
+    joinRequestSent: '✅ تم إرسال الطلب',
+    pendingJoinRequests: 'طلبات الانضمام',
+    noPublicGroupsFound: 'لم يتم العثور على مجموعات عامة',
+    memberInvited: '✅ تم إرسال الدعوة',
+    onlyCreatorCanDelete: '⚠️ يمكن للمنشئ فقط حذف المجموعة',
+    save: 'حفظ',
+    voiceInput: 'إدخال صوتي',
+    voiceListening: 'جاري الاستماع…',
+    voiceNotSupported: '⚠️ الإدخال الصوتي غير مدعوم في هذا المتصفح',
+    voicePermissionDenied: '⚠️ اسمح بالوصول إلى الميكروفون',
   },
   zh: {
     appTitle: 'Messenger',
@@ -340,6 +637,8 @@ const I18N: Record<UiLanguage, Record<I18nKey, string>> = {
     signUp: '注册',
     logout: '退出登录',
     profile: '个人资料',
+    myProfile: '我的资料',
+    myProfileHint: '其他人在聊天中看到的姓名和邮箱。',
     settings: '设置',
     close: '关闭',
     language: '语言',
@@ -360,6 +659,9 @@ const I18N: Record<UiLanguage, Record<I18nKey, string>> = {
     copyText: '复制文本',
     translate: '翻译',
     edit: '编辑',
+    deleteMessage: '删除',
+    downloadImage: '下载图片',
+    messageDeleted: '✅ 消息已删除',
     aiThinking: '✨ AI 思考中…',
     aiTranslateLabel: '翻译：{x}',
     aiStyleLabel: '风格：{x}',
@@ -377,6 +679,48 @@ const I18N: Record<UiLanguage, Record<I18nKey, string>> = {
     langEnglish: '英语',
     langNorwegian: '挪威语',
     langRussian: '俄语',
+    searchPlaceholder: '搜索',
+    searchNoResults: '无结果',
+    searchMessages: '消息',
+    groupsTab: '群组',
+    createGroup: '创建群组',
+    createGroupTitle: '新群组',
+    groupNamePlaceholder: '群组名称',
+    selectMembers: '成员',
+    createGroupBtn: '创建',
+    membersCount: '{n} 位成员',
+    noGroupsYet: '暂无群组',
+    groupCreated: '✅ 群组已创建',
+    groupNameRequired: '⚠️ 请输入群组名称',
+    groupMembersRequired: '⚠️ 请至少选择一位成员',
+    groupDbNotReady: '⚠️ 请在 Supabase → SQL Editor 中运行 supabase/groups.sql',
+    groupRlsFix: '⚠️ 请运行 supabase/groups_rls_fix.sql',
+    groupV2DbNotReady: '⚠️ 请在 Supabase → SQL Editor 中运行 supabase/groups_v2.sql',
+    groupInvitesSent: '✅ 邀请已发送',
+    groupInviteTitle: '群组邀请',
+    acceptBtn: '接受',
+    declineBtn: '拒绝',
+    groupSettings: '群组设置',
+    groupVisibility: '可见性',
+    groupPrivate: '私密',
+    groupPublic: '公开（可搜索）',
+    inviteMembers: '邀请成员',
+    deleteGroup: '删除群组',
+    deleteGroupConfirm: '删除群组「{name}」？此操作无法撤销。',
+    groupDeleted: '✅ 群组已删除',
+    searchGroups: '查找群组',
+    searchGroupsPlaceholder: '公开群组名称…',
+    requestJoin: '申请加入',
+    joinRequestSent: '✅ 申请已发送',
+    pendingJoinRequests: '加入申请',
+    noPublicGroupsFound: '未找到公开群组',
+    memberInvited: '✅ 邀请已发送',
+    onlyCreatorCanDelete: '⚠️ 只有创建者可以删除群组',
+    save: '保存',
+    voiceInput: '语音输入',
+    voiceListening: '正在聆听…',
+    voiceNotSupported: '⚠️ 此浏览器不支持语音输入',
+    voicePermissionDenied: '⚠️ 请允许麦克风访问',
   },
   uk: {
     appTitle: 'Messenger',
@@ -388,6 +732,8 @@ const I18N: Record<UiLanguage, Record<I18nKey, string>> = {
     signUp: 'Реєстрація',
     logout: 'Вийти',
     profile: 'Профіль',
+    myProfile: 'Мій профіль',
+    myProfileHint: 'Ім’я та email, які бачать інші в чатах.',
     settings: 'Налаштування',
     close: 'Закрити',
     language: 'Мова',
@@ -408,6 +754,9 @@ const I18N: Record<UiLanguage, Record<I18nKey, string>> = {
     copyText: 'Копіювати текст',
     translate: 'Перекласти',
     edit: 'Редагувати',
+    deleteMessage: 'Видалити',
+    downloadImage: 'Завантажити зображення',
+    messageDeleted: '✅ Повідомлення видалено',
     aiThinking: '✨ ШІ думає…',
     aiTranslateLabel: 'Переклад: {x}',
     aiStyleLabel: 'Стиль: {x}',
@@ -425,6 +774,50 @@ const I18N: Record<UiLanguage, Record<I18nKey, string>> = {
     langEnglish: 'Англійська',
     langNorwegian: 'Норвезька',
     langRussian: 'Російська',
+    searchPlaceholder: 'Пошук',
+    searchNoResults: 'Нічого не знайдено',
+    searchMessages: 'Повідомлення',
+    groupsTab: 'Групи',
+    createGroup: 'Створити групу',
+    createGroupTitle: 'Нова група',
+    groupNamePlaceholder: 'Назва групи',
+    selectMembers: 'Учасники',
+    createGroupBtn: 'Створити',
+    membersCount: '{n} учасників',
+    noGroupsYet: 'Поки немає груп',
+    groupCreated: '✅ Групу створено',
+    groupNameRequired: '⚠️ Введіть назву групи',
+    groupMembersRequired: '⚠️ Оберіть хоча б одного учасника',
+    groupDbNotReady:
+      '⚠️ Таблиці груп не створені. Виконайте supabase/groups.sql у Supabase → SQL Editor',
+    groupRlsFix:
+      '⚠️ Помилка RLS груп. Виконайте supabase/groups_rls_fix.sql у Supabase → SQL Editor',
+    groupV2DbNotReady: '⚠️ Виконайте supabase/groups_v2.sql у Supabase → SQL Editor',
+    groupInvitesSent: '✅ Запрошення надіслано',
+    groupInviteTitle: 'Запрошення в групу',
+    acceptBtn: 'Прийняти',
+    declineBtn: 'Відхилити',
+    groupSettings: 'Налаштування групи',
+    groupVisibility: 'Видимість',
+    groupPrivate: 'Приватна',
+    groupPublic: 'Глобальна (у пошуку)',
+    inviteMembers: 'Запросити учасників',
+    deleteGroup: 'Видалити групу',
+    deleteGroupConfirm: 'Видалити групу «{name}»? Це незворотно.',
+    groupDeleted: '✅ Групу видалено',
+    searchGroups: 'Знайти групу',
+    searchGroupsPlaceholder: 'Назва публічної групи…',
+    requestJoin: 'Запит на вступ',
+    joinRequestSent: '✅ Запит надіслано',
+    pendingJoinRequests: 'Запити на вступ',
+    noPublicGroupsFound: 'Публічних груп не знайдено',
+    memberInvited: '✅ Запрошення надіслано',
+    onlyCreatorCanDelete: '⚠️ Видалити групу може лише творець',
+    save: 'Зберегти',
+    voiceInput: 'Голосовий ввід',
+    voiceListening: 'Слухаю…',
+    voiceNotSupported: '⚠️ Голосовий ввід не підтримується в цьому браузері',
+    voicePermissionDenied: '⚠️ Дозвольте доступ до мікрофона',
   },
   es: {
     appTitle: 'Messenger',
@@ -436,6 +829,8 @@ const I18N: Record<UiLanguage, Record<I18nKey, string>> = {
     signUp: 'Registrarse',
     logout: 'Salir',
     profile: 'Perfil',
+    myProfile: 'Mi perfil',
+    myProfileHint: 'Nombre y correo que otros ven en los chats.',
     settings: 'Ajustes',
     close: 'Cerrar',
     language: 'Idioma',
@@ -456,6 +851,9 @@ const I18N: Record<UiLanguage, Record<I18nKey, string>> = {
     copyText: 'Copiar texto',
     translate: 'Traducir',
     edit: 'Editar',
+    deleteMessage: 'Eliminar',
+    downloadImage: 'Descargar imagen',
+    messageDeleted: '✅ Mensaje eliminado',
     aiThinking: '✨ La IA está pensando…',
     aiTranslateLabel: 'Traducir: {x}',
     aiStyleLabel: 'Estilo: {x}',
@@ -473,7 +871,149 @@ const I18N: Record<UiLanguage, Record<I18nKey, string>> = {
     langEnglish: 'Inglés',
     langNorwegian: 'Noruego',
     langRussian: 'Ruso',
+    searchPlaceholder: 'Buscar',
+    searchNoResults: 'Sin resultados',
+    searchMessages: 'Mensajes',
+    groupsTab: 'Grupos',
+    createGroup: 'Crear grupo',
+    createGroupTitle: 'Nuevo grupo',
+    groupNamePlaceholder: 'Nombre del grupo',
+    selectMembers: 'Miembros',
+    createGroupBtn: 'Crear',
+    membersCount: '{n} miembros',
+    noGroupsYet: 'Aún no hay grupos',
+    groupCreated: '✅ Grupo creado',
+    groupNameRequired: '⚠️ Introduce un nombre de grupo',
+    groupMembersRequired: '⚠️ Selecciona al menos un miembro',
+    groupDbNotReady: '⚠️ Ejecuta supabase/groups.sql en Supabase → SQL Editor',
+    groupRlsFix: '⚠️ Ejecuta supabase/groups_rls_fix.sql en Supabase → SQL Editor',
+    groupV2DbNotReady: '⚠️ Ejecuta supabase/groups_v2.sql en Supabase → SQL Editor',
+    groupInvitesSent: '✅ Invitaciones enviadas',
+    groupInviteTitle: 'Invitación al grupo',
+    acceptBtn: 'Aceptar',
+    declineBtn: 'Rechazar',
+    groupSettings: 'Ajustes del grupo',
+    groupVisibility: 'Visibilidad',
+    groupPrivate: 'Privado',
+    groupPublic: 'Público (buscable)',
+    inviteMembers: 'Invitar miembros',
+    deleteGroup: 'Eliminar grupo',
+    deleteGroupConfirm: '¿Eliminar el grupo «{name}»? No se puede deshacer.',
+    groupDeleted: '✅ Grupo eliminado',
+    searchGroups: 'Buscar grupo',
+    searchGroupsPlaceholder: 'Nombre del grupo público…',
+    requestJoin: 'Solicitar unirse',
+    joinRequestSent: '✅ Solicitud enviada',
+    pendingJoinRequests: 'Solicitudes de unión',
+    noPublicGroupsFound: 'No se encontraron grupos públicos',
+    memberInvited: '✅ Invitación enviada',
+    onlyCreatorCanDelete: '⚠️ Solo el creador puede eliminar el grupo',
+    save: 'Guardar',
+    voiceInput: 'Entrada de voz',
+    voiceListening: 'Escuchando…',
+    voiceNotSupported: '⚠️ La entrada de voz no es compatible con este navegador',
+    voicePermissionDenied: '⚠️ Permite el acceso al micrófono',
   },
+}
+
+function isGroupsSchemaMissingError(message: string) {
+  const m = message.toLowerCase()
+  return m.includes('chat_groups') && (m.includes('schema cache') || m.includes('does not exist'))
+}
+
+function isGroupsRlsRecursionError(message: string) {
+  return message.toLowerCase().includes('infinite recursion') && message.toLowerCase().includes('group_members')
+}
+
+function isGroupsV2MissingError(message: string) {
+  const m = message.toLowerCase()
+  return (
+    (m.includes('group_invites') || m.includes('group_join_requests') || m.includes('visibility')) &&
+    (m.includes('schema cache') || m.includes('does not exist') || m.includes('column'))
+  )
+}
+
+function groupErrorToast(message: string, t: (key: I18nKey) => string) {
+  if (isGroupsSchemaMissingError(message)) return t('groupDbNotReady')
+  if (isGroupsRlsRecursionError(message)) return t('groupRlsFix')
+  if (isGroupsV2MissingError(message)) return t('groupV2DbNotReady')
+  return '❌ ' + message
+}
+
+function groupCacheKey(groupId: string) {
+  return `g:${groupId}`
+}
+
+type VoiceInputTarget = 'composer' | 'search'
+
+function isImageFileUrl(url: string) {
+  return /\.(jpeg|jpg|gif|png|webp)$/i.test(url)
+}
+
+type InboxMessageHit = {
+  id: number
+  content: string
+  created_at: string
+  sender_id: string
+  receiver_id: string | null
+  peerId: string
+}
+
+function escapeIlikePattern(value: string) {
+  return value.replace(/\\/g, '\\\\').replace(/%/g, '\\%').replace(/_/g, '\\_')
+}
+
+function messageSearchSnippet(content: string, query: string, maxLen = 96) {
+  const q = query.toLowerCase()
+  const lower = content.toLowerCase()
+  const idx = lower.indexOf(q)
+  if (idx === -1) return content.length > maxLen ? `${content.slice(0, maxLen)}…` : content
+  const start = Math.max(0, idx - 24)
+  const end = Math.min(content.length, idx + query.length + 36)
+  const prefix = start > 0 ? '…' : ''
+  const suffix = end < content.length ? '…' : ''
+  return `${prefix}${content.slice(start, end)}${suffix}`
+}
+
+function highlightSearchMatch(text: string, query: string): ReactNode {
+  const q = query.trim()
+  if (!q) return text
+
+  const lowerText = text.toLowerCase()
+  const lowerQ = q.toLowerCase()
+  if (!lowerText.includes(lowerQ)) return text
+
+  const nodes: ReactNode[] = []
+  let cursor = 0
+  let part = 0
+
+  while (cursor < text.length) {
+    const idx = lowerText.indexOf(lowerQ, cursor)
+    if (idx === -1) {
+      nodes.push(text.slice(cursor))
+      break
+    }
+    if (idx > cursor) nodes.push(text.slice(cursor, idx))
+    nodes.push(
+      <mark key={`hl-${part++}`} className="imessage-search-highlight">
+        {text.slice(idx, idx + q.length)}
+      </mark>
+    )
+    cursor = idx + q.length
+  }
+
+  return nodes
+}
+
+function renderMessageSearchPreview(content: string, query: string, isMe: boolean) {
+  const snippet = messageSearchSnippet(content, query)
+  const prefix = isMe ? 'You: ' : ''
+  return (
+    <>
+      {prefix}
+      {highlightSearchMatch(snippet, query)}
+    </>
+  )
 }
 
 export default function App() {
@@ -487,8 +1027,31 @@ export default function App() {
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({})
 
   const [selectedUser, setSelectedUser] = useState<Profile | null>(null)
+  const [selectedGroup, setSelectedGroup] = useState<ChatGroup | null>(null)
+  const [groups, setGroups] = useState<ChatGroup[]>([])
+  const [groupUnreadCounts, setGroupUnreadCounts] = useState<Record<string, number>>({})
+  const [groupPreviews, setGroupPreviews] = useState<
+    Record<string, { content: string | null; file_url: string | null; created_at: string; sender_id: string }>
+  >({})
+  const [extraProfiles, setExtraProfiles] = useState<Record<string, Profile>>({})
+  const [isCreateGroupOpen, setIsCreateGroupOpen] = useState(false)
+  const [newGroupName, setNewGroupName] = useState('')
+  const [newGroupMemberIds, setNewGroupMemberIds] = useState<Set<string>>(new Set())
+  const [isCreatingGroup, setIsCreatingGroup] = useState(false)
+  const [newGroupVisibility, setNewGroupVisibility] = useState<GroupVisibility>('private')
+  const [incomingGroupInvites, setIncomingGroupInvites] = useState<GroupInvite[]>([])
+  const [isGroupSettingsOpen, setIsGroupSettingsOpen] = useState(false)
+  const [groupSettingsVisibility, setGroupSettingsVisibility] = useState<GroupVisibility>('private')
+  const [groupInviteMemberIds, setGroupInviteMemberIds] = useState<Set<string>>(new Set())
+  const [pendingJoinRequests, setPendingJoinRequests] = useState<GroupJoinRequest[]>([])
+  const [isSavingGroupSettings, setIsSavingGroupSettings] = useState(false)
+  const [isDeletingGroup, setIsDeletingGroup] = useState(false)
+  const [publicGroupSearch, setPublicGroupSearch] = useState('')
+  const [publicGroupResults, setPublicGroupResults] = useState<ChatGroup[]>([])
+  const [isSearchingPublicGroups, setIsSearchingPublicGroups] = useState(false)
   const [newContactEmail, setNewContactEmail] = useState('')
   const [messageSearchQuery, setMessageSearchQuery] = useState('')
+  const [inboxMessageHits, setInboxMessageHits] = useState<InboxMessageHit[]>([])
 
   const [toastMsg, setToastMsg] = useState<string | null>(null)
   const [isCollapsed, setIsCollapsed] = useState(false)
@@ -511,6 +1074,12 @@ export default function App() {
   const [isSending, setIsSending] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const composerInputRef = useRef<HTMLInputElement>(null)
+  const searchInputRef = useRef<HTMLInputElement>(null)
+  const voiceSessionRef = useRef<VoiceInputSession | null>(null)
+  const voiceSessionTargetRef = useRef<VoiceInputTarget | null>(null)
+  const voiceInterimRef = useRef('')
+  const [voiceInputTarget, setVoiceInputTarget] = useState<VoiceInputTarget | null>(null)
+  const [voiceInterim, setVoiceInterim] = useState('')
   const [editingMessageId, setEditingMessageId] = useState<number | null>(null)
 
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -532,11 +1101,125 @@ export default function App() {
     document.documentElement.dir = uiLanguage === 'ar' ? 'rtl' : 'ltr'
   }, [uiLanguage])
 
+  useEffect(() => {
+    if (inboxFilter !== 'groups') {
+      setPublicGroupSearch('')
+      setPublicGroupResults([])
+    }
+  }, [inboxFilter])
 
   const showNotification = useCallback((msg: string) => {
     setToastMsg(msg)
     setTimeout(() => setToastMsg(null), 4000)
   }, [])
+
+  const setVoiceInterimValue = useCallback((value: string) => {
+    voiceInterimRef.current = value
+    setVoiceInterim(value)
+  }, [])
+
+  const appendVoiceTranscript = useCallback((target: VoiceInputTarget, trimmed: string) => {
+    if (target === 'composer') {
+      setText((prev) => (prev.trim() ? `${prev.trim()} ${trimmed}` : trimmed))
+    } else {
+      setMessageSearchQuery((prev) => (prev.trim() ? `${prev.trim()} ${trimmed}` : trimmed))
+    }
+  }, [])
+
+  const flushVoiceInterim = useCallback(
+    (target: VoiceInputTarget | null) => {
+      const pending = voiceInterimRef.current.trim()
+      if (pending && target) appendVoiceTranscript(target, pending)
+      voiceInterimRef.current = ''
+      setVoiceInterim('')
+    },
+    [appendVoiceTranscript]
+  )
+
+  const stopVoiceInput = useCallback(
+    (options?: { immediate?: boolean }) => {
+      const immediate = options?.immediate ?? false
+      const target = voiceSessionTargetRef.current
+      const session = voiceSessionRef.current
+
+      flushVoiceInterim(target)
+      voiceSessionRef.current = null
+      voiceSessionTargetRef.current = null
+      setVoiceInputTarget(null)
+      setVoiceInterimValue('')
+
+      if (!session) return
+      if (immediate) session.destroyImmediate()
+      else session.endByUser()
+    },
+    [flushVoiceInterim, setVoiceInterimValue]
+  )
+
+  const toggleVoiceInput = useCallback(
+    (target: VoiceInputTarget) => {
+      if (voiceInputTarget === target) {
+        stopVoiceInput()
+        return
+      }
+      if (voiceInputTarget) stopVoiceInput({ immediate: true })
+
+      if (!isSpeechRecognitionSupported()) {
+        showNotification(t('voiceNotSupported'))
+        return
+      }
+
+      voiceSessionTargetRef.current = target
+      const session = new VoiceInputSession(speechLangFromUi(uiLanguage), {
+        onInterim: setVoiceInterimValue,
+        onFinal: (trimmed) => {
+          appendVoiceTranscript(target, trimmed)
+          setVoiceInterimValue('')
+        },
+        onFatalError: (code) => {
+          stopVoiceInput({ immediate: true })
+          if (code === 'not-allowed') showNotification(t('voicePermissionDenied'))
+          else if (code === 'unsupported') showNotification(t('voiceNotSupported'))
+          else showNotification(`❌ ${code}`)
+        },
+      })
+      voiceSessionRef.current = session
+      session.begin()
+      setVoiceInputTarget(target)
+
+      if (target === 'composer') {
+        setComposerPanel('closed')
+        composerInputRef.current?.focus()
+      } else {
+        searchInputRef.current?.focus()
+      }
+    },
+    [
+      appendVoiceTranscript,
+      setVoiceInterimValue,
+      showNotification,
+      stopVoiceInput,
+      t,
+      uiLanguage,
+      voiceInputTarget,
+    ]
+  )
+
+  useEffect(() => {
+    voiceSessionRef.current?.setLanguage(speechLangFromUi(uiLanguage))
+  }, [uiLanguage])
+
+  useEffect(
+    () => () => {
+      stopVoiceInput({ immediate: true })
+    },
+    [stopVoiceInput]
+  )
+
+  useEffect(() => {
+    if (!selectedUser && !selectedGroup && voiceInputTarget === 'composer') {
+      stopVoiceInput({ immediate: true })
+    }
+  }, [selectedUser, selectedGroup, voiceInputTarget, stopVoiceInput])
 
   const loadUserSettings = useCallback(
     async (userId: string) => {
@@ -576,6 +1259,10 @@ export default function App() {
   const [aiProcessingFromInput, setAiProcessingFromInput] = useState(false)
   const [customLang, setCustomLang] = useState('');
   const [translations, setTranslations] = useState<Record<number, string>>({}); // Храним переводы чужих сообщений
+
+  useEffect(() => {
+    if (isSending || isAiLoading) stopVoiceInput({ immediate: true })
+  }, [isSending, isAiLoading, stopVoiceInput])
 
   // === ФУНКЦИЯ ОБРАЩЕНИЯ К ИИ ===
   const handleAiAction = async (action: 'style' | 'translate', modifier: string, msgId?: number, msgContent?: string) => {
@@ -639,6 +1326,8 @@ export default function App() {
   const reactionMenuRef = useRef<HTMLDivElement | null>(null)
   const [reactionMenuStyle, setReactionMenuStyle] = useState<{ top: number; left: number } | null>(null)
   const messagesViewportRef = useRef<HTMLDivElement | null>(null)
+  const pendingScrollTargetRef = useRef<{ peerId: string; msgId: number } | null>(null)
+  const [highlightSearchMsgId, setHighlightSearchMsgId] = useState<number | null>(null)
 
   // Таймер для мобильного долгого нажатия
   const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -657,6 +1346,22 @@ export default function App() {
     if (pressTimer.current) clearTimeout(pressTimer.current);
   };
 
+  const handleMessageContextMenu = (
+    e: { preventDefault: () => void },
+    msgId: number,
+    isMe: boolean,
+    isMenuOpen: boolean
+  ) => {
+    if (isMenuOpen) {
+      if (window.getSelection()?.toString()) return
+      e.preventDefault()
+      return
+    }
+    e.preventDefault()
+    setActiveReactionIsMe(isMe)
+    setActiveReactionMsgId(msgId)
+  }
+
   // Esc закрывает меню (десктоп)
   useEffect(() => {
     if (activeReactionMsgId === null) return
@@ -666,6 +1371,80 @@ export default function App() {
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [activeReactionMsgId])
+
+  // Поиск по тексту сообщений в истории переписок (Supabase + локальный кэш)
+  useEffect(() => {
+    const query = messageSearchQuery.trim()
+    if (!session || !query) {
+      setInboxMessageHits([])
+      return
+    }
+
+    const userId = session.user.id
+    const q = query.toLowerCase()
+
+    const localHits: InboxMessageHit[] = []
+    for (const [peerId, msgs] of Object.entries(messagesCacheRef.current)) {
+      if (peerId.startsWith('g:')) continue
+      for (const msg of msgs) {
+        if (msg.group_id || !msg.content) continue
+        if (!msg.content.toLowerCase().includes(q)) continue
+        localHits.push({
+          id: msg.id,
+          content: msg.content,
+          created_at: msg.created_at,
+          sender_id: msg.sender_id,
+          receiver_id: msg.receiver_id,
+          peerId,
+        })
+      }
+    }
+
+    const mergeHits = (remote: InboxMessageHit[]) => {
+      const byId = new Map<number, InboxMessageHit>()
+      for (const hit of [...localHits, ...remote]) byId.set(hit.id, hit)
+      return [...byId.values()].sort(
+        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      )
+    }
+
+    if (localHits.length > 0) setInboxMessageHits(mergeHits([]))
+
+    const timer = window.setTimeout(() => {
+      void (async () => {
+        const pattern = `%${escapeIlikePattern(query)}%`
+        const { data, error } = await supabase
+          .from('messages')
+          .select('id, content, sender_id, receiver_id, created_at')
+          .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
+          .ilike('content', pattern)
+          .not('content', 'is', null)
+          .order('created_at', { ascending: false })
+          .limit(50)
+
+        if (error) {
+          console.error('Inbox message search failed:', error)
+          setInboxMessageHits(mergeHits([]))
+          return
+        }
+
+        const remoteHits: InboxMessageHit[] = (data ?? [])
+          .filter((msg) => msg.content && msg.receiver_id)
+          .map((msg) => ({
+            id: msg.id,
+            content: msg.content as string,
+            created_at: msg.created_at,
+            sender_id: msg.sender_id,
+            receiver_id: msg.receiver_id,
+            peerId: msg.sender_id === userId ? msg.receiver_id : msg.sender_id,
+          }))
+
+        setInboxMessageHits(mergeHits(remoteHits))
+      })()
+    }, 280)
+
+    return () => window.clearTimeout(timer)
+  }, [messageSearchQuery, session])
 
   // Двойной тап по сообщению = быстрый лайк ❤️ (как в Telegram)
   const lastTapRef = useRef<{ id: number; time: number } | null>(null)
@@ -699,6 +1478,34 @@ export default function App() {
   }
 
 // Копирование как в Telegram: clipboard API + фолбэк для http/старых браузеров
+  const downloadImage = async (url: string) => {
+    setActiveReactionMsgId(null)
+    const fallbackName = url.split('/').pop()?.split('?')[0] || 'image.jpg'
+    try {
+      const res = await fetch(url)
+      if (!res.ok) throw new Error('fetch failed')
+      const blob = await res.blob()
+      const objectUrl = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = objectUrl
+      a.download = fallbackName
+      a.rel = 'noopener'
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      URL.revokeObjectURL(objectUrl)
+    } catch {
+      const a = document.createElement('a')
+      a.href = url
+      a.download = fallbackName
+      a.target = '_blank'
+      a.rel = 'noopener noreferrer'
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+    }
+  }
+
   const copyToClipboard = async (text: string) => {
     if (!text) return
     setActiveReactionMsgId(null)
@@ -799,12 +1606,7 @@ export default function App() {
     supabase.auth.getSession().then(({ data: { session: s } }) => {
       setSession(s)
       if (s?.user.id) void loadUserSettings(s.user.id)
-      if (s?.user.id) {
-        window.OneSignalDeferred = window.OneSignalDeferred ?? []
-        window.OneSignalDeferred.push(async (OneSignal) => {
-          await OneSignal.login(s.user.id)
-        })
-      }
+      if (s?.user.id) oneSignalLogin(s.user.id)
     })
 
     const {
@@ -813,16 +1615,8 @@ export default function App() {
       setSession(s)
       if (s?.user.id) void loadUserSettings(s.user.id)
       else setUiLanguage('ru')
-      window.OneSignalDeferred = window.OneSignalDeferred ?? []
-      if (s?.user.id) {
-        window.OneSignalDeferred.push(async (OneSignal) => {
-          await OneSignal.login(s.user.id)
-        })
-      } else {
-        window.OneSignalDeferred.push(async (OneSignal) => {
-          await OneSignal.logout()
-        })
-      }
+      if (s?.user.id) oneSignalLogin(s.user.id)
+      else oneSignalLogout()
     })
     return () => subscription.unsubscribe()
   }, [loadUserSettings])
@@ -945,19 +1739,121 @@ export default function App() {
         .limit(300)
       const previews: Record<string, { content: string | null; file_url: string | null; created_at: string; sender_id: string }> = {}
       for (const msg of recentMsgs ?? []) {
+        if (!msg.receiver_id && msg.sender_id === userId) continue
         const peerId = msg.sender_id === userId ? msg.receiver_id : msg.sender_id
-        if (contactIds.includes(peerId) && !previews[peerId]) {
-          previews[peerId] = {
-            content: msg.content,
-            file_url: msg.file_url,
-            created_at: msg.created_at,
-            sender_id: msg.sender_id,
-          }
+        if (!peerId || !contactIds.includes(peerId) || previews[peerId]) continue
+        previews[peerId] = {
+          content: msg.content,
+          file_url: msg.file_url,
+          created_at: msg.created_at,
+          sender_id: msg.sender_id,
         }
       }
       setConversationPreviews(previews)
     } else {
       setConversationPreviews({})
+    }
+
+    try {
+      const { data: groupMemberRows, error: groupsError } = await supabase
+        .from('group_members')
+        .select('chat_groups(id, name, created_by, created_at, visibility)')
+        .eq('user_id', userId)
+      if (groupsError) throw groupsError
+
+      const groupRows = (groupMemberRows ?? []) as GroupMemberQueryRow[]
+      const userGroups: ChatGroup[] = groupRows.flatMap((row) => {
+        if (!row.chat_groups) return []
+        const g = Array.isArray(row.chat_groups) ? row.chat_groups[0] : row.chat_groups
+        return g ? [g] : []
+      })
+      const groupIds = userGroups.map((g) => g.id)
+
+      if (groupIds.length > 0) {
+        const { data: allMembers } = await supabase
+          .from('group_members')
+          .select('group_id')
+          .in('group_id', groupIds)
+        const memberCountByGroup: Record<string, number> = {}
+        for (const row of allMembers ?? []) {
+          const gid = row.group_id as string
+          memberCountByGroup[gid] = (memberCountByGroup[gid] || 0) + 1
+        }
+        const groupsWithCounts = userGroups.map((g) => ({
+          ...g,
+          member_count: memberCountByGroup[g.id] ?? 1,
+        }))
+        setGroups(groupsWithCounts)
+
+        const { data: recentGroupMsgs } = await supabase
+          .from('messages')
+          .select('group_id, content, file_url, created_at, sender_id')
+          .in('group_id', groupIds)
+          .order('created_at', { ascending: false })
+          .limit(500)
+        const gPreviews: typeof groupPreviews = {}
+        for (const msg of recentGroupMsgs ?? []) {
+          const gid = msg.group_id as string
+          if (gid && !gPreviews[gid]) {
+            gPreviews[gid] = {
+              content: msg.content,
+              file_url: msg.file_url,
+              created_at: msg.created_at,
+              sender_id: msg.sender_id,
+            }
+          }
+        }
+        setGroupPreviews(gPreviews)
+
+        const { data: reads } = await supabase
+          .from('group_reads')
+          .select('group_id, last_read_at')
+          .eq('user_id', userId)
+          .in('group_id', groupIds)
+        const readMap: Record<string, string> = {}
+        for (const r of reads ?? []) {
+          readMap[r.group_id as string] = r.last_read_at as string
+        }
+
+        const { data: unreadGroupMsgs } = await supabase
+          .from('messages')
+          .select('group_id, created_at, sender_id')
+          .in('group_id', groupIds)
+          .neq('sender_id', userId)
+        const gUnread: Record<string, number> = {}
+        for (const msg of unreadGroupMsgs ?? []) {
+          const gid = msg.group_id as string
+          const lastRead = readMap[gid]
+          if (!lastRead || new Date(msg.created_at as string) > new Date(lastRead)) {
+            gUnread[gid] = (gUnread[gid] || 0) + 1
+          }
+        }
+        setGroupUnreadCounts(gUnread)
+      } else {
+        setGroups([])
+        setGroupPreviews({})
+        setGroupUnreadCounts({})
+      }
+    } catch (groupsErr) {
+      console.warn('Groups sidebar unavailable:', groupsErr)
+      setGroups([])
+      setGroupPreviews({})
+      setGroupUnreadCounts({})
+    }
+
+    try {
+      const { data: inviteData, error: invitesError } = await supabase
+        .from('group_invites')
+        .select(
+          'id, group_id, invitee_id, invited_by, status, created_at, chat_groups(id, name, created_by, created_at, visibility)'
+        )
+        .eq('invitee_id', userId)
+        .eq('status', 'pending')
+      if (invitesError) throw invitesError
+      setIncomingGroupInvites((inviteData ?? []) as GroupInvite[])
+    } catch (invitesErr) {
+      console.warn('Group invites unavailable:', invitesErr)
+      setIncomingGroupInvites([])
     }
   }, [session])
 
@@ -1008,9 +1904,35 @@ export default function App() {
       )
       .subscribe()
 
+    const groupsChannel = supabase
+      .channel('realtime-groups-sidebar')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'group_members' },
+        () => {
+          void fetchSidebarData()
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'messages' },
+        (payload) => {
+          const row = payload.new as { group_id?: string | null }
+          if (row.group_id) void fetchSidebarData()
+        }
+      )
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'group_invites' }, () => {
+        void fetchSidebarData()
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'group_join_requests' }, () => {
+        void fetchSidebarData()
+      })
+      .subscribe()
+
     return () => {
       supabase.removeChannel(contactsChannel)
       supabase.removeChannel(badgesChannel)
+      supabase.removeChannel(groupsChannel)
     }
   }, [session, fetchSidebarData, showNotification])
 
@@ -1064,71 +1986,141 @@ export default function App() {
   }
   // === ЛОГИКА АКТИВНОГО ЧАТА + РЕАКЦИИ ===
   useEffect(() => {
-    if (!session || !selectedUser) return
+    if (!session || (!selectedUser && !selectedGroup)) return
     const userId = session.user.id
-    const peerId = selectedUser.id
+    const isGroup = selectedGroup !== null
+    const cacheKey = isGroup ? groupCacheKey(selectedGroup.id) : selectedUser!.id
+    const peerId = selectedUser?.id
+    const groupId = selectedGroup?.id
 
-    // Мгновенно показываем кэш (как Telegram), свежие данные подтянутся фоном
-    const cached = messagesCacheRef.current[peerId]
+    const cached = messagesCacheRef.current[cacheKey]
     setMessages(cached ?? [])
 
     async function fetchMessagesAndMarkRead() {
-      const { data } = await supabase
-        .from('messages')
-        .select('*')
-        .or(
-          `and(sender_id.eq.${userId},receiver_id.eq.${peerId}),and(sender_id.eq.${peerId},receiver_id.eq.${userId})`
+      if (isGroup && groupId) {
+        const { data: memberRows } = await supabase
+          .from('group_members')
+          .select('user_id, profiles(id, email)')
+          .eq('group_id', groupId)
+        const profilesFromMembers: Record<string, Profile> = {}
+        for (const row of memberRows ?? []) {
+          const raw = row.profiles as Profile | Profile[] | null
+          const p = raw ? (Array.isArray(raw) ? raw[0] : raw) : null
+          if (p) profilesFromMembers[p.id] = p
+        }
+        setExtraProfiles((prev) => ({ ...prev, ...profilesFromMembers }))
+
+        const { data, error } = await supabase
+          .from('messages')
+          .select('*')
+          .eq('group_id', groupId)
+          .order('created_at', { ascending: true })
+        if (error) {
+          console.error('Failed to fetch group messages:', error)
+        } else if (data) {
+          const fresh = data as ChatMessage[]
+          messagesCacheRef.current[cacheKey] = fresh
+          setMessages(fresh)
+        }
+
+        await supabase.from('group_reads').upsert(
+          { user_id: userId, group_id: groupId, last_read_at: new Date().toISOString() },
+          { onConflict: 'user_id,group_id' }
         )
-        .order('created_at', { ascending: true })
-      if (data) {
-        const fresh = data as ChatMessage[]
-        messagesCacheRef.current[peerId] = fresh
-        setMessages(fresh)
+      } else if (peerId) {
+        const { data, error } = await supabase
+          .from('messages')
+          .select('*')
+          .or(
+            `and(sender_id.eq.${userId},receiver_id.eq.${peerId}),and(sender_id.eq.${peerId},receiver_id.eq.${userId})`
+          )
+          .order('created_at', { ascending: true })
+        if (error) {
+          console.error('Failed to fetch DM messages:', error)
+        } else if (data) {
+          const fresh = data as ChatMessage[]
+          messagesCacheRef.current[cacheKey] = fresh
+          setMessages(fresh)
+        }
+
+        await supabase
+          .from('messages')
+          .update({ is_read: true })
+          .eq('sender_id', peerId)
+          .eq('receiver_id', userId)
+          .eq('is_read', false)
       }
 
       const { data: reactData } = await supabase.from('message_reactions').select('*')
       if (reactData) setAllReactions(reactData as MessageReaction[])
 
-      await supabase
-        .from('messages')
-        .update({ is_read: true })
-        .eq('sender_id', peerId)
-        .eq('receiver_id', userId)
-        .eq('is_read', false)
       void fetchSidebarData()
     }
     void fetchMessagesAndMarkRead()
 
     const channel = supabase
-      .channel('realtime-chat-data')
+      .channel(`realtime-chat-${cacheKey}`)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'messages' },
         (payload) => {
           if (payload.eventType === 'INSERT' && payload.new) {
             const msg = payload.new as ChatMessage
-            if (
-              (msg.sender_id === peerId && msg.receiver_id === userId) ||
-              (msg.sender_id === userId && msg.receiver_id === peerId)
-            ) {
-              if (msg.sender_id === peerId) {
+            const matchesDm =
+              peerId &&
+              !msg.group_id &&
+              ((msg.sender_id === peerId && msg.receiver_id === userId) ||
+                (msg.sender_id === userId && msg.receiver_id === peerId))
+            const matchesGroup = groupId && msg.group_id === groupId
+            if (matchesDm || matchesGroup) {
+              if (matchesDm && msg.sender_id === peerId) {
                 void supabase.from('messages').update({ is_read: true }).eq('id', msg.id)
+              }
+              if (matchesGroup && msg.sender_id !== userId) {
+                void supabase.from('group_reads').upsert(
+                  { user_id: userId, group_id: groupId, last_read_at: new Date().toISOString() },
+                  { onConflict: 'user_id,group_id' }
+                )
               }
               setMessages((prev) => {
                 const next = [...prev, msg]
-                messagesCacheRef.current[peerId] = next
+                messagesCacheRef.current[cacheKey] = next
                 return next
               })
             }
           }
           if (payload.eventType === 'UPDATE' && payload.new) {
             const updated = payload.new as ChatMessage
-            setMessages((prev) => {
-              const next = prev.map((m) => (m.id === updated.id ? updated : m))
-              messagesCacheRef.current[peerId] = next
-              return next
-            })
-            void fetchSidebarData()
+            const inThread =
+              (peerId &&
+                !updated.group_id &&
+                (updated.sender_id === peerId || updated.receiver_id === peerId)) ||
+              (groupId && updated.group_id === groupId)
+            if (inThread) {
+              setMessages((prev) => {
+                const next = prev.map((m) => (m.id === updated.id ? updated : m))
+                messagesCacheRef.current[cacheKey] = next
+                return next
+              })
+              void fetchSidebarData()
+            }
+          }
+          if (payload.eventType === 'DELETE' && payload.old) {
+            const deleted = payload.old as ChatMessage
+            const inThread =
+              (peerId &&
+                !deleted.group_id &&
+                (deleted.sender_id === peerId || deleted.receiver_id === peerId)) ||
+              (groupId && deleted.group_id === groupId)
+            if (inThread) {
+              setMessages((prev) => {
+                const next = prev.filter((m) => m.id !== deleted.id)
+                messagesCacheRef.current[cacheKey] = next
+                return next
+              })
+              setAllReactions((prev) => prev.filter((r) => r.message_id !== deleted.id))
+              void fetchSidebarData()
+            }
           }
         }
       )
@@ -1145,13 +2137,12 @@ export default function App() {
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [session, selectedUser, fetchSidebarData])
+  }, [session, selectedUser, selectedGroup, fetchSidebarData])
 
   useEffect(() => {
-    // При смене диалога выходим из режима редактирования и закрываем меню
     setEditingMessageId(null)
     setComposerPanel('closed')
-  }, [selectedUser?.id])
+  }, [selectedUser?.id, selectedGroup?.id])
 
   const scrollToBottom = useCallback((behavior: ScrollBehavior = 'smooth') => {
     const el = messagesViewportRef.current
@@ -1166,16 +2157,61 @@ export default function App() {
     }
   }, [])
 
-  // Telegram-style: позиция скролла выставляется ДО отрисовки кадра —
-  // чат всегда открывается сразу на последнем сообщении, без видимой прокрутки
   const prevChatKeyRef = useRef<string | null>(null)
   const lastMsgIdRef = useRef<number | null>(null)
+
+  const scrollToMessage = useCallback((msgId: number, behavior: ScrollBehavior = 'auto') => {
+    const el = messagesViewportRef.current
+    if (!el) return false
+    const msgEl = document.getElementById(`msg-${msgId}`)
+    if (!msgEl) return false
+
+    const viewportRect = el.getBoundingClientRect()
+    const msgRect = msgEl.getBoundingClientRect()
+    // Центрируем найденное сообщение по вертикали в области чата
+    const rawTop =
+      el.scrollTop + (msgRect.top - viewportRect.top) - (el.clientHeight - msgRect.height) / 2
+    const maxScroll = Math.max(0, el.scrollHeight - el.clientHeight)
+    const targetTop = Math.max(0, Math.min(rawTop, maxScroll))
+
+    if (behavior === 'smooth') {
+      el.scrollTo({ top: targetTop, behavior: 'smooth' })
+    } else {
+      el.scrollTop = targetTop
+    }
+    return true
+  }, [])
+
+  const tryScrollToPendingSearchMessage = useCallback(() => {
+    const target = pendingScrollTargetRef.current
+    if (!target || selectedUser?.id !== target.peerId) return false
+    if (!messages.some((m) => m.id === target.msgId)) return false
+    if (!scrollToMessage(target.msgId, 'auto')) return false
+
+    pendingScrollTargetRef.current = null
+    setHighlightSearchMsgId(target.msgId)
+    prevChatKeyRef.current = selectedUser.id
+    lastMsgIdRef.current = messages.length > 0 ? messages[messages.length - 1].id : null
+    return true
+  }, [messages, scrollToMessage, selectedUser?.id])
+
+  useEffect(() => {
+    if (highlightSearchMsgId === null) return
+    const t = window.setTimeout(() => setHighlightSearchMsgId(null), 2200)
+    return () => window.clearTimeout(t)
+  }, [highlightSearchMsgId])
 
   useLayoutEffect(() => {
     const el = messagesViewportRef.current
     if (!el) return
 
-    const chatKey = selectedUser?.id ?? null
+    // Переход из поиска: ждём нужный чат и сообщение, не скроллим вниз
+    if (pendingScrollTargetRef.current) {
+      if (tryScrollToPendingSearchMessage()) return
+      return
+    }
+
+    const chatKey = selectedGroup?.id ?? selectedUser?.id ?? null
     const lastMsg = messages.length > 0 ? messages[messages.length - 1] : null
     const isNewChat = chatKey !== prevChatKeyRef.current
     const isNewMessage = lastMsg !== null && lastMsg.id !== lastMsgIdRef.current
@@ -1198,7 +2234,38 @@ export default function App() {
 
     prevChatKeyRef.current = chatKey
     lastMsgIdRef.current = lastMsg?.id ?? null
-  }, [selectedUser?.id, messages, session?.user.id])
+  }, [selectedUser?.id, selectedGroup?.id, messages, session?.user.id, tryScrollToPendingSearchMessage])
+
+  // Повторная попытка после отрисовки DOM и подгрузки истории с другого чата
+  useEffect(() => {
+    if (!pendingScrollTargetRef.current) return
+
+    let cancelled = false
+    let rafId = 0
+    const attempt = (tries = 0) => {
+      if (cancelled || tries > 40) return
+      if (tryScrollToPendingSearchMessage()) return
+      rafId = requestAnimationFrame(() => attempt(tries + 1))
+    }
+
+    rafId = requestAnimationFrame(() => requestAnimationFrame(() => attempt(0)))
+    const giveUpTimer = window.setTimeout(() => {
+      if (cancelled || !pendingScrollTargetRef.current) return
+      const target = pendingScrollTargetRef.current
+      if (selectedUser?.id !== target.peerId) return
+      if (messages.some((m) => m.id === target.msgId)) return
+      // Сообщение не найдено в загруженной истории — отпускаем pending
+      pendingScrollTargetRef.current = null
+      const el = messagesViewportRef.current
+      if (el) el.scrollTop = el.scrollHeight
+    }, 4000)
+
+    return () => {
+      cancelled = true
+      cancelAnimationFrame(rafId)
+      window.clearTimeout(giveUpTimer)
+    }
+  }, [selectedUser?.id, messages, tryScrollToPendingSearchMessage])
 
   function handleFileUpload(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0]
@@ -1220,9 +2287,265 @@ export default function App() {
     }
   }
 
+  const openDm = (peer: Profile) => {
+    setSelectedGroup(null)
+    setSelectedUser(peer)
+  }
+
+  const openGroup = (group: ChatGroup) => {
+    setSelectedUser(null)
+    setSelectedGroup(group)
+  }
+
+  const closeChat = () => {
+    setSelectedUser(null)
+    setSelectedGroup(null)
+  }
+
+  function inviteGroupFromRow(row: GroupInvite['chat_groups']): ChatGroup | null {
+    if (!row) return null
+    return Array.isArray(row) ? row[0] ?? null : row
+  }
+
+  async function createGroup() {
+    if (!session || isCreatingGroup) return
+    const name = newGroupName.trim()
+    if (!name) return showNotification(t('groupNameRequired'))
+    if (newGroupMemberIds.size === 0) return showNotification(t('groupMembersRequired'))
+
+    setIsCreatingGroup(true)
+    const { data: group, error: groupError } = await supabase
+      .from('chat_groups')
+      .insert({ name, created_by: session.user.id, visibility: newGroupVisibility })
+      .select('id, name, created_by, created_at, visibility')
+      .single()
+
+    if (groupError || !group) {
+      showNotification(groupErrorToast(groupError?.message ?? 'Failed to create group', t))
+      setIsCreatingGroup(false)
+      return
+    }
+
+    const { error: selfMemberError } = await supabase.from('group_members').insert({
+      group_id: group.id,
+      user_id: session.user.id,
+      role: 'admin',
+    })
+    if (selfMemberError) {
+      showNotification(groupErrorToast(selfMemberError.message, t))
+      setIsCreatingGroup(false)
+      return
+    }
+
+    const invites = Array.from(newGroupMemberIds).map((uid) => ({
+      group_id: group.id,
+      invitee_id: uid,
+      invited_by: session.user.id,
+    }))
+    const { error: invitesError } = await supabase.from('group_invites').insert(invites)
+    if (invitesError) {
+      showNotification(groupErrorToast(invitesError.message, t))
+      setIsCreatingGroup(false)
+      return
+    }
+
+    await supabase.from('group_reads').insert({
+      user_id: session.user.id,
+      group_id: group.id,
+      last_read_at: new Date().toISOString(),
+    })
+
+    const created: ChatGroup = {
+      ...group,
+      member_count: 1,
+    }
+    setIsCreatingGroup(false)
+    setIsCreateGroupOpen(false)
+    setNewGroupName('')
+    setNewGroupMemberIds(new Set())
+    setNewGroupVisibility('private')
+    showNotification(t('groupInvitesSent'))
+    void fetchSidebarData()
+    openGroup(created)
+  }
+
+  async function acceptGroupInvite(invite: GroupInvite) {
+    if (!session) return
+    const { error: memberError } = await supabase.from('group_members').insert({
+      group_id: invite.group_id,
+      user_id: session.user.id,
+      role: 'member',
+    })
+    if (memberError) {
+      showNotification(groupErrorToast(memberError.message, t))
+      return
+    }
+    await supabase.from('group_invites').update({ status: 'accepted' }).eq('id', invite.id)
+    await supabase.from('group_reads').upsert(
+      {
+        user_id: session.user.id,
+        group_id: invite.group_id,
+        last_read_at: new Date().toISOString(),
+      },
+      { onConflict: 'user_id,group_id' }
+    )
+    const g = inviteGroupFromRow(invite.chat_groups)
+    void fetchSidebarData()
+    if (g) openGroup({ ...g, member_count: (g.member_count ?? 0) + 1 })
+  }
+
+  async function declineGroupInvite(inviteId: string) {
+    if (!session) return
+    await supabase.from('group_invites').update({ status: 'declined' }).eq('id', inviteId)
+    void fetchSidebarData()
+  }
+
+  async function loadGroupJoinRequests(groupId: string) {
+    if (!session) return
+    const { data, error } = await supabase
+      .from('group_join_requests')
+      .select('id, group_id, user_id, status, created_at, profiles(id, email)')
+      .eq('group_id', groupId)
+      .eq('status', 'pending')
+    if (error) {
+      console.warn('Join requests:', error)
+      setPendingJoinRequests([])
+      return
+    }
+    setPendingJoinRequests((data ?? []) as GroupJoinRequest[])
+  }
+
+  async function openGroupSettings() {
+    if (!selectedGroup || !session) return
+    setGroupSettingsVisibility(selectedGroup.visibility ?? 'private')
+    setGroupInviteMemberIds(new Set())
+    setIsGroupSettingsOpen(true)
+    if (selectedGroup.created_by === session.user.id) {
+      await loadGroupJoinRequests(selectedGroup.id)
+    } else {
+      setPendingJoinRequests([])
+    }
+  }
+
+  async function saveGroupSettings() {
+    if (!session || !selectedGroup || isSavingGroupSettings) return
+    if (selectedGroup.created_by !== session.user.id) return
+    setIsSavingGroupSettings(true)
+    const { error } = await supabase
+      .from('chat_groups')
+      .update({ visibility: groupSettingsVisibility })
+      .eq('id', selectedGroup.id)
+    if (error) {
+      showNotification(groupErrorToast(error.message, t))
+      setIsSavingGroupSettings(false)
+      return
+    }
+    setSelectedGroup((g) => (g ? { ...g, visibility: groupSettingsVisibility } : g))
+    setIsSavingGroupSettings(false)
+    void fetchSidebarData()
+  }
+
+  async function inviteMembersToGroup() {
+    if (!session || !selectedGroup || groupInviteMemberIds.size === 0) return
+    const invites = Array.from(groupInviteMemberIds).map((uid) => ({
+      group_id: selectedGroup.id,
+      invitee_id: uid,
+      invited_by: session.user.id,
+    }))
+    const { error } = await supabase.from('group_invites').insert(invites)
+    if (error) {
+      showNotification(groupErrorToast(error.message, t))
+      return
+    }
+    setGroupInviteMemberIds(new Set())
+    showNotification(t('memberInvited'))
+  }
+
+  async function acceptJoinRequest(req: GroupJoinRequest) {
+    if (!session || !selectedGroup) return
+    const { error: memberError } = await supabase.from('group_members').insert({
+      group_id: req.group_id,
+      user_id: req.user_id,
+      role: 'member',
+    })
+    if (memberError) {
+      showNotification(groupErrorToast(memberError.message, t))
+      return
+    }
+    await supabase.from('group_join_requests').update({ status: 'accepted' }).eq('id', req.id)
+    await loadGroupJoinRequests(selectedGroup.id)
+    void fetchSidebarData()
+  }
+
+  async function declineJoinRequest(reqId: string) {
+    if (!selectedGroup) return
+    await supabase.from('group_join_requests').update({ status: 'declined' }).eq('id', reqId)
+    await loadGroupJoinRequests(selectedGroup.id)
+  }
+
+  async function deleteGroup() {
+    if (!session || !selectedGroup || isDeletingGroup) return
+    if (selectedGroup.created_by !== session.user.id) {
+      showNotification(t('onlyCreatorCanDelete'))
+      return
+    }
+    if (!window.confirm(t('deleteGroupConfirm', { name: selectedGroup.name }))) return
+    setIsDeletingGroup(true)
+    const { error } = await supabase.from('chat_groups').delete().eq('id', selectedGroup.id)
+    setIsDeletingGroup(false)
+    if (error) {
+      showNotification(groupErrorToast(error.message, t))
+      return
+    }
+    setIsGroupSettingsOpen(false)
+    closeChat()
+    showNotification(t('groupDeleted'))
+    void fetchSidebarData()
+  }
+
+  async function searchPublicGroups() {
+    if (!session) return
+    const q = publicGroupSearch.trim()
+    if (!q) {
+      setPublicGroupResults([])
+      return
+    }
+    setIsSearchingPublicGroups(true)
+    const { data, error } = await supabase
+      .from('chat_groups')
+      .select('id, name, created_by, created_at, visibility')
+      .eq('visibility', 'public')
+      .ilike('name', `%${q}%`)
+      .limit(20)
+    setIsSearchingPublicGroups(false)
+    if (error) {
+      showNotification(groupErrorToast(error.message, t))
+      return
+    }
+    const memberGroupIds = new Set(groups.map((g) => g.id))
+    setPublicGroupResults(
+      ((data ?? []) as ChatGroup[]).filter((g) => !memberGroupIds.has(g.id))
+    )
+  }
+
+  async function requestJoinPublicGroup(groupId: string) {
+    if (!session) return
+    const { error } = await supabase.from('group_join_requests').insert({
+      group_id: groupId,
+      user_id: session.user.id,
+    })
+    if (error) {
+      showNotification(groupErrorToast(error.message, t))
+      return
+    }
+    showNotification(t('joinRequestSent'))
+    setPublicGroupResults((prev) => prev.filter((g) => g.id !== groupId))
+  }
+
   async function sendMessage() {
     if (!session) return
-    if (!selectedUser || isSending) return
+    if ((!selectedUser && !selectedGroup) || isSending) return
+    stopVoiceInput()
 
     if (editingMessageId !== null) {
       if (!text.trim()) return
@@ -1270,12 +2593,22 @@ export default function App() {
       uploadedUrl = data.publicUrl
     }
 
-    const { error } = await supabase.from('messages').insert([{ 
-        content: text.trim() ? text : null, 
-        file_url: uploadedUrl, 
-        sender_id: session.user.id, 
-        receiver_id: selectedUser.id 
-    }])
+    const payload = selectedGroup
+      ? {
+          content: text.trim() ? text : null,
+          file_url: uploadedUrl,
+          sender_id: session.user.id,
+          group_id: selectedGroup.id,
+          receiver_id: null,
+        }
+      : {
+          content: text.trim() ? text : null,
+          file_url: uploadedUrl,
+          sender_id: session.user.id,
+          receiver_id: selectedUser!.id,
+        }
+
+    const { error } = await supabase.from('messages').insert([payload])
 
     if (!error) {
       setText('')
@@ -1325,9 +2658,28 @@ export default function App() {
     return t('online')
   }
 
-  const totalUnread = Object.values(unreadCounts).reduce((a, b) => a + b, 0)
-  const canSend = text.trim() !== '' || pendingFile !== null
-  const isTyping = text.trim() !== ''
+  const totalUnread =
+    Object.values(unreadCounts).reduce((a, b) => a + b, 0) +
+    Object.values(groupUnreadCounts).reduce((a, b) => a + b, 0)
+  const isInChat = selectedUser !== null || selectedGroup !== null
+  const isComposerVoiceActive = voiceInputTarget === 'composer'
+  const isSearchVoiceActive = voiceInputTarget === 'search'
+  const composerDisplayValue =
+    isComposerVoiceActive && voiceInterim
+      ? text.trim()
+        ? `${text} ${voiceInterim}`
+        : voiceInterim
+      : text
+  const searchDisplayValue =
+    isSearchVoiceActive && voiceInterim
+      ? messageSearchQuery.trim()
+        ? `${messageSearchQuery} ${voiceInterim}`
+        : voiceInterim
+      : messageSearchQuery
+  const canSend =
+    !isComposerVoiceActive && (text.trim() !== '' || pendingFile !== null)
+  const isTyping = text.trim() !== '' || isComposerVoiceActive
+  const voiceInputSupported = isSpeechRecognitionSupported()
 
   const composerPlusControl = (
     <div className="relative shrink-0 imessage-plus-wrap">
@@ -1407,6 +2759,217 @@ export default function App() {
 
   const inboxContacts = sortedContacts
 
+  const inboxSearch = messageSearchQuery.trim().toLowerCase()
+  const isInboxSearching = inboxSearch.length > 0
+
+  const profileMatchesInboxSearch = (profile: Profile) => {
+    if (!isInboxSearching) return true
+    const haystack = `${displayName(profile.email)} ${profile.email}`.toLowerCase()
+    return haystack.includes(inboxSearch)
+  }
+
+  const contactMatchesInboxSearch = (contact: Profile) => {
+    if (!isInboxSearching) return true
+    const preview = conversationPreviews[contact.id]
+    const haystack = [
+      displayName(contact.email),
+      contact.email,
+      preview?.content ?? '',
+      previewText(contact.id),
+      preview?.file_url ? 'attachment' : '',
+    ]
+      .join(' ')
+      .toLowerCase()
+    return haystack.includes(inboxSearch)
+  }
+
+  const visibleOutgoingRequests = outgoingRequests.filter(
+    (u) =>
+      (inboxFilter === 'all' || inboxFilter === 'requests') && profileMatchesInboxSearch(u)
+  )
+
+  const visibleIncomingRequests = incomingRequests.filter(
+    (u) =>
+      (inboxFilter === 'all' || inboxFilter === 'requests') && profileMatchesInboxSearch(u)
+  )
+
+  const visibleGroupInvites = incomingGroupInvites.filter(
+    (inv) => inboxFilter === 'all' || inboxFilter === 'requests' || inboxFilter === 'groups'
+  )
+
+  const profilesById = useMemo(() => {
+    const m = new Map(contacts.map((c) => [c.id, c]))
+    for (const [id, p] of Object.entries(extraProfiles)) m.set(id, p)
+    return m
+  }, [contacts, extraProfiles])
+
+  function groupPreviewText(groupId: string) {
+    const p = groupPreviews[groupId]
+    const memberCount = String(groups.find((g) => g.id === groupId)?.member_count ?? 0)
+    if (!p) return t('membersCount', { n: memberCount })
+    if (p.file_url) return p.content ? p.content : 'Attachment'
+    if (p.content) {
+      const sender = profilesById.get(p.sender_id)
+      const who =
+        p.sender_id === session?.user.id ? 'You' : sender ? displayName(sender.email) : 'Member'
+      return `${who}: ${p.content}`
+    }
+    return t('membersCount', { n: memberCount })
+  }
+
+  const groupMatchesInboxSearch = (group: ChatGroup) => {
+    if (!isInboxSearching) return true
+    const preview = groupPreviews[group.id]
+    const haystack = [
+      group.name,
+      preview?.content ?? '',
+      groupPreviewText(group.id),
+      preview?.file_url ? 'attachment' : '',
+    ]
+      .join(' ')
+      .toLowerCase()
+    return haystack.includes(inboxSearch)
+  }
+
+  const messageHitMatchesInboxFilter = (peerId: string) => {
+    if (inboxFilter === 'groups' || inboxFilter === 'requests') return false
+    if (inboxFilter === 'unread') return unreadCounts[peerId] > 0
+    return true
+  }
+
+  const visibleInboxContacts = inboxContacts.filter((u) => {
+    if (inboxFilter === 'unread' && unreadCounts[u.id] <= 0) return false
+    if (inboxFilter === 'groups' || inboxFilter === 'requests') return false
+    return contactMatchesInboxSearch(u)
+  })
+
+  const sortedGroups = [...groups].sort((a, b) => {
+    const ta = groupPreviews[a.id]?.created_at
+    const tb = groupPreviews[b.id]?.created_at
+    if (!ta && !tb) return a.name.localeCompare(b.name)
+    if (!ta) return 1
+    if (!tb) return -1
+    return new Date(tb).getTime() - new Date(ta).getTime()
+  })
+
+  const visibleGroups = sortedGroups.filter((g) => {
+    if (inboxFilter === 'unread' && (groupUnreadCounts[g.id] ?? 0) <= 0) return false
+    if (inboxFilter === 'all' || inboxFilter === 'groups' || inboxFilter === 'unread') {
+      return groupMatchesInboxSearch(g)
+    }
+    return false
+  })
+
+  type InboxListItem =
+    | { kind: 'dm'; contact: Profile; sortAt: string | null }
+    | { kind: 'group'; group: ChatGroup; sortAt: string | null }
+
+  const visibleInboxItems: InboxListItem[] = (() => {
+    const items: InboxListItem[] = []
+    if (inboxFilter === 'all' || inboxFilter === 'unread') {
+      for (const u of visibleInboxContacts) {
+        items.push({
+          kind: 'dm',
+          contact: u,
+          sortAt: conversationPreviews[u.id]?.created_at ?? null,
+        })
+      }
+      for (const g of visibleGroups) {
+        items.push({
+          kind: 'group',
+          group: g,
+          sortAt: groupPreviews[g.id]?.created_at ?? null,
+        })
+      }
+      items.sort((a, b) => {
+        if (!a.sortAt && !b.sortAt) {
+          const nameA = a.kind === 'dm' ? displayName(a.contact.email) : a.group.name
+          const nameB = b.kind === 'dm' ? displayName(b.contact.email) : b.group.name
+          return nameA.localeCompare(nameB)
+        }
+        if (!a.sortAt) return 1
+        if (!b.sortAt) return -1
+        return new Date(b.sortAt).getTime() - new Date(a.sortAt).getTime()
+      })
+      return items
+    }
+    if (inboxFilter === 'groups') {
+      return visibleGroups.map((g) => ({
+        kind: 'group' as const,
+        group: g,
+        sortAt: groupPreviews[g.id]?.created_at ?? null,
+      }))
+    }
+    return items
+  })()
+
+  const visibleMessageHits = isInboxSearching
+    ? inboxMessageHits.filter(
+        (hit) => profilesById.has(hit.peerId) && messageHitMatchesInboxFilter(hit.peerId)
+      )
+    : []
+
+  const inboxSearchEmpty =
+    isInboxSearching &&
+    visibleOutgoingRequests.length === 0 &&
+    visibleIncomingRequests.length === 0 &&
+    visibleGroupInvites.length === 0 &&
+    visibleInboxItems.length === 0 &&
+    visibleMessageHits.length === 0
+
+  const groupsTabEmpty = inboxFilter === 'groups' && !isInboxSearching && visibleGroups.length === 0
+
+  const openChatFromSearch = (peer: Profile, messageId?: number) => {
+    if (messageId != null) {
+      pendingScrollTargetRef.current = { peerId: peer.id, msgId: messageId }
+      setHighlightSearchMsgId(null)
+      setMessages(messagesCacheRef.current[peer.id] ?? [])
+    } else {
+      pendingScrollTargetRef.current = null
+    }
+    openDm(peer)
+    setMessageSearchQuery('')
+    setInboxMessageHits([])
+  }
+
+  const deleteMessage = async (messageId: number) => {
+    if (!session) return
+    setActiveReactionMsgId(null)
+    if (editingMessageId === messageId) {
+      setEditingMessageId(null)
+      setText('')
+    }
+
+    const cacheKey = selectedGroup
+      ? groupCacheKey(selectedGroup.id)
+      : selectedUser?.id
+    const snapshot = messages
+    setMessages((prev) => {
+      const next = prev.filter((m) => m.id !== messageId)
+      if (cacheKey) messagesCacheRef.current[cacheKey] = next
+      return next
+    })
+    setAllReactions((prev) => prev.filter((r) => r.message_id !== messageId))
+
+    await supabase.from('message_reactions').delete().eq('message_id', messageId)
+    const { error } = await supabase
+      .from('messages')
+      .delete()
+      .eq('id', messageId)
+      .eq('sender_id', session.user.id)
+
+    if (error) {
+      if (cacheKey) messagesCacheRef.current[cacheKey] = snapshot
+      setMessages(snapshot)
+      showNotification('❌ ' + error.message)
+      const { data: reactData } = await supabase.from('message_reactions').select('*')
+      if (reactData) setAllReactions(reactData as MessageReaction[])
+    } else {
+      showNotification(t('messageDeleted'))
+      void fetchSidebarData()
+    }
+  }
+
   const toggleReaction = async (messageId: number, emoji: string) => {
     if (!session) return
     const userId = session.user.id
@@ -1465,9 +3028,279 @@ export default function App() {
     <div className="flex flex-col h-[100dvh] min-h-0 w-full relative overflow-hidden text-[var(--ios-text-primary)] antialiased ios-app-shell">
       
       {toastMsg && (
-        <div className="absolute top-[max(1.25rem,env(safe-area-inset-top))] left-1/2 -translate-x-1/2 ios-glass-prominent z-50 flex items-center gap-3 px-5 py-2.5 rounded-full border border-[var(--ios-border-subtle)] shadow-lg animate-bounce">
+        <div className="fixed top-[max(1.25rem,env(safe-area-inset-top))] left-1/2 -translate-x-1/2 ios-glass-prominent z-[100] flex items-center gap-3 px-5 py-2.5 rounded-full border border-[var(--ios-border-subtle)] shadow-lg animate-bounce pointer-events-none">
           <span className="font-medium text-sm md:text-base whitespace-nowrap text-[var(--ios-text-primary)]">{toastMsg}</span>
         </div>
+      )}
+
+      {isCreateGroupOpen && (
+        <>
+          <div
+            className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-md"
+            onClick={() => !isCreatingGroup && setIsCreateGroupOpen(false)}
+          />
+          <div className="fixed inset-0 z-[70] flex items-end md:items-center justify-center p-0 md:p-6">
+            <div className="w-full max-w-lg ios-sheet ios-glass-prominent overflow-hidden max-md:pb-[env(safe-area-inset-bottom)] max-h-[85dvh] flex flex-col">
+              <div className="ios-navbar flex h-12 shrink-0 items-center justify-between px-4">
+                <span className="text-[17px] font-semibold text-[var(--ios-text-primary)]">
+                  {t('createGroupTitle')}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => !isCreatingGroup && setIsCreateGroupOpen(false)}
+                  className="ios-icon-btn"
+                  aria-label={t('close')}
+                >
+                  ×
+                </button>
+              </div>
+              <div className="p-4 md:p-5 bg-[var(--ios-surface-secondary)] overflow-y-auto flex-1 min-h-0">
+                <input
+                  type="text"
+                  autoFocus
+                  value={newGroupName}
+                  onChange={(e) => setNewGroupName(e.target.value)}
+                  placeholder={t('groupNamePlaceholder')}
+                  className="ios-field w-full rounded-[12px] px-4 py-3 text-[16px] border border-[var(--ios-border-subtle)] bg-[var(--ios-surface)] outline-none focus:ring-2 focus:ring-[var(--ios-accent)]/30"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') void createGroup()
+                  }}
+                />
+                <p className="mt-4 mb-2 text-[13px] font-semibold text-[var(--ios-text-secondary)] uppercase tracking-wide">
+                  {t('groupVisibility')}
+                </p>
+                <div className="flex gap-2 mb-4">
+                  <button
+                    type="button"
+                    onClick={() => setNewGroupVisibility('private')}
+                    className={`flex-1 py-2.5 rounded-full text-[14px] font-medium ${
+                      newGroupVisibility === 'private'
+                        ? 'bg-[var(--ios-accent)] text-white'
+                        : 'bg-[var(--ios-search-bg)] text-[var(--ios-text-primary)]'
+                    }`}
+                  >
+                    {t('groupPrivate')}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setNewGroupVisibility('public')}
+                    className={`flex-1 py-2.5 rounded-full text-[14px] font-medium ${
+                      newGroupVisibility === 'public'
+                        ? 'bg-[var(--ios-accent)] text-white'
+                        : 'bg-[var(--ios-search-bg)] text-[var(--ios-text-primary)]'
+                    }`}
+                  >
+                    {t('groupPublic')}
+                  </button>
+                </div>
+                <p className="mb-2 text-[13px] font-semibold text-[var(--ios-text-secondary)] uppercase tracking-wide">
+                  {t('selectMembers')}
+                </p>
+                {contacts.length === 0 ? (
+                  <p className="text-[14px] text-[var(--ios-text-tertiary)]">{t('myFriends')}: —</p>
+                ) : (
+                  <div className="ios-grouped overflow-hidden max-h-[40vh] overflow-y-auto">
+                    {contacts.map((c) => {
+                      const checked = newGroupMemberIds.has(c.id)
+                      return (
+                        <label
+                          key={c.id}
+                          className="flex items-center gap-3 px-4 py-3 border-b border-[var(--ios-separator)] last:border-b-0 cursor-pointer"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() => {
+                              setNewGroupMemberIds((prev) => {
+                                const next = new Set(prev)
+                                if (next.has(c.id)) next.delete(c.id)
+                                else next.add(c.id)
+                                return next
+                              })
+                            }}
+                            className="w-4 h-4 accent-[var(--ios-accent)]"
+                          />
+                          <IosAvatar seed={c.email} label={c.email} size="sm" variant="person" />
+                          <span className="text-[16px] truncate">{displayName(c.email)}</span>
+                        </label>
+                      )
+                    })}
+                  </div>
+                )}
+                <button
+                  type="button"
+                  disabled={isCreatingGroup || contacts.length === 0}
+                  onClick={() => void createGroup()}
+                  className="mt-4 w-full py-3.5 rounded-full bg-[var(--ios-accent)] text-white text-[17px] font-semibold disabled:opacity-50"
+                >
+                  {isCreatingGroup ? t('saving') : t('createGroupBtn')}
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {isGroupSettingsOpen && selectedGroup && (
+        <>
+          <div
+            className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-md"
+            onClick={() => !isSavingGroupSettings && !isDeletingGroup && setIsGroupSettingsOpen(false)}
+          />
+          <div className="fixed inset-0 z-[70] flex items-end md:items-center justify-center p-0 md:p-6">
+            <div className="w-full max-w-lg ios-sheet ios-glass-prominent overflow-hidden max-md:pb-[env(safe-area-inset-bottom)] max-h-[85dvh] flex flex-col">
+              <div className="ios-navbar flex h-12 shrink-0 items-center justify-between px-4">
+                <span className="text-[17px] font-semibold text-[var(--ios-text-primary)]">
+                  {t('groupSettings')}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => !isSavingGroupSettings && !isDeletingGroup && setIsGroupSettingsOpen(false)}
+                  className="ios-icon-btn"
+                  aria-label={t('close')}
+                >
+                  ×
+                </button>
+              </div>
+              <div className="p-4 md:p-5 bg-[var(--ios-surface-secondary)] overflow-y-auto flex-1 min-h-0">
+                <p className="text-[15px] font-semibold text-[var(--ios-text-primary)] mb-3 truncate">
+                  {selectedGroup.name}
+                </p>
+                {session?.user.id === selectedGroup.created_by && (
+                  <>
+                    <p className="text-[13px] font-semibold text-[var(--ios-text-secondary)] uppercase tracking-wide mb-2">
+                      {t('groupVisibility')}
+                    </p>
+                    <div className="flex gap-2 mb-4">
+                      <button
+                        type="button"
+                        onClick={() => setGroupSettingsVisibility('private')}
+                        className={`flex-1 py-2.5 rounded-full text-[14px] font-medium ${
+                          groupSettingsVisibility === 'private'
+                            ? 'bg-[var(--ios-accent)] text-white'
+                            : 'bg-[var(--ios-search-bg)]'
+                        }`}
+                      >
+                        {t('groupPrivate')}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setGroupSettingsVisibility('public')}
+                        className={`flex-1 py-2.5 rounded-full text-[14px] font-medium ${
+                          groupSettingsVisibility === 'public'
+                            ? 'bg-[var(--ios-accent)] text-white'
+                            : 'bg-[var(--ios-search-bg)]'
+                        }`}
+                      >
+                        {t('groupPublic')}
+                      </button>
+                    </div>
+                    <button
+                      type="button"
+                      disabled={isSavingGroupSettings}
+                      onClick={() => void saveGroupSettings()}
+                      className="w-full py-3 rounded-full bg-[var(--ios-accent)] text-white text-[16px] font-semibold mb-4 disabled:opacity-50"
+                    >
+                      {isSavingGroupSettings ? t('saving') : t('save')}
+                    </button>
+                    {pendingJoinRequests.length > 0 && (
+                      <>
+                        <p className="text-[13px] font-semibold text-[var(--ios-text-secondary)] uppercase tracking-wide mb-2">
+                          {t('pendingJoinRequests')}
+                        </p>
+                        <div className="ios-grouped overflow-hidden mb-4">
+                          {pendingJoinRequests.map((req) => {
+                            const raw = req.profiles
+                            const p = raw ? (Array.isArray(raw) ? raw[0] : raw) : null
+                            return (
+                              <div
+                                key={req.id}
+                                className="flex items-center gap-3 px-4 py-3 border-b border-[var(--ios-separator)] last:border-b-0"
+                              >
+                                {p && (
+                                  <IosAvatar seed={p.email} label={p.email} size="sm" variant="person" />
+                                )}
+                                <span className="flex-1 text-[15px] truncate">
+                                  {p ? displayName(p.email) : req.user_id}
+                                </span>
+                                <button
+                                  type="button"
+                                  className="px-3 py-1 rounded-full bg-[var(--ios-accent)] text-white text-[13px]"
+                                  onClick={() => void acceptJoinRequest(req)}
+                                >
+                                  {t('acceptBtn')}
+                                </button>
+                                <button
+                                  type="button"
+                                  className="px-3 py-1 rounded-full bg-[var(--ios-search-bg)] text-[var(--ios-danger)] text-[13px]"
+                                  onClick={() => void declineJoinRequest(req.id)}
+                                >
+                                  {t('declineBtn')}
+                                </button>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </>
+                    )}
+                  </>
+                )}
+                <p className="text-[13px] font-semibold text-[var(--ios-text-secondary)] uppercase tracking-wide mb-2">
+                  {t('inviteMembers')}
+                </p>
+                {contacts.length === 0 ? (
+                  <p className="text-[14px] text-[var(--ios-text-tertiary)] mb-4">{t('myFriends')}: —</p>
+                ) : (
+                  <div className="ios-grouped overflow-hidden max-h-[28vh] overflow-y-auto mb-3">
+                    {contacts.map((c) => {
+                      const checked = groupInviteMemberIds.has(c.id)
+                      return (
+                        <label
+                          key={c.id}
+                          className="flex items-center gap-3 px-4 py-3 border-b border-[var(--ios-separator)] last:border-b-0 cursor-pointer"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() => {
+                              setGroupInviteMemberIds((prev) => {
+                                const next = new Set(prev)
+                                if (next.has(c.id)) next.delete(c.id)
+                                else next.add(c.id)
+                                return next
+                              })
+                            }}
+                            className="w-4 h-4 accent-[var(--ios-accent)]"
+                          />
+                          <IosAvatar seed={c.email} label={c.email} size="sm" variant="person" />
+                          <span className="text-[16px] truncate">{displayName(c.email)}</span>
+                        </label>
+                      )
+                    })}
+                  </div>
+                )}
+                <button
+                  type="button"
+                  disabled={groupInviteMemberIds.size === 0}
+                  onClick={() => void inviteMembersToGroup()}
+                  className="w-full py-3 rounded-full bg-[var(--ios-search-bg)] text-[var(--ios-accent)] text-[16px] font-semibold mb-4 disabled:opacity-50"
+                >
+                  {t('inviteMembers')}
+                </button>
+                {session?.user.id === selectedGroup.created_by && (
+                  <button
+                    type="button"
+                    disabled={isDeletingGroup}
+                    onClick={() => void deleteGroup()}
+                    className="w-full py-3 rounded-full bg-[var(--ios-danger)] text-white text-[16px] font-semibold disabled:opacity-50"
+                  >
+                    {isDeletingGroup ? t('saving') : t('deleteGroup')}
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </>
       )}
 
       {isSettingsOpen && (
@@ -1490,7 +3323,29 @@ export default function App() {
                 </button>
               </div>
               <div className="p-4 md:p-5 bg-[var(--ios-surface-secondary)]">
-                <div className="ios-grouped p-4 md:p-5">
+                {session?.user.email && (
+                  <div className="ios-grouped p-4 md:p-5">
+                    <div className="flex items-start gap-3">
+                      <IosAvatar seed={session.user.email} label={session.user.email} size="md" />
+                      <div className="flex flex-col min-w-0 flex-1 gap-1">
+                        <span className="text-[13px] font-semibold uppercase tracking-wide text-[var(--ios-text-secondary)]">
+                          {t('myProfile')}
+                        </span>
+                        <span className="text-[17px] font-semibold text-[var(--ios-text-primary)] truncate">
+                          {displayName(session.user.email)}
+                        </span>
+                        <span className="text-[15px] text-[var(--ios-text-secondary)] truncate">
+                          {session.user.email}
+                        </span>
+                        <span className="text-[13px] text-[var(--ios-text-tertiary)] leading-snug pt-0.5">
+                          {t('myProfileHint')}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div className="ios-grouped p-4 md:p-5 mt-3">
                   <div className="flex items-start gap-3">
                     <div className="w-11 h-11 rounded-full bg-[var(--ios-accent-tint)] flex items-center justify-center text-[var(--ios-accent)] shrink-0">
                       <IconGlobe />
@@ -1711,7 +3566,7 @@ export default function App() {
           {/* iMessage inbox list */}
           <div
             className={`imessage-sidebar-shell relative z-20
-            ${selectedUser ? 'hidden md:flex md:flex-none' : 'flex w-full flex-1 md:flex-none'}
+            ${isInChat ? 'hidden md:flex md:flex-none' : 'flex w-full flex-1 md:flex-none'}
             ${isCollapsed ? 'md:w-[80px]' : 'md:w-[356px] lg:w-[406px]'}`}
           >
             <div className="imessage-inbox relative flex flex-col min-h-0 min-w-0 flex-1 w-full overflow-hidden">
@@ -1783,7 +3638,7 @@ export default function App() {
                   {([
                     ['all', 'All'],
                     ['unread', 'Unread'],
-                    ['groups', 'Groups'],
+                    ['groups', t('groupsTab')],
                     ['requests', 'Requests'],
                   ] as const).map(([key, label]) => (
                     <button
@@ -1797,8 +3652,63 @@ export default function App() {
                   ))}
                 </div>
 
+                {inboxFilter === 'groups' && !isInboxSearching && (
+                  <div className="imessage-groups-toolbar shrink-0">
+                    <button
+                      type="button"
+                      className="imessage-create-group-btn"
+                      onClick={() => setIsCreateGroupOpen(true)}
+                    >
+                      <span className="imessage-create-group-icon-wrap" aria-hidden>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src="/icons/add-group-flaticon.png"
+                          alt=""
+                          width={20}
+                          height={20}
+                          className="imessage-create-group-icon"
+                        />
+                      </span>
+                      <span>{t('createGroup')}</span>
+                    </button>
+                    <label className="imessage-float-search imessage-group-search">
+                      <IconSearch />
+                      <input
+                        type="search"
+                        enterKeyHint="search"
+                        value={publicGroupSearch}
+                        onChange={(e) => setPublicGroupSearch(e.target.value)}
+                        placeholder={t('searchGroupsPlaceholder')}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') void searchPublicGroups()
+                          if (e.key === 'Escape') {
+                            setPublicGroupSearch('')
+                            setPublicGroupResults([])
+                          }
+                        }}
+                      />
+                      {publicGroupSearch.trim() ? (
+                        <button
+                          type="button"
+                          disabled={isSearchingPublicGroups}
+                          onClick={() => void searchPublicGroups()}
+                          className="imessage-inbox-find-go disabled:opacity-50"
+                        >
+                          {t('go')}
+                        </button>
+                      ) : null}
+                    </label>
+                  </div>
+                )}
+
                 <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden no-scrollbar pb-28">
-                  {(inboxFilter === 'all' || inboxFilter === 'requests') && outgoingRequests.map((u) => (
+                  {inboxSearchEmpty && (
+                    <div className="imessage-search-empty">
+                      <p>{t('searchNoResults')}</p>
+                    </div>
+                  )}
+
+                  {visibleOutgoingRequests.map((u) => (
                     <div key={u.id} className="imessage-row opacity-80">
                       <span className="imessage-unread-spacer" />
                       <IosAvatar seed={u.email} label={u.email} size="inbox" variant="person" />
@@ -1814,7 +3724,7 @@ export default function App() {
                     </div>
                   ))}
 
-                  {(inboxFilter === 'all' || inboxFilter === 'requests') && incomingRequests.map((u) => (
+                  {visibleIncomingRequests.map((u) => (
                     <div key={u.id} className="imessage-row">
                       <span className="imessage-unread-dot" />
                       <IosAvatar seed={u.email} label={u.email} size="inbox" variant="person" />
@@ -1828,34 +3738,127 @@ export default function App() {
                         </div>
                         <p className="imessage-row-preview">{u.email}</p>
                         <div className="flex gap-2 mt-2">
-                          <button type="button" className="flex-1 py-1.5 rounded-full bg-[var(--ios-accent)] text-white text-[14px] font-medium" onClick={() => acceptRequest(u.id)}>Принять</button>
-                          <button type="button" className="flex-1 py-1.5 rounded-full bg-[var(--ios-search-bg)] text-[var(--ios-danger)] text-[14px] font-medium" onClick={() => rejectRequest(u.id)}>Отклонить</button>
+                          <button type="button" className="flex-1 py-1.5 rounded-full bg-[var(--ios-accent)] text-white text-[14px] font-medium" onClick={() => acceptRequest(u.id)}>{t('acceptBtn')}</button>
+                          <button type="button" className="flex-1 py-1.5 rounded-full bg-[var(--ios-search-bg)] text-[var(--ios-danger)] text-[14px] font-medium" onClick={() => rejectRequest(u.id)}>{t('declineBtn')}</button>
                         </div>
                       </div>
                     </div>
                   ))}
 
-                  {inboxContacts
-                    .filter((u) => {
-                      if (inboxFilter === 'unread') return unreadCounts[u.id] > 0
-                      if (inboxFilter === 'groups' || inboxFilter === 'requests') return false
-                      return true
-                    })
-                    .map((u) => {
-                    const unread = unreadCounts[u.id] > 0
-                    const preview = conversationPreviews[u.id]
+                  {visibleGroupInvites.map((inv) => {
+                    const g = inviteGroupFromRow(inv.chat_groups)
+                    const name = g?.name ?? t('groupInviteTitle')
+                    return (
+                      <div key={inv.id} className="imessage-row">
+                        <span className="imessage-unread-dot" />
+                        <IosAvatar seed={inv.group_id} label={name} size="inbox" variant="color" />
+                        <div className="imessage-row-body">
+                          <div className="imessage-row-top">
+                            <span className="imessage-row-name imessage-row-name-unread">{name}</span>
+                            <span className="imessage-row-meta">
+                              <span className="imessage-row-time">{t('groupInviteTitle')}</span>
+                            </span>
+                          </div>
+                          <p className="imessage-row-preview">{t('groupInviteTitle')}</p>
+                          <div className="flex gap-2 mt-2">
+                            <button
+                              type="button"
+                              className="flex-1 py-1.5 rounded-full bg-[var(--ios-accent)] text-white text-[14px] font-medium"
+                              onClick={() => void acceptGroupInvite(inv)}
+                            >
+                              {t('acceptBtn')}
+                            </button>
+                            <button
+                              type="button"
+                              className="flex-1 py-1.5 rounded-full bg-[var(--ios-search-bg)] text-[var(--ios-danger)] text-[14px] font-medium"
+                              onClick={() => void declineGroupInvite(inv.id)}
+                            >
+                              {t('declineBtn')}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+
+                  {inboxFilter === 'groups' && !isInboxSearching && publicGroupResults.length === 0 && publicGroupSearch.trim() && !isSearchingPublicGroups && (
+                    <p className="px-4 py-2 text-[13px] text-[var(--ios-text-tertiary)]">{t('noPublicGroupsFound')}</p>
+                  )}
+
+                  {inboxFilter === 'groups' && !isInboxSearching && publicGroupResults.map((g) => (
+                    <div key={g.id} className="imessage-group-search-hit">
+                      <IosAvatar seed={g.id} label={g.name} size="sm" variant="color" />
+                      <span className="flex-1 min-w-0 text-[15px] font-medium truncate">{g.name}</span>
+                      <button
+                        type="button"
+                        onClick={() => void requestJoinPublicGroup(g.id)}
+                        className="px-3 py-1.5 rounded-full bg-[var(--ios-accent)] text-white text-[13px] font-medium shrink-0"
+                      >
+                        {t('requestJoin')}
+                      </button>
+                    </div>
+                  ))}
+
+                  {groupsTabEmpty && (
+                    <div className="imessage-groups-empty px-6 py-10 text-center">
+                      <p className="text-[15px] text-[var(--ios-text-secondary)]">{t('noGroupsYet')}</p>
+                    </div>
+                  )}
+
+                  {visibleInboxItems.map((item) => {
+                    if (item.kind === 'dm') {
+                      const u = item.contact
+                      const unread = unreadCounts[u.id] > 0
+                      const preview = conversationPreviews[u.id]
+                      return (
+                        <div
+                          key={`dm-${u.id}`}
+                          className={`imessage-row cursor-pointer ${selectedUser?.id === u.id ? 'imessage-row-selected' : ''}`}
+                          onClick={() => (isInboxSearching ? openChatFromSearch(u) : openDm(u))}
+                        >
+                          {unread ? <span className="imessage-unread-dot" /> : <span className="imessage-unread-spacer" />}
+                          <IosAvatar seed={u.email} label={u.email} size="inbox" variant="person" />
+                          <div className="imessage-row-body">
+                            <div className="imessage-row-top">
+                              <span className={`imessage-row-name ${unread ? 'imessage-row-name-unread' : ''}`}>
+                                {isInboxSearching
+                                  ? highlightSearchMatch(displayName(u.email), inboxSearch)
+                                  : displayName(u.email)}
+                              </span>
+                              <span className="imessage-row-meta">
+                                {preview && (
+                                  <span className="imessage-row-time">{formatListTime(preview.created_at)}</span>
+                                )}
+                                <IconChevronRight className="imessage-row-chevron" />
+                              </span>
+                            </div>
+                            <p className={`imessage-row-preview ${unread ? 'imessage-row-preview-unread' : ''}`}>
+                              {isInboxSearching
+                                ? highlightSearchMatch(previewText(u.id), inboxSearch)
+                                : previewText(u.id)}
+                            </p>
+                          </div>
+                        </div>
+                      )
+                    }
+
+                    const g = item.group
+                    const unread = (groupUnreadCounts[g.id] ?? 0) > 0
+                    const preview = groupPreviews[g.id]
                     return (
                       <div
-                        key={u.id}
-                        className={`imessage-row cursor-pointer ${selectedUser?.id === u.id ? 'imessage-row-selected' : ''}`}
-                        onClick={() => setSelectedUser(u)}
+                        key={`group-${g.id}`}
+                        className={`imessage-row cursor-pointer ${selectedGroup?.id === g.id ? 'imessage-row-selected' : ''}`}
+                        onClick={() => openGroup(g)}
                       >
                         {unread ? <span className="imessage-unread-dot" /> : <span className="imessage-unread-spacer" />}
-                        <IosAvatar seed={u.email} label={u.email} size="inbox" variant="person" />
+                        <IosAvatar seed={g.id} label={g.name} size="inbox" variant="color" />
                         <div className="imessage-row-body">
                           <div className="imessage-row-top">
                             <span className={`imessage-row-name ${unread ? 'imessage-row-name-unread' : ''}`}>
-                              {displayName(u.email)}
+                              {isInboxSearching
+                                ? highlightSearchMatch(g.name, inboxSearch)
+                                : g.name}
                             </span>
                             <span className="imessage-row-meta">
                               {preview && (
@@ -1865,24 +3868,110 @@ export default function App() {
                             </span>
                           </div>
                           <p className={`imessage-row-preview ${unread ? 'imessage-row-preview-unread' : ''}`}>
-                            {previewText(u.id)}
+                            {isInboxSearching
+                              ? highlightSearchMatch(groupPreviewText(g.id), inboxSearch)
+                              : groupPreviewText(g.id)}
                           </p>
                         </div>
                       </div>
                     )
                   })}
+
+                  {visibleMessageHits.length > 0 && (
+                    <>
+                      <div className="imessage-search-section-title">{t('searchMessages')}</div>
+                      {visibleMessageHits.map((hit) => {
+                        const peer = profilesById.get(hit.peerId)
+                        if (!peer) return null
+                        const isMe = hit.sender_id === session?.user.id
+                        return (
+                          <div
+                            key={hit.id}
+                            className={`imessage-row imessage-row-search-hit cursor-pointer ${selectedUser?.id === peer.id ? 'imessage-row-selected' : ''}`}
+                            onClick={() => openChatFromSearch(peer, hit.id)}
+                          >
+                            <span className="imessage-unread-spacer" />
+                            <IosAvatar seed={peer.email} label={peer.email} size="inbox" variant="person" />
+                            <div className="imessage-row-body">
+                              <div className="imessage-row-top">
+                                <span className="imessage-row-name">
+                                  {highlightSearchMatch(displayName(peer.email), inboxSearch)}
+                                </span>
+                                <span className="imessage-row-meta">
+                                  <span className="imessage-row-time">{formatListTime(hit.created_at)}</span>
+                                  <IconChevronRight className="imessage-row-chevron" />
+                                </span>
+                              </div>
+                              <p className="imessage-row-preview imessage-row-preview-unread">
+                                {renderMessageSearchPreview(hit.content, inboxSearch, isMe)}
+                              </p>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </>
+                  )}
                 </div>
 
                 <div className="imessage-bottom-search">
-                  <label className="imessage-float-search">
+                  <label
+                    className={`imessage-float-search${isSearchVoiceActive ? ' imessage-float-search-voice-active' : ''}`}
+                  >
                     <IconSearch />
                     <input
-                      placeholder="Search"
-                      value={messageSearchQuery}
-                      onChange={(e) => setMessageSearchQuery(e.target.value)}
-                      readOnly
+                      ref={searchInputRef}
+                      type="search"
+                      enterKeyHint="search"
+                      placeholder={isSearchVoiceActive ? t('voiceListening') : t('searchPlaceholder')}
+                      value={searchDisplayValue}
+                      onChange={(e) => {
+                        stopVoiceInput()
+                        setMessageSearchQuery(e.target.value)
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Escape') {
+                          stopVoiceInput()
+                          setMessageSearchQuery('')
+                        }
+                      }}
+                      className={isSearchVoiceActive ? 'imessage-input-pill-voice' : ''}
                     />
-                    <IconMic className="opacity-60" />
+                    {isSearchVoiceActive ? (
+                      <button
+                        type="button"
+                        className="imessage-voice-btn imessage-search-voice-btn imessage-voice-btn-listening"
+                        onClick={() => toggleVoiceInput('search')}
+                        aria-label={t('voiceInput')}
+                        aria-pressed
+                        title={t('voiceInput')}
+                      >
+                        <IconMic className="w-5 h-5" />
+                      </button>
+                    ) : isInboxSearching ? (
+                      <button
+                        type="button"
+                        className="imessage-search-clear"
+                        aria-label={t('cancel')}
+                        onClick={() => {
+                          stopVoiceInput()
+                          setMessageSearchQuery('')
+                        }}
+                      >
+                        ×
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        className="imessage-voice-btn imessage-search-voice-btn"
+                        onClick={() => toggleVoiceInput('search')}
+                        disabled={!voiceInputSupported}
+                        aria-label={t('voiceInput')}
+                        aria-pressed={false}
+                        title={t('voiceInput')}
+                      >
+                        <IconMic className="w-5 h-5 opacity-80" />
+                      </button>
+                    )}
                   </label>
                 </div>
               </>
@@ -1902,9 +3991,9 @@ export default function App() {
 
 {/* ПРАВАЯ КОЛОНКА — Messages thread */}
           <div className={`flex flex-col relative z-10 w-full min-h-0 flex-1 overflow-hidden ios-chat-canvas
-            ${selectedUser ? 'flex max-md:w-full' : 'hidden md:flex'}`}>   
+            ${isInChat ? 'flex max-md:w-full' : 'hidden md:flex'}`}>   
             
-            {!selectedUser ? (
+            {!isInChat ? (
               <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
                 <MessagesAppIcon className="w-24 h-24 mb-6 opacity-90" />
                 <p className="text-[20px] font-semibold text-[var(--ios-text-primary)] max-w-sm">{t('chooseFriendTitle')}</p>
@@ -1914,39 +4003,60 @@ export default function App() {
               <>
                 <div
                   ref={messagesViewportRef}
-                  className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-4 md:px-6 flex flex-col pb-24 w-full no-scrollbar bg-[var(--ios-chat-bg)]"
+                  className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-4 md:px-6 flex flex-col pb-[4.75rem] w-full no-scrollbar bg-[var(--ios-chat-bg)]"
                 >
                   <div className="imessage-thread-header -mx-4 md:-mx-6 px-4 md:px-6">
                     <button
                       type="button"
-                      onClick={() => setSelectedUser(null)}
+                      onClick={closeChat}
                       className="imessage-back-btn imessage-header-icon"
                       aria-label={t('back')}
                     >
                       <IconBack className="imessage-header-flaticon" />
                       {totalUnread > 0 && <span className="imessage-back-badge">{totalUnread > 9 ? '9+' : totalUnread}</span>}
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => openProfile(selectedUser)}
-                      className="imessage-thread-contact"
-                      aria-label="Открыть профиль пользователя"
-                    >
-                      <span className="imessage-thread-contact-glow" aria-hidden />
-                      <span className="imessage-thread-avatar-wrap">
-                        <span className="imessage-thread-avatar-glow" aria-hidden />
-                        <IosAvatar seed={selectedUser.email} label={selectedUser.email} size="threadLg" variant="person" />
-                      </span>
-                      <span className="imessage-thread-name-pill">
-                        <span className="truncate">{displayName(selectedUser.email)}</span>
-                        <IconChevronRight className="!w-2.5 !h-3.5 !opacity-50 shrink-0" />
-                      </span>
-                    </button>
+                    {selectedGroup ? (
+                      <button
+                        type="button"
+                        onClick={() => void openGroupSettings()}
+                        className="imessage-thread-contact"
+                        aria-label={t('groupSettings')}
+                      >
+                        <span className="imessage-thread-contact-glow" aria-hidden />
+                        <span className="imessage-thread-avatar-wrap">
+                          <span className="imessage-thread-avatar-glow" aria-hidden />
+                          <IosAvatar seed={selectedGroup.id} label={selectedGroup.name} size="threadLg" variant="color" />
+                        </span>
+                        <span className="imessage-thread-name-pill">
+                          <span className="truncate">{selectedGroup.name}</span>
+                          <IconChevronRight className="!w-2.5 !h-3.5 !opacity-50 shrink-0" />
+                        </span>
+                      </button>
+                    ) : selectedUser ? (
+                      <button
+                        type="button"
+                        onClick={() => openProfile(selectedUser)}
+                        className="imessage-thread-contact"
+                        aria-label="Открыть профиль пользователя"
+                      >
+                        <span className="imessage-thread-contact-glow" aria-hidden />
+                        <span className="imessage-thread-avatar-wrap">
+                          <span className="imessage-thread-avatar-glow" aria-hidden />
+                          <IosAvatar seed={selectedUser.email} label={selectedUser.email} size="threadLg" variant="person" />
+                        </span>
+                        <span className="imessage-thread-name-pill">
+                          <span className="truncate">{displayName(selectedUser.email)}</span>
+                          <IconChevronRight className="!w-2.5 !h-3.5 !opacity-50 shrink-0" />
+                        </span>
+                      </button>
+                    ) : null}
                     <div className="imessage-thread-header-side" aria-hidden />
                   </div>
                   <div className="py-1 flex flex-col w-full">
                   {messages.map((m, idx) => {
                     const isMe = m.sender_id === session.user.id;
+                    const isImage = Boolean(m.file_url && isImageFileUrl(m.file_url))
+                    const isImageOnly = isImage && !m.content?.trim()
                     const msgReactions = allReactions.filter((r) => r.message_id === m.id)
                     const isMenuOpen = activeReactionMsgId === m.id;
                     const prev = messages[idx - 1]
@@ -1962,7 +4072,12 @@ export default function App() {
                       <div
                         className={`relative flex flex-col mb-2 ${isMe ? 'items-end' : 'items-start'}`}
                       >
-                        
+                        {selectedGroup && !isMe && (
+                          <span className="text-[11px] font-medium text-[var(--ios-text-secondary)] mb-0.5 px-2">
+                            {displayName(profilesById.get(m.sender_id)?.email ?? 'Member')}
+                          </span>
+                        )}
+
                         {/* КОНТЕКСТНОЕ МЕНЮ (Эмодзи + Копировать + Перевести) */}
                         {isMenuOpen && (
                           <>
@@ -1993,44 +4108,101 @@ export default function App() {
                                 })}
                               </div>
                               {/* Пункты меню строками, как в Telegram */}
-                              {m.content && (
-                                <div className="imessage-msg-menu-items">
+                              <div className="imessage-msg-menu-items">
+                                {isImage && m.file_url && (
                                   <button
                                     type="button"
                                     onClick={(e) => {
                                       e.stopPropagation()
-                                      // Если выделена часть текста — копируем её, иначе всё сообщение
+                                      void downloadImage(m.file_url!)
+                                    }}
+                                    disabled={isAiLoading}
+                                    className="imessage-msg-menu-item"
+                                  >
+                                    <span className="imessage-msg-menu-item-icon" aria-hidden>
+                                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                                      <img
+                                        src="/icons/download-flaticon.png"
+                                        alt=""
+                                        className="w-[22px] h-[22px] object-contain"
+                                      />
+                                    </span>
+                                    <span>{t('downloadImage')}</span>
+                                  </button>
+                                )}
+                                {!isImageOnly && m.content && (
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation()
                                       const selected = window.getSelection()?.toString().trim()
                                       void copyToClipboard(selected || m.content || '')
                                     }}
                                     disabled={isAiLoading}
                                     className="imessage-msg-menu-item"
                                   >
-                                    <span className="imessage-msg-menu-item-icon" aria-hidden>📋</span>
+                                    <span className="imessage-msg-menu-item-icon" aria-hidden>
+                                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                                      <img
+                                        src="/icons/copy-flaticon.png"
+                                        alt=""
+                                        className="w-[22px] h-[22px] object-contain"
+                                      />
+                                    </span>
                                     <span>{t('copyText')}</span>
                                   </button>
-                                  {isMe && (
-                                    <button
-                                      type="button"
-                                      onClick={(e) => {
-                                        e.stopPropagation()
-                                        setEditingMessageId(m.id)
-                                        setText(m.content ?? '')
-                                        setActiveReactionMsgId(null)
-                                        requestAnimationFrame(() => composerInputRef.current?.focus())
-                                      }}
-                                      disabled={isAiLoading || isSending}
-                                      className="imessage-msg-menu-item"
-                                    >
-                                      <span className="imessage-msg-menu-item-icon" aria-hidden>✏️</span>
-                                      <span>{t('edit')}</span>
-                                    </button>
-                                  )}
+                                )}
+                                {!isImageOnly && !isImage && m.file_url && (
                                   <button
                                     type="button"
                                     onClick={(e) => {
                                       e.stopPropagation()
-                                      if (m.content) void handleAiAction('translate', 'Русский', m.id, m.content)
+                                      void copyToClipboard(m.file_url || '')
+                                    }}
+                                    disabled={isAiLoading}
+                                    className="imessage-msg-menu-item"
+                                  >
+                                    <span className="imessage-msg-menu-item-icon" aria-hidden>
+                                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                                      <img
+                                        src="/icons/copy-flaticon.png"
+                                        alt=""
+                                        className="w-[22px] h-[22px] object-contain"
+                                      />
+                                    </span>
+                                    <span>{t('copyText')}</span>
+                                  </button>
+                                )}
+                                {!isImageOnly && isMe && m.content && (
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      setEditingMessageId(m.id)
+                                      setText(m.content ?? '')
+                                      setActiveReactionMsgId(null)
+                                      requestAnimationFrame(() => composerInputRef.current?.focus())
+                                    }}
+                                    disabled={isAiLoading || isSending}
+                                    className="imessage-msg-menu-item"
+                                  >
+                                    <span className="imessage-msg-menu-item-icon" aria-hidden>
+                                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                                      <img
+                                        src="/icons/edit-flaticon.png"
+                                        alt=""
+                                        className="w-[22px] h-[22px] object-contain"
+                                      />
+                                    </span>
+                                    <span>{t('edit')}</span>
+                                  </button>
+                                )}
+                                {!isImageOnly && m.content && (
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      void handleAiAction('translate', 'Русский', m.id, m.content!)
                                       setActiveReactionMsgId(null)
                                     }}
                                     disabled={isAiLoading}
@@ -2041,8 +4213,29 @@ export default function App() {
                                     </span>
                                     <span>{t('translate')}</span>
                                   </button>
-                                </div>
-                              )}
+                                )}
+                                {isMe && (
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      void deleteMessage(m.id)
+                                    }}
+                                    disabled={isAiLoading || isSending}
+                                    className="imessage-msg-menu-item imessage-msg-menu-item-danger"
+                                  >
+                                    <span className="imessage-msg-menu-item-icon" aria-hidden>
+                                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                                      <img
+                                        src="/icons/delete-flaticon.png"
+                                        alt=""
+                                        className="w-[22px] h-[22px] object-contain"
+                                      />
+                                    </span>
+                                    <span>{t('deleteMessage')}</span>
+                                  </button>
+                                )}
+                              </div>
                             </div>
                           </>
                         )}
@@ -2050,17 +4243,9 @@ export default function App() {
                         {/* ПУЗЫРЕК СООБЩЕНИЯ */}
                         <div 
                           id={`msg-${m.id}`}
-                          onContextMenu={(e) => {
-                            // Меню открыто и есть выделенный текст — пускаем нативное меню браузера
-                            if (isMenuOpen) {
-                              if (window.getSelection()?.toString()) return
-                              e.preventDefault()
-                              return
-                            }
-                            e.preventDefault()
-                            setActiveReactionIsMe(isMe)
-                            setActiveReactionMsgId(m.id)
-                          }}
+                          onContextMenu={(e) =>
+                            handleMessageContextMenu(e, m.id, isMe, isMenuOpen)
+                          }
                           onDoubleClick={() => { if (!isMenuOpen) quickLike(m.id) }}
                           onTouchStart={() => handlePressStart(m.id, isMe)}
                           onTouchEnd={() => handleBubbleTouchEnd(m.id)}
@@ -2071,16 +4256,28 @@ export default function App() {
                           }}
                           className={`ios-bubble relative flex flex-col shrink-0 ${isMe ? 'ios-bubble-sent' : 'ios-bubble-received'} ${
                             isMenuOpen ? 'imessage-bubble-selected select-text' : 'select-none'
-                          }`}
+                          } ${highlightSearchMsgId === m.id ? 'imessage-bubble-search-hit' : ''}`}
                         >
                           {likeBurst?.id === m.id && (
                             <span key={likeBurst.key} className="imessage-like-burst" aria-hidden>❤️</span>
                           )}
                           {m.file_url && (
                             <div className="mb-2 overflow-hidden rounded-xl">
-                              {m.file_url.match(/\.(jpeg|jpg|gif|png|webp)$/i) ? (
+                              {isImageFileUrl(m.file_url) ? (
                                 /* eslint-disable-next-line @next/next/no-img-element -- remote Supabase URLs; next/image needs domain config */
-                                <img src={m.file_url} alt="Вложение" onLoad={() => scrollToBottom('auto')} className="w-full h-full max-h-64 object-cover rounded-xl shadow-sm" />
+                                <img
+                                  src={m.file_url}
+                                  alt="Вложение"
+                                  draggable={false}
+                                  onLoad={() => scrollToBottom('auto')}
+                                  onContextMenu={(e) =>
+                                    handleMessageContextMenu(e, m.id, isMe, isMenuOpen)
+                                  }
+                                  onTouchStart={() => handlePressStart(m.id, isMe)}
+                                  onTouchEnd={() => handleBubbleTouchEnd(m.id)}
+                                  onTouchMove={handlePressEnd}
+                                  className="w-full h-full max-h-64 object-cover rounded-xl shadow-sm"
+                                />
                               ) : (
                                  <a href={m.file_url} target="_blank" rel="noopener noreferrer" className={`flex items-center gap-2 p-3 rounded-[12px] text-sm transition-colors ${isMe ? 'bg-black/15 hover:bg-black/25' : 'bg-black/25 hover:bg-black/35'}`}>
                                    <span className="text-lg">📎</span> <span className="font-medium">Файл</span>
@@ -2110,7 +4307,7 @@ export default function App() {
                           )}
 
                           {msgReactions.length > 0 && (
-                            <div className={`absolute -bottom-3.5 flex flex-wrap gap-1 z-10 ${isMe ? 'right-2' : 'left-2'}`}>
+                            <div className={`absolute -bottom-3.5 flex flex-wrap gap-1 z-[1] ${isMe ? 'right-2' : 'left-2'}`}>
                               {Array.from(new Set(msgReactions.map((r) => r.emoji))).map((emoji) => {
                                 const count = msgReactions.filter((r) => r.emoji === emoji).length
                                 const hasMyReaction = msgReactions.some(
@@ -2175,23 +4372,36 @@ export default function App() {
 
                     <input type="file" className="hidden" ref={fileInputRef} onChange={handleFileUpload} accept="image/*,.pdf,.doc,.docx" />
 
-                    <div className={`imessage-input-shell ${isTyping ? 'imessage-input-shell-active' : ''}`}>
+                    <div className={`imessage-input-shell ${isTyping || isComposerVoiceActive ? 'imessage-input-shell-active' : ''} ${composerPanel !== 'closed' ? 'imessage-input-shell-menu-open' : ''}`}>
                       {composerPlusControl}
 
                       <input
                         ref={composerInputRef}
-                        className={`imessage-input-pill ${aiProcessingFromInput && isAiLoading ? 'text-transparent caret-transparent' : ''}`}
-                        value={text}
-                        onChange={(e) => setText(e.target.value)}
+                        className={`imessage-input-pill ${aiProcessingFromInput && isAiLoading ? 'text-transparent caret-transparent' : ''} ${isComposerVoiceActive ? 'imessage-input-pill-voice' : ''}`}
+                        value={composerDisplayValue}
+                        onChange={(e) => {
+                          stopVoiceInput()
+                          setText(e.target.value)
+                        }}
                         onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
                         onPaste={handlePaste}
-                        placeholder={t('messagePlaceholder')}
+                        placeholder={isComposerVoiceActive ? t('voiceListening') : t('messagePlaceholder')}
                         disabled={isSending || isAiLoading}
                         onFocus={() => setComposerPanel('closed')}
                       />
 
                       {!canSend && !isAiLoading && composerPanel === 'closed' && (
-                        <IconMic className="imessage-input-mic w-5 h-5" />
+                        <button
+                          type="button"
+                          className={`imessage-voice-btn ${isComposerVoiceActive ? 'imessage-voice-btn-listening' : ''}`}
+                          onClick={() => toggleVoiceInput('composer')}
+                          disabled={!voiceInputSupported || isSending}
+                          aria-label={t('voiceInput')}
+                          aria-pressed={isComposerVoiceActive}
+                          title={t('voiceInput')}
+                        >
+                          <IconMic className="w-5 h-5" />
+                        </button>
                       )}
 
                       {canSend && (

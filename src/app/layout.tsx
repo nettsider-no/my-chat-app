@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { GeistSans } from 'geist/font/sans'; // Импортируем крутой шрифт Geist Sans
-import Script from "next/script";
+import { OneSignalLoader } from "@/src/components/OneSignalLoader";
 import "./globals.css";
 
 // МЕТАДАННЫЕ (Наш паспорт приложения)
@@ -50,19 +50,7 @@ export default function RootLayout({
           на Apple-устройствах рендерится родной SF, на остальных — Geist */}
       <body className={`${GeistSans.variable} antialiased ios-root-bg min-h-dvh`}>
         
-        {/* --- КОД ONESIGNAL (Оставляем как есть) --- */}
-        <Script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" strategy="beforeInteractive" />
-        <Script id="onesignal-init" strategy="afterInteractive" dangerouslySetInnerHTML={{
-          __html: `
-            window.OneSignalDeferred = window.OneSignalDeferred || [];
-            OneSignalDeferred.push(async function(OneSignal) {
-              await OneSignal.init({
-                appId: "9485fb3c-fdf8-4d2c-b4d3-8cecaf4e347c",
-              });
-            });
-          `
-        }} />
-        {/* --- КОНЕЦ КОДА ONESIGNAL --- */}
+        <OneSignalLoader />
         
         {children}
       </body>

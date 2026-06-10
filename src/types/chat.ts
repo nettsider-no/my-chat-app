@@ -14,9 +14,51 @@ export interface ChatMessage {
   content: string | null
   file_url: string | null
   sender_id: string
-  receiver_id: string
+  receiver_id: string | null
+  group_id: string | null
   is_read: boolean
   created_at: string
+}
+
+export type GroupVisibility = 'private' | 'public'
+
+export interface ChatGroup {
+  id: string
+  name: string
+  created_by: string
+  created_at: string
+  visibility?: GroupVisibility
+  member_count?: number
+}
+
+export interface GroupInvite {
+  id: string
+  group_id: string
+  invitee_id: string
+  invited_by: string
+  status: 'pending' | 'accepted' | 'declined'
+  created_at: string
+  chat_groups?: ChatGroup | ChatGroup[] | null
+}
+
+export interface GroupJoinRequest {
+  id: string
+  group_id: string
+  user_id: string
+  status: 'pending' | 'accepted' | 'declined'
+  created_at: string
+  profiles?: Profile | Profile[] | null
+}
+
+export interface GroupMemberRow {
+  group_id: string
+  user_id: string
+  role: 'admin' | 'member'
+  profiles?: Profile | Profile[] | null
+}
+
+export interface GroupMemberQueryRow {
+  chat_groups: ChatGroup | ChatGroup[] | null
 }
 
 export interface MessageReaction {
